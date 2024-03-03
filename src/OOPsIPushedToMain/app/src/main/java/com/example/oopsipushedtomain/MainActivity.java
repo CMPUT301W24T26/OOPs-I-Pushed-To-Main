@@ -1,78 +1,114 @@
 package com.example.oopsipushedtomain;
 
-import android.os.Bundle;
-
-import com.google.android.material.snackbar.Snackbar;
-
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.Toast;
 
-import androidx.core.view.WindowCompat;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
-
-import com.example.oopsipushedtomain.databinding.ActivityMainBinding;
-
-import android.view.Menu;
-import android.view.MenuItem;
+import com.google.zxing.WriterException;
 
 public class MainActivity extends AppCompatActivity {
+    // Buttons
+    Button scanButton, generateButton, showButton;
+    ImageView qrImage;
 
-    private AppBarConfiguration appBarConfiguration;
-    private ActivityMainBinding binding;
+    // QR code
+    QRCode qrCode;
+
+    // Activity result launcher for getting the result of the QR code scan
+    private ActivityResultLauncher<Intent> qrCodeActivityResultLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        // Find the three buttons on the screen
+        scanButton = findViewById(R.id.scan_qr_code);
+        generateButton = findViewById(R.id.generate_qr_code);
+        showButton = findViewById(R.id.show_qr_code);
 
-        setSupportActionBar(binding.toolbar);
+        // Get the image view
+        qrImage = findViewById(R.id.qr_image);
 
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+        // Create an empty qr code
+        qrCode = new QRCode();
 
-        binding.fab.setOnClickListener(new View.OnClickListener() {
+        // ChatGPT, How do I pass a variable back to the calling activity?, Can you give me the code for registerForActivityResult()
+        // Register the activity result
+        qrCodeActivityResultLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult o) {
+                        if (o.getResultCode() == Activity.RESULT_OK){
+                            // Get the data
+                            Intent data = o.getData();
+
+                            // If the data is not null, retrieve and store in qrCode
+                            if (data != null) {
+                                String returnValue = data.getStringExtra("result");
+                                qrCode.setQrString(returnValue);
+
+                                // Show the scanned data
+                                Toast.makeText(getApplicationContext(), qrCode.getQrString(), Toast.LENGTH_LONG).show();
+
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Data Error", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    }
+                }
+        );
+
+
+        // Set on click listener for the generate button
+        generateButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAnchorView(R.id.fab)
-                        .setAction("Action", null).show();
+            public void onClick(View v) {
+                // Generate a new code with the string "Testing"
+                try {
+                    qrCode.generateCode("Testing");
+                } catch (WriterException e) {
+                    // Catch the error, just print for now
+                    e.printStackTrace();
+                }
+
+                // Print confirmation
+                Toast.makeText(getApplicationContext(), "QR Generated", Toast.LENGTH_SHORT).show();
             }
         });
-    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+        // Set on click listener for the show button
+        showButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Show the QR Code on screen
+                qrImage.setImageBitmap(qrCode.getQrImage());
+            }
+        });
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        // Set the on click listener for the scan button
+        scanButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+                // Switch to the scanning activity and scan
+                Intent intent = new Intent(getApplicationContext(), QRScanner.class);
 
-        return super.onOptionsItemSelected(item);
-    }
+                // Start the activity
+                qrCodeActivityResultLauncher.launch(intent);
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        return NavigationUI.navigateUp(navController, appBarConfiguration)
-                || super.onSupportNavigateUp();
+                // This is asynchronous. DO NOT PUT CODE HERE
+            }
+        });
     }
 }

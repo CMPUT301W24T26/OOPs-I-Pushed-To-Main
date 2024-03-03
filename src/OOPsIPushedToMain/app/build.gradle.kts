@@ -3,6 +3,7 @@ plugins {
     // Add the Google services Gradle plugin
     id("com.google.gms.google-services")
 
+
 }
 
 android {
@@ -50,5 +51,9 @@ dependencies {
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-firestore")
+
+    //Add the ZXing library for the QR code scanner https://github.com/zxing/zxing
+    implementation("com.journeyapps:zxing-android-embedded:4.2.0")
+    implementation("com.google.zxing:core:3.4.0")
 
 }
