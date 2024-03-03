@@ -43,4 +43,9 @@
         libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
+    <string name="send_announcement">Send Announcement</string>
+    <string name="announcement_title">Announcement Title</string>
+    <string name="announcement_body">Announcement Body</string>
+    <string name="send">Send</string>
+    <string name="cancel">Cancel</string>
 </resources>
