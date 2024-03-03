@@ -58,4 +58,11 @@ public class EventListActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh event list here, by re-querying the database
+    }
+
 }

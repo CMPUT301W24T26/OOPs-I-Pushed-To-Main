@@ -89,7 +89,9 @@ public class EventDetailsActivityOrganizer extends AppCompatActivity {
                     event.setStartTime(eventStartTimeEdit.getText().toString());
                     event.setEndTime(eventEndTimeEdit.getText().toString());
                     event.setDescription(eventDescriptionEdit.getText().toString());
-                    finish();
+                    Intent intent = new Intent(EventDetailsActivityOrganizer.this, EventListActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); // Clears the back stack
+                    startActivity(intent);
                 }
             }
         });
@@ -161,10 +163,13 @@ public class EventDetailsActivityOrganizer extends AppCompatActivity {
         // Placeholder for actual deletion logic
         // For example, deleting from a database or making an API call
 
+        // TODO: Delete the event from the list
         //deleteEventFromDatabase(event.getEventId());
 
-        // After deletion, navigate back
-        finish();
+        // After deletion, navigate back to EventListActivity
+        Intent intent = new Intent(EventDetailsActivityOrganizer.this, EventListActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); // Clears the back stack
+        startActivity(intent);
     }
 
 

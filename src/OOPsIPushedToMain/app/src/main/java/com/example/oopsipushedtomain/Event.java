@@ -23,6 +23,31 @@ public class Event implements Serializable {
     private int attendeeLimit; // Optional
 
     /**
+     * Constructs a new Event instance.
+     *
+     * @param eventId The unique identifier for the event.
+     * @param title The title of the event.
+     * @param startTime The start time of the event.
+     * @param endTime The end time of the event.
+     * @param description A description of the event.
+     * @param location The location of the event.
+     * @param posterUrl The URL to an image for the event.
+     * @param qrCodeData QR code data related to the event, potentially for quick check-ins or additional information.
+     * @param attendeeLimit The maximum number of attendees for the event. Use 0 or a negative number to indicate no limit.
+     */
+    public Event(String eventId, String title, String startTime, String endTime, String description, String location, String posterUrl, String qrCodeData, int attendeeLimit) {
+        this.eventId = eventId;
+        this.title = title;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.description = description;
+        this.location = location; // Optional
+        this.posterUrl = posterUrl;
+        this.qrCodeData = qrCodeData;
+        this.attendeeLimit = attendeeLimit; // Optional
+    }
+
+    /**
      * Gets the unique identifier for the event.
      * @return the event's unique identifier
      */
