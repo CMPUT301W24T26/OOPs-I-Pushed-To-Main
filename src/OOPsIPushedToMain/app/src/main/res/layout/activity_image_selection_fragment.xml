@@ -1,0 +1,19 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="60dp">
+
+    <Button
+        android:id="@+id/btnEventPictures"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/event_pictures"/>
+
+    <Button
+        android:id="@+id/btnProfilePictures"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/profile_pictures"
+        android:layout_marginTop="16dp"/>
+</LinearLayout>
