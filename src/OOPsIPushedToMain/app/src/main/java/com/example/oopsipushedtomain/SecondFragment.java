@@ -1,5 +1,6 @@
 package com.example.oopsipushedtomain;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,10 +26,32 @@ public class SecondFragment extends Fragment {
         return binding.getRoot();
 
     }
-
+    @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if(getArguments() != null) {
+            String firstName = getArguments().getString("firstName", "");
+            String lastName = getArguments().getString("lastName", "");
+            String phoneNumber = getArguments().getString("phoneNumber", "");
+            String emailAddress = getArguments().getString("emailAddress", "");
+
+            // Set the text of TextViews to display the information
+            binding.firstNameTextView.setText(firstName);
+            binding.lastNameTextView.setText(lastName);
+            binding.phoneNumberTextView.setText(phoneNumber);
+            binding.emailAddressTextView.setText(emailAddress);
+
+            // Handle the imageUri if you are passing it
+            String imageUri = getArguments().getString("imageUri");
+            if (imageUri != null && !imageUri.isEmpty()) {
+                Uri uri = Uri.parse(imageUri);
+                binding.profileImageView.setImageURI(uri);
+            } else {
+                // Set default image
+                binding.profileImageView.setImageResource(R.drawable.default_image);
+            }
+        }
         binding.buttonSecond.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
