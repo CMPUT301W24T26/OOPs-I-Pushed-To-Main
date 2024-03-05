@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Other styles -->
+
+    <!-- Style for a circular ShapeableImageView -->
+    <style name="CircularShape">
+        <item name="cornerSize">50%</item>
+    </style>
+</resources>
+
