@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">QRScannerTest</string>
+    <string name="title_activity_qrscanner">QRScanner</string>
+</resources>
