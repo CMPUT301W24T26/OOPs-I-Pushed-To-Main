@@ -1,104 +1,162 @@
 package com.example.oopsipushedtomain;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class defines the page where organizers can create announcements to send to attendees.
- * @author Aidan Gironella
- * @version 1.0
+ * The announcements are created and uploaded to the database where a Cloud Function notices the
+ * new announcement and send a notification to that event topic.
+ * @author  Aidan Gironella
+ * @version 1.1
+ * @see     PushNotificationService
  */
 public class SendAnnouncementActivity extends AppCompatActivity {
+
+    private EditText announcementTitleE;
+    private EditText announcementBodyE;
+    private Button sendAnnouncementButton, cancelButton, subButton, unSubButton;
+
     private String event;  // TODO: Make it an event ID instead of a string (dependent on database design)
-    private ArrayList<String> attendees;  // TODO: Make it a list of Attendees instead of Strings
-    private EditText announcementTitle;
-    private EditText announcementBody;
-    private Button sendAnnouncementButton;
-    private Button cancelButton;
-    private String CHANNEL_ID = "test";
+    private CollectionReference announcementsRef;
 
-
+    /**
+     * Initialize the activity by restoring the state if necessary, setting the ContentView,
+     * initializing our UI elements, establishing the database connection, and setting our
+     * button listeners.
+     * @param savedInstanceState If supplied, is used to restore the activity to its prior state.
+     *      If not supplied, create a fresh activity.
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send_announcement);
-        createNotificationChannel();
-
-        announcementTitle = findViewById(R.id.announcement_title_e);
-        announcementBody = findViewById(R.id.announcement_body_e);
-        sendAnnouncementButton = findViewById(R.id.btnSendNotification);
-        cancelButton = findViewById(R.id.btnCancel);
-
         event = getIntent().getStringExtra("event");
 
-        // TODO: Query database and get a list of attendees using the event ID
-        String[] dummyAttendees = {"Adam", "Bill", "Clyde"};
-        attendees = new ArrayList<>();
-        attendees.addAll(Arrays.asList(dummyAttendees));
+        // Initialize EditTexts and Buttons
+        initializeViews();
 
-        // TODO: Change this intent to open the event that this announcement is for
-        Intent intent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        // Initialize database reference to Announcements collection
+        announcementsRef = FirebaseFirestore.getInstance().collection("announcements");
 
-        sendAnnouncementButton.setOnClickListener(v -> {
-            Log.d("Announcement", "Sending announcement");
-            String title = announcementTitle.getText().toString();
-            String body = announcementBody.getText().toString();
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_launcher_background)  // TODO: App icon
-                    .setContentTitle(title)
-                    .setContentText(body)
-                    .setContentIntent(pendingIntent)
-                    .setAutoCancel(true);
-            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-//                return;
-            }
-            // TODO: Generate unique notification IDs (potentially in the database?)
-            NotificationManagerCompat.from(this).notify(1, builder.build());
-            Log.d("Announcement", "Announcement sent?");
-        });
-
-        cancelButton.setOnClickListener(v -> {finish();});
+        // Set button listeners
+        setListeners();
     }
 
-    private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is not in the Support Library.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Default";
-            String description = "Default notification channel";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this.
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
+    /**
+     * Initialize all the views using findViewById, and set the uneditable Event Title field to
+     * the event title.
+     */
+    private void initializeViews() {
+        // Declare UI elements
+        EditText eventTitleE = findViewById(R.id.event_title_title);
+        announcementTitleE = findViewById(R.id.announcement_title_e);
+        announcementBodyE = findViewById(R.id.announcement_body_e);
+        sendAnnouncementButton = findViewById(R.id.btnSendNotification);
+        cancelButton = findViewById(R.id.btnCancel);
+        subButton = findViewById(R.id.btnSub);
+        unSubButton = findViewById(R.id.btnUnsub);
+
+        eventTitleE.setText(event);
+    }
+
+    /**
+     * Set the button listeners.
+     * The Send button builds an announcement object and passes it to sendAnnouncement()
+     * The cancel button (//TODO maybe unnecessary?) closes this activity
+     */
+    private void setListeners() {
+        sendAnnouncementButton.setOnClickListener(v -> {
+            // Retrieve announcement data from the EditTexts
+            String title = announcementTitleE.getText().toString();
+            String body = announcementBodyE.getText().toString();
+
+            // Check if the organizer created a proper announcement
+            if (title.isEmpty() || body.isEmpty()) {
+                alertEmptyFields();
+                return;
+            }
+
+            // Build and send the announcement
+            Map<String, Object> announcement = new HashMap<>();
+            String topic = "test-notifications";  // TODO: Set this to unique event ID
+            announcement.put("image", "image");  // TODO
+            announcement.put("title", title);
+            announcement.put("body", body);
+            announcement.put("eventId", topic);  // TODO: Pass in unique event ID
+            Log.d("Announcements", "Sending announcement");
+            sendAnnouncement(announcement);
+            finish();
+        });
+
+        cancelButton.setOnClickListener(v -> finish());
+
+        // Testing button, should be deleted eventually
+        subButton.setOnClickListener(v -> FirebaseMessaging.getInstance().subscribeToTopic("test-notifications")
+                .addOnCompleteListener(task -> {
+                    String msg = "Subscribed";
+                    if (!task.isSuccessful()) {
+                        msg = "Subscribe failed";
+                    }
+                    Log.d("Announcement", msg);
+                    Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
+                }));
+
+        // Testing button, should be deleted eventually
+        unSubButton.setOnClickListener(v -> FirebaseMessaging.getInstance().unsubscribeFromTopic("test-notifications")
+                .addOnCompleteListener(task -> {
+                    String msg = "Unsubscribed";
+                    if (!task.isSuccessful()) {
+                        msg = "Unsubscribe failed";
+                    }
+                    Log.d("Announcement", msg);
+                    Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
+                }));
+    }
+
+    /**
+     * Shows an AlertDialog informing the user that they have not provided enough info.
+     */
+    private void alertEmptyFields() {
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert
+                .setTitle("Missing info")
+                .setMessage("One or more fields are empty. Please try again");
+        AlertDialog dialog = alert.create();
+        dialog.show();
+    }
+
+    /**
+     * Takes an announcement Map and posts it to the database.
+     * @param announcement The announcement Map with all the info to post to the database.
+     */
+    private void sendAnnouncement(Map<String, Object> announcement) {
+        announcementsRef
+                .document("uid")  // TODO: UID?
+                .set(announcement)
+                .addOnSuccessListener(e -> {
+                    Log.d("Announcement", "Announcement successfully sent to DB");
+                    AlertDialog.Builder alert = new AlertDialog.Builder(getBaseContext());
+                    alert
+                            .setTitle("Announcement sent")
+                            .setMessage("Your announcement was successfully sent!");
+                    AlertDialog dialog = alert.create();
+                    dialog.show();
+                })
+                .addOnFailureListener(e -> Log.d("Announcement", "Announcement could not be sent to DB" + e));
     }
 }

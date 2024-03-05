@@ -16,14 +16,33 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/announcement_title"
+        android:id="@+id/event_title_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="@string/announcement_title"
+        android:text="@string/event_title"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/send_announcement" />
+
+    <EditText
+        android:id="@+id/event_title_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="@string/event_title"
+        android:inputType="none"
+        android:textSize="15sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/event_title_header" />
+
+    <TextView
+        android:id="@+id/announcement_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/announcement_title"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/event_title_title" />
 
     <EditText
         android:id="@+id/announcement_title_e"
@@ -71,6 +90,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             android:layout_marginEnd="16sp"/>
+
         <Button
             android:id="@+id/btnCancel"
             android:layout_width="wrap_content"
@@ -80,6 +100,25 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
+        <Button
+            android:id="@+id/btnSub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/button_positive"
+            android:text="sub"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginStart="16sp"/>
+
+        <Button
+            android:id="@+id/btnUnsub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/button_positive"
+            android:text="un"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginStart="16sp"/>
     </LinearLayout>
 
 
