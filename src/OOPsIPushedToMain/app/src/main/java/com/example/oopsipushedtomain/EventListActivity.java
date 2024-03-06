@@ -8,6 +8,10 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
+
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 
@@ -62,7 +66,25 @@ public class EventListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh event list here, by re-querying the database
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("events").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                eventDataList.clear();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String title = document.getString("title");
+                    String startDateTime = document.getString("startDateTime");
+                    String endDateTime = document.getString("endDateTime");
+                    String details = document.getString("details");
+                    // Extract other fields as necessary and create a new Event object
+                    Event event = new Event(document.getId(), title, startDateTime, endDateTime, details, "", "", "", 0);
+                    eventDataList.add(event);
+                }
+                eventAdapter.notifyDataSetChanged();
+            } else {
+                Toast.makeText(EventListActivity.this, "Error getting events", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
 
 }

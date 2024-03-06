@@ -10,10 +10,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
+
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -69,21 +74,28 @@ public class NewEventActivity extends AppCompatActivity {
             String startTime = newEventStartTimeEdit.getText().toString();
             String endTime = newEventEndTimeEdit.getText().toString();
             String description = newEventDescriptionEdit.getText().toString();
-            // Assuming you handle location, posterUrl, qrCodeData, and attendeeLimit elsewhere
+            // Assuming handling location, posterUrl, qrCodeData, and attendeeLimit elsewhere
 
-            // Create the event object
-            Event newEvent = new Event(UUID.randomUUID().toString(), title, startTime, endTime, description, "", "", "", 0);
+            Map<String, Object> event = new HashMap<>();
+            event.put("title", title);
+            event.put("startDateTime", startTime);
+            event.put("endDateTime", endTime);
+            event.put("details", description);
+            // Add other fields as necessary
 
-            // TODO: Add the new event to the list
-
-            // Navigate back to EventListActivity
-            Intent intent = new Intent(NewEventActivity.this, EventListActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("events").add(event)
+                    .addOnSuccessListener(documentReference -> {
+                        Toast.makeText(NewEventActivity.this, "Event added successfully", Toast.LENGTH_SHORT).show();
+                        // Navigate back to EventListActivity
+                        Intent intent = new Intent(NewEventActivity.this, EventListActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(NewEventActivity.this, "Error adding event", Toast.LENGTH_SHORT).show());
         });
     }
-
-    private void showDateTimePicker(final EditText editText) {
+    private void showDateTimePicker (final EditText editText){
         Calendar currentDate = Calendar.getInstance();
         new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
             Calendar time = Calendar.getInstance();

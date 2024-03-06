@@ -12,6 +12,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
@@ -160,17 +162,20 @@ public class EventDetailsActivityOrganizer extends AppCompatActivity {
     }
 
     private void deleteEvent() {
-        // Placeholder for actual deletion logic
-        // For example, deleting from a database or making an API call
-
-        // TODO: Delete the event from the list
-        //deleteEventFromDatabase(event.getEventId());
-
-        // After deletion, navigate back to EventListActivity
-        Intent intent = new Intent(EventDetailsActivityOrganizer.this, EventListActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); // Clears the back stack
-        startActivity(intent);
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String eventId = getIntent().getStringExtra("eventId");
+        db.collection("events").document(eventId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(EventDetailsActivityOrganizer.this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
+                    // Navigate back to EventListActivity
+                    Intent intent = new Intent(EventDetailsActivityOrganizer.this, EventListActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); // Clears the back stack
+                    startActivity(intent);
+                })
+                .addOnFailureListener(e -> Toast.makeText(EventDetailsActivityOrganizer.this, "Error deleting event", Toast.LENGTH_SHORT).show());
     }
+
 
 
 }
