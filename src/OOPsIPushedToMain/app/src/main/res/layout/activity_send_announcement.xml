@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SendAnnouncementActivity">
+    tools:context=".Announcements.SendAnnouncementActivity"
+    android:padding="10dp">
 
     <TextView
         android:id="@+id/send_announcement"
@@ -31,6 +32,8 @@
         android:layout_height="wrap_content"
         android:hint="@string/event_title"
         android:inputType="none"
+        android:focusable="false"
+        android:textColor="#808080"
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/event_title_header" />
@@ -99,28 +102,6 @@
             android:text="@string/cancel"
             android:textSize="18sp"
             android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnSub"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/button_positive"
-            android:text="sub"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginStart="16sp"/>
-
-        <Button
-            android:id="@+id/btnUnsub"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/button_positive"
-            android:text="un"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginStart="16sp"/>
     </LinearLayout>
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

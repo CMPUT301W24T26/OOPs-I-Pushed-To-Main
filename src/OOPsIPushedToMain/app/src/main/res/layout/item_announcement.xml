@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="8dp">
+                <ImageView
+                    android:id="@+id/announcement_image_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:maxHeight="40dp"
+                    android:src="@drawable/ic_launcher_background"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Notification image" />
+                <TextView
+                    android:id="@+id/announcement_list_item_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="22sp"
+                    android:layout_marginStart="8dp"
+                    android:text="Announcement Title" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/announcement_list_item_body"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:padding="4dp"
+                android:layout_marginStart="8dp"
+                android:text="Announcement Body" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

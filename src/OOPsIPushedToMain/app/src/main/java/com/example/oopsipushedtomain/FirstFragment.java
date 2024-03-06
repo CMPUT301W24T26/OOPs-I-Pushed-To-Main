@@ -8,8 +8,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.fragment.NavHostFragment;
 
+import com.example.oopsipushedtomain.Announcements.AnnouncementListActivity;
+import com.example.oopsipushedtomain.Announcements.SendAnnouncementActivity;
 import com.example.oopsipushedtomain.databinding.FragmentFirstBinding;
 
 public class FirstFragment extends Fragment {
@@ -37,6 +38,17 @@ public class FirstFragment extends Fragment {
 //                        .navigate(R.id.action_FirstFragment_to_SecondFragment);
                 Intent i = new Intent(getContext(), SendAnnouncementActivity.class);
                 i.putExtra("event", "AnnouncementTest");
+                startActivity(i);
+            }
+        });
+
+        binding.buttonSecond.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+//                NavHostFragment.findNavController(FirstFragment.this)
+//                        .navigate(R.id.action_FirstFragment_to_SecondFragment);
+                Intent i = new Intent(getContext(), AnnouncementListActivity.class);
+                i.putExtra("user", "UserID");
                 startActivity(i);
             }
         });

@@ -1,5 +1,6 @@
-package com.example.oopsipushedtomain;
+package com.example.oopsipushedtomain.Announcements;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -10,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.oopsipushedtomain.R;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -29,9 +31,9 @@ public class SendAnnouncementActivity extends AppCompatActivity {
 
     private EditText announcementTitleE;
     private EditText announcementBodyE;
-    private Button sendAnnouncementButton, cancelButton, subButton, unSubButton;
-
-    private String event;  // TODO: Make it an event ID instead of a string (dependent on database design)
+    private Button sendAnnouncementButton, cancelButton;
+    private String eventId;
+    private FirebaseFirestore db;
     private CollectionReference announcementsRef;
 
     /**
@@ -45,13 +47,19 @@ public class SendAnnouncementActivity extends AppCompatActivity {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send_announcement);
-        event = getIntent().getStringExtra("event");
+
+        // TODO: Integration - in Ningze EventDetailsActivityOrganizer.java, on line 108 (or inside
+        //  btnSendNotification setOnClickListener, before startActivity), add:
+        //  intent.putExtra("eventId", event.getEventId());
+        eventId = getIntent().getStringExtra("eventId");
+        eventId = "EVNT-0000000000";
+
+        // Initialize database reference to Announcements collection
+        db = FirebaseFirestore.getInstance();
+        announcementsRef = db.collection("announcements");
 
         // Initialize EditTexts and Buttons
         initializeViews();
-
-        // Initialize database reference to Announcements collection
-        announcementsRef = FirebaseFirestore.getInstance().collection("announcements");
 
         // Set button listeners
         setListeners();
@@ -68,16 +76,18 @@ public class SendAnnouncementActivity extends AppCompatActivity {
         announcementBodyE = findViewById(R.id.announcement_body_e);
         sendAnnouncementButton = findViewById(R.id.btnSendNotification);
         cancelButton = findViewById(R.id.btnCancel);
-        subButton = findViewById(R.id.btnSub);
-        unSubButton = findViewById(R.id.btnUnsub);
 
-        eventTitleE.setText(event);
+        // TODO: Integration - this should properly get the event title and fill the field once
+        //  Event.java is in the project, try just uncommenting these two lines and remove the third
+//        Event event = db.collection("events").whereEqualTo("eventId", eventId)
+//        eventTitleE.setText(event.getTitle());
+        eventTitleE.setText("Event Name");
     }
 
     /**
      * Set the button listeners.
      * The Send button builds an announcement object and passes it to sendAnnouncement()
-     * The cancel button (//TODO maybe unnecessary?) closes this activity
+     * The cancel button closes this activity (TODO maybe unnecessary?)
      */
     private void setListeners() {
         sendAnnouncementButton.setOnClickListener(v -> {
@@ -93,39 +103,16 @@ public class SendAnnouncementActivity extends AppCompatActivity {
 
             // Build and send the announcement
             Map<String, Object> announcement = new HashMap<>();
-            String topic = "test-notifications";  // TODO: Set this to unique event ID
-            announcement.put("image", "image");  // TODO
             announcement.put("title", title);
             announcement.put("body", body);
-            announcement.put("eventId", topic);  // TODO: Pass in unique event ID
+            announcement.put("imageId", "image");  //  TODO:
+            announcement.put("eventId", eventId);
             Log.d("Announcements", "Sending announcement");
             sendAnnouncement(announcement);
             finish();
         });
 
         cancelButton.setOnClickListener(v -> finish());
-
-        // Testing button, should be deleted eventually
-        subButton.setOnClickListener(v -> FirebaseMessaging.getInstance().subscribeToTopic("test-notifications")
-                .addOnCompleteListener(task -> {
-                    String msg = "Subscribed";
-                    if (!task.isSuccessful()) {
-                        msg = "Subscribe failed";
-                    }
-                    Log.d("Announcement", msg);
-                    Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
-                }));
-
-        // Testing button, should be deleted eventually
-        unSubButton.setOnClickListener(v -> FirebaseMessaging.getInstance().unsubscribeFromTopic("test-notifications")
-                .addOnCompleteListener(task -> {
-                    String msg = "Unsubscribed";
-                    if (!task.isSuccessful()) {
-                        msg = "Unsubscribe failed";
-                    }
-                    Log.d("Announcement", msg);
-                    Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
-                }));
     }
 
     /**
@@ -135,28 +122,37 @@ public class SendAnnouncementActivity extends AppCompatActivity {
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
         alert
                 .setTitle("Missing info")
-                .setMessage("One or more fields are empty. Please try again");
+                .setMessage("One or more fields are empty. Please try again.")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                });
         AlertDialog dialog = alert.create();
         dialog.show();
     }
 
     /**
      * Takes an announcement Map and posts it to the database.
+     * Uses Firestore to generate announcement UIDs
      * @param announcement The announcement Map with all the info to post to the database.
      */
     private void sendAnnouncement(Map<String, Object> announcement) {
+        // Generate a unique ID using Firestore
+        String uid = announcementsRef.document().getId().toUpperCase();
+        Log.d("Announcement", "ANMT-" + uid);
+
         announcementsRef
-                .document("uid")  // TODO: UID?
+                .document("ANMT-" + uid)
                 .set(announcement)
                 .addOnSuccessListener(e -> {
                     Log.d("Announcement", "Announcement successfully sent to DB");
-                    AlertDialog.Builder alert = new AlertDialog.Builder(getBaseContext());
-                    alert
-                            .setTitle("Announcement sent")
-                            .setMessage("Your announcement was successfully sent!");
-                    AlertDialog dialog = alert.create();
-                    dialog.show();
+                    Toast.makeText(getBaseContext(), "Success, your announcement was sent!", Toast.LENGTH_LONG).show();
                 })
-                .addOnFailureListener(e -> Log.d("Announcement", "Announcement could not be sent to DB" + e));
+                .addOnFailureListener(e -> {
+                    Log.d("Announcement", "Announcement could not be sent to DB" + e);
+                    Toast.makeText(getBaseContext(), "Error: Your announcement could not be sent", Toast.LENGTH_LONG).show();
+                });
     }
 }

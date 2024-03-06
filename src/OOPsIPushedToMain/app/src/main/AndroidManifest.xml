@@ -26,7 +26,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SendAnnouncementActivity"
+            android:name=".Announcements.SendAnnouncementActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,7 +34,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".PushNotificationService"
+            android:name=".Announcements.PushNotificationService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -43,6 +43,14 @@
         <!-- TODO: Set custom default notification icon
              https://firebase.google.com/docs/cloud-messaging/android/send-multiple?authuser=0#receive_and_handle_topic_messages
          -->
+        <activity
+            android:name=".Announcements.AnnouncementListActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
