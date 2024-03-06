@@ -25,8 +25,6 @@ import java.util.ArrayList;
  *    This needs to be replaced with a dynamic check to determine if the user is an attendee or an organizer.
  * 2. The deletion logic in EventDetailsActivityOrganizer does not currently update the event list in this activity.
  *    A mechanism to refresh the event list after an event is deleted needs to be implemented.
- * 3. The event list is not dynamically fetched from a database or backend service. The application needs to
- *    implement data persistence and retrieval mechanisms to fetch events dynamically and manage them accordingly.
  */
 
 public class EventListActivity extends AppCompatActivity {

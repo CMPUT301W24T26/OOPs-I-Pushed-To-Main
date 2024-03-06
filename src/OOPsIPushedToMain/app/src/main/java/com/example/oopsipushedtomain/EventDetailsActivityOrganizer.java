@@ -35,8 +35,6 @@ import java.util.Locale;
  *    data persistence. Saving the updated event details to a database or backend service is required.
  * 4. The placeholder methods for sending notifications, viewing/limiting attendees, viewing event QR code,
  *    and deleting the event need to be fully implemented.
- * 5. The deletion logic in deleteEvent() is only a placeholder. Actual deletion from the data source
- *    needs to be implemented, along with notifying the EventListActivity to refresh its event list.
  */
 
 public class EventDetailsActivityOrganizer extends AppCompatActivity {

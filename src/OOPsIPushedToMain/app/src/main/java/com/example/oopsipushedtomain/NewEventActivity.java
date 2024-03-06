@@ -32,7 +32,6 @@ import java.util.UUID;
  *
  * Outstanding issues:
  * 1. The event poster functionality is not yet implemented.
- * 2. Actual addition to the data source needs to be implemented, along with notifying the EventListActivity to refresh its event list.
  */
 
 public class NewEventActivity extends AppCompatActivity {
