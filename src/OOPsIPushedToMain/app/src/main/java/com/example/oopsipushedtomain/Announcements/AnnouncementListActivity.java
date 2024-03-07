@@ -42,6 +42,7 @@ public class AnnouncementListActivity extends AppCompatActivity {
      */
     private void addListeners() {
 
+        // TODO: Get announcements for that user (anmtId in the user collection maybe?)
         announcementsRef.addSnapshotListener((queryDocumentSnapshots, error) -> {
             if (error != null) {
                 Log.e("Firebase", error.toString());

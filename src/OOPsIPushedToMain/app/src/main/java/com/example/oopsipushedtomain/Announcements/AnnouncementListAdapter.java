@@ -17,8 +17,8 @@ import com.example.oopsipushedtomain.R;
 import java.util.ArrayList;
 
 public class AnnouncementListAdapter extends ArrayAdapter<Announcement> {
-    private ArrayList<Announcement> announcements;
-    private Context context;
+    private final ArrayList<Announcement> announcements;
+    private final Context context;
 
     public AnnouncementListAdapter(Context context, ArrayList<Announcement> announcements) {
         super(context, 0, announcements);

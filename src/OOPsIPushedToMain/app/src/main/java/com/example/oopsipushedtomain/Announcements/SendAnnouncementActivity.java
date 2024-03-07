@@ -49,9 +49,11 @@ public class SendAnnouncementActivity extends AppCompatActivity {
         setContentView(R.layout.activity_send_announcement);
 
         // TODO: Integration - in Ningze EventDetailsActivityOrganizer.java, on line 108 (or inside
-        //  btnSendNotification setOnClickListener, before startActivity), add:
+        //  btnSendNotification setOnClickListener, before startActivity), add this line:
         //  intent.putExtra("eventId", event.getEventId());
         eventId = getIntent().getStringExtra("eventId");
+
+        // TODO: Integration - and remove this line
         eventId = "EVNT-0000000000";
 
         // Initialize database reference to Announcements collection
@@ -87,7 +89,7 @@ public class SendAnnouncementActivity extends AppCompatActivity {
     /**
      * Set the button listeners.
      * The Send button builds an announcement object and passes it to sendAnnouncement()
-     * The cancel button closes this activity (TODO maybe unnecessary?)
+     * The cancel button closes this activity (TODO maybe unnecessary? Feel free to remove)
      */
     private void setListeners() {
         sendAnnouncementButton.setOnClickListener(v -> {
@@ -105,8 +107,8 @@ public class SendAnnouncementActivity extends AppCompatActivity {
             Map<String, Object> announcement = new HashMap<>();
             announcement.put("title", title);
             announcement.put("body", body);
-            announcement.put("imageId", "image");  //  TODO:
-            announcement.put("eventId", eventId);
+            announcement.put("imageId", "image");
+            announcement.put("eventId", "test-notifications");
             Log.d("Announcements", "Sending announcement");
             sendAnnouncement(announcement);
             finish();

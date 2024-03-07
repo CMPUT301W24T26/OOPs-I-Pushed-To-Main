@@ -48,6 +48,7 @@ public class PushNotificationService extends FirebaseMessagingService {
      */
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
+        Log.e("Notification", "Notification received!");
         super.onMessageReceived(message);
 
         // Set up the notification channel to listen to
@@ -109,9 +110,9 @@ public class PushNotificationService extends FirebaseMessagingService {
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
+            Log.e("Notifications", "User has notifications disabled");
             return;
         }
-        // TODO: More sophisticated notification ID?
         NotificationManagerCompat.from(this).notify(new Random().nextInt(), notification.build());
     }
 }
