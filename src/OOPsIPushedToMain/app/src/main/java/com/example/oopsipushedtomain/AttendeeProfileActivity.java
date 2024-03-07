@@ -6,12 +6,23 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentReference;
 
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -26,6 +37,7 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
     private Button notificationsButton, eventsButton, announcementsButton, scanQRCodeButton;
     private Switch toggleGeolocationSwitch;
     private FirebaseFirestore db;
+    private String userId = "USER-00000000000"; // Get from bundle
 
     /**
      * Initializes the activity, sets up the UI elements, and prepares Firestore interaction
@@ -48,7 +60,53 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
         // Setup listeners for interactive elements
         setupListeners();
 
-        // TODO: Load attendee data and display it
+        // Load attendee data and display it
+        loadUserDataFromFirestore();
+    }
+
+    /**
+     * Gets user data based on user ID and loads data
+     */
+    private void loadUserDataFromFirestore() {
+        //db = FirebaseFirestore.getInstance();
+        DocumentReference docRef = db.collection("users").document(userId);
+        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        // Extract fields and update UI
+
+                        Timestamp birthdayTimestamp = document.getTimestamp("birthday");
+                        Date birthdayDate = birthdayTimestamp.toDate();
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                        String birthday = sdf.format(birthdayDate);
+                        birthdayValue.setText(birthday);
+
+                        String name = document.getString("name");
+                        String nickname = document.getString("nickname");
+                        String homepage = document.getString("homepage");
+                        String address = document.getString("address");
+                        String phone = document.getString("phone");
+                        String email = document.getString("email");
+
+                        // Update UI elements
+                        nameValue.setText(name);
+                        nicknameValue.setText(nickname);
+                        birthdayValue.setText(birthday);
+                        homepageValue.setText(homepage);
+                        addressValue.setText(address);
+                        phoneNumberValue.setText(phone);
+                        emailValue.setText(email);
+                    } else {
+                        Log.d("Document", "No such document");
+                    }
+                } else {
+                    Log.d("Document", "get failed with ", task.getException());
+                }
+            }
+        });
     }
 
     /**
@@ -60,8 +118,6 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
      */
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, String fieldName, String fieldValue) {
-        // Assuming you have a way to retrieve the current user's UID
-        String userUID = "USER-###########"; // Replace with actual user UID retrieval logic
 
         // Update the corresponding field in your UI based on fieldName
         Map<String, Object> update = new HashMap<>();
@@ -98,7 +154,7 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
 
         // Update Firestore
         if (!update.isEmpty()) {
-            db.collection("Users").document(userUID)
+            db.collection("Users").document(userId)
                     .update(update)
                     .addOnSuccessListener(aVoid -> Log.d("Firestore", "DocumentSnapshot successfully updated!"))
                     .addOnFailureListener(e -> Log.w("Firestore", "Error updating document", e));
