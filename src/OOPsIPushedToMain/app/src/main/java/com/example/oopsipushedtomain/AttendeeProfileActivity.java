@@ -37,7 +37,7 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
     private Button notificationsButton, eventsButton, announcementsButton, scanQRCodeButton;
     private Switch toggleGeolocationSwitch;
     private FirebaseFirestore db;
-    private String userId = "USER-00000000000"; // Get from bundle
+    private String userId = "USER-0000000000"; // Get from bundle
 
     /**
      * Initializes the activity, sets up the UI elements, and prepares Firestore interaction
@@ -54,14 +54,11 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
 
-        // Initialize UI elements
+        // Initialize UI elements and load attendee data
         initializeViews();
 
         // Setup listeners for interactive elements
         setupListeners();
-
-        // Load attendee data and display it
-        loadUserDataFromFirestore();
     }
 
     /**
@@ -77,7 +74,6 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
                         // Extract fields and update UI
-
                         Timestamp birthdayTimestamp = document.getTimestamp("birthday");
                         Date birthdayDate = birthdayTimestamp.toDate();
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -88,7 +84,7 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
                         String nickname = document.getString("nickname");
                         String homepage = document.getString("homepage");
                         String address = document.getString("address");
-                        String phone = document.getString("phone");
+                        String phone = document.getLong("phone").toString();
                         String email = document.getString("email");
 
                         // Update UI elements
@@ -212,6 +208,9 @@ public class AttendeeProfileActivity extends AppCompatActivity implements EditFi
 
         // Initialize switch
         toggleGeolocationSwitch = findViewById(R.id.toggleGeolocationSwitch);
+
+        // Load user data into views
+        loadUserDataFromFirestore();
     }
 
     /**
