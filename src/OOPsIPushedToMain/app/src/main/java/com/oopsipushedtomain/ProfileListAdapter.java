@@ -55,6 +55,18 @@ public class ProfileListAdapter extends RecyclerView.Adapter<ProfileListAdapter.
         }
     }
 
+    /**
+     * Called when RecyclerView needs a new {@link ProfileViewHolder} of the given type to represent
+     * an item. This new ViewHolder should be constructed with a new View that can represent the items
+     * of the given type. The new ViewHolder will be used to display items of the adapter using
+     * onBindViewHolder(ProfileViewHolder, int).
+     *
+     * @param parent The ViewGroup into which the new View will be added after it is bound to
+     *               an adapter position.
+     * @param viewType The view type of the new View.
+     * @return A new ViewHolder that holds a View of the given view type.
+     */
+
     @NonNull
     @Override
     public ProfileViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -63,12 +75,28 @@ public class ProfileListAdapter extends RecyclerView.Adapter<ProfileListAdapter.
         return new ProfileViewHolder(itemView);
     }
 
+    /**
+     * Called by RecyclerView to display the data at the specified position. This method should
+     * update the contents of the {@link ProfileViewHolder#itemView} to reflect the item at the given
+     * position.
+     *
+     * @param holder The ViewHolder which should be updated to represent the contents of the item at
+     *               the given position in the data set.
+     * @param position The position of the item within the adapter's data set.
+     */
+
     @Override
     public void onBindViewHolder(@NonNull ProfileViewHolder holder, int position) {
         Profile profile = profileList.get(position);
         holder.nameTextView.setText(profile.getName()); // Set name to TextView
         // Set other details to views as needed
     }
+
+    /**
+     * Returns the total number of items in the data set held by the adapter.
+     *
+     * @return The total number of items in this adapter.
+     */
 
     @Override
     public int getItemCount() {
