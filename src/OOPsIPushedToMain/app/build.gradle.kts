@@ -43,7 +43,7 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment:2.7.7")
     implementation(libs.glide)
 
-    implementation(files("/Users/matteofalsetti/Library/Android/sdk/platforms/android-34/android.jar"))
+//    implementation(files("/Users/matteofalsetti/Library/Android/sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

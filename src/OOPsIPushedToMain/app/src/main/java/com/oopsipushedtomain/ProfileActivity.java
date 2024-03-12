@@ -57,7 +57,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
     /**
      * Declare UI elements for buttons
      */
-    private Button eventsButton, scanQRCodeButton, adminButton;
+    private Button eventsButton, scanQRCodeButton, adminButton, testingButton;
 
     /**
      * Reference to the geo-location toggle
@@ -391,6 +391,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         eventsButton = findViewById(R.id.eventsButton);
         scanQRCodeButton = findViewById(R.id.scanQRCodeButton);
         adminButton = findViewById(R.id.adminButton);
+        testingButton = findViewById(R.id.testingButton);
 
         // Initialize switch
         toggleGeolocationSwitch = findViewById(R.id.toggleGeolocationSwitch);
@@ -438,6 +439,13 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
 
             }
 
+        });
+        testingButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), TestingActivity.class);
+                startActivity(intent);
+            }
         });
     }
 }

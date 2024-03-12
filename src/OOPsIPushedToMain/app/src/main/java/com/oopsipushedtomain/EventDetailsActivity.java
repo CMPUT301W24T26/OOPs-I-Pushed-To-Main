@@ -185,7 +185,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         deleteButton.setOnClickListener(v -> {
-            final String eventId = getIntent().getStringExtra("eventId");
+            final String eventId = ((Event) getIntent().getSerializableExtra("selectedEvent")).getEventId();
             // Call deleteEvent with the eventId
             if (eventId != null) {
                 deleteEvent(eventId);

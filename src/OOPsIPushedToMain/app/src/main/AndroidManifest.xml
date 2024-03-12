@@ -37,6 +37,8 @@
         <activity
             android:name=".QRScanner"
             android:exported="false" />
+        <activity android:name=".TestingActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

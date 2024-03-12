@@ -195,6 +195,16 @@
                 app:layout_constraintStart_toStartOf="@id/adminButton"
                 app:layout_constraintTop_toBottomOf="@id/adminButton" />
 
+            <Button
+                android:id="@+id/testingButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Testing"
+                app:layout_constraintEnd_toEndOf="@id/toggleGeolocationSwitch"
+                app:layout_constraintStart_toStartOf="@id/toggleGeolocationSwitch"
+                app:layout_constraintTop_toBottomOf="@id/toggleGeolocationSwitch" />
+
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
