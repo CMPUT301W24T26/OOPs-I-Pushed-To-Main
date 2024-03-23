@@ -11,6 +11,8 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -92,6 +94,9 @@ public class Event implements Serializable {
      * A reference to the storage pool for images
      */
     private StorageReference storageRef;
+
+    private FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
 
     /**
      * Constructs a new Event instance.
@@ -193,14 +198,16 @@ public class Event implements Serializable {
         event.put("eventImage", imageUID);
         event.put("signedUpAttendees", signedUpAttendees); // Include the attendees list
 
+        firebaseAccess.storeDataInFirestore(eventId, event);
 
-        db.collection("events").document(eventId).set(event).addOnSuccessListener(aVoid -> {
+
+        /*db.collection("events").document(eventId).set(event).addOnSuccessListener(aVoid -> {
             // Successfully added/updated event with specific ID
             System.out.println("Event successfully added/updated with ID: " + eventId);
         }).addOnFailureListener(e -> {
             // Failed to add/update event
             System.err.println("Error adding/updating event: " + e.getMessage());
-        });
+        });*/
     }
 
 

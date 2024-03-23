@@ -12,6 +12,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.oopsipushedtomain.Event;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -773,10 +774,23 @@ public class FirebaseAccess {
 
         }
 
+    }
 
-
-
-
+    public CompletableFuture<ArrayList<Event>> getAllEvents() {
+        CompletableFuture<ArrayList<Event>> futureEvents = new CompletableFuture<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("events").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                ArrayList<Event> events = new ArrayList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    events.add(document.toObject(Event.class));
+                }
+                futureEvents.complete(events);
+            } else {
+                futureEvents.completeExceptionally(task.getException());
+            }
+        });
+        return futureEvents;
     }
 
 }
