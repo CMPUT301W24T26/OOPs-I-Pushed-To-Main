@@ -17,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
 
 import java.util.ArrayList;
 
@@ -142,7 +144,19 @@ public class EventListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        /*FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        firebaseAccess.getAllEvents().thenAccept(events -> {
+            eventDataList.clear();
+            eventDataList.addAll(events);
+            runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
+        }).exceptionally(e -> {
+            // Handle exceptions
+            Log.e("EventListActivity", "Error fetching events", e);
+            return null;
+        });*/
+
+        /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 eventDataList.clear();
@@ -158,7 +172,7 @@ public class EventListActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(EventListActivity.this, "Error getting events", Toast.LENGTH_SHORT).show();
             }
-        });
+        });*/
     }
 
 
