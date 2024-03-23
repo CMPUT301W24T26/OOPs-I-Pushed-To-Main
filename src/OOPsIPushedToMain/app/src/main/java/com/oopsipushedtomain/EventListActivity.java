@@ -158,6 +158,7 @@ public class EventListActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+
         /*FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
         firebaseAccess.getAllEvents().thenAccept(events -> {
             eventDataList.clear();
@@ -168,6 +169,8 @@ public class EventListActivity extends AppCompatActivity {
             Log.e("EventListActivity", "Error fetching events", e);
             return null;
         });*/
+
+
 
         /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").get().addOnCompleteListener(task -> {
@@ -202,6 +205,7 @@ public class EventListActivity extends AppCompatActivity {
                 Log.e("EventListActivity", "Error getting events", task.getException());
             }
         });
+
     }
 
     private void fetchEventsSortedByDate() {
