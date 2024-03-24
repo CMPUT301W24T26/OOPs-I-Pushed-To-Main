@@ -208,6 +208,7 @@ public class EventListActivity extends AppCompatActivity {
 
     }
 
+
     private void fetchEventsSortedByDate() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").orderBy("startTime", Query.Direction.ASCENDING).get().addOnCompleteListener(task -> {
