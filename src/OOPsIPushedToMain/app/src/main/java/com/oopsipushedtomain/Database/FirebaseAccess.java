@@ -1067,8 +1067,7 @@ public class FirebaseAccess {
 
 
 
-
-    /*public CompletableFuture<ArrayList<Event>> getAllEvents() {
+    /*public CompletableFuture<ArrayList<Event>> getAllEvents () {
         CompletableFuture<ArrayList<Event>> futureEvents = new CompletableFuture<>();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").get().addOnCompleteListener(task -> {
@@ -1083,7 +1082,9 @@ public class FirebaseAccess {
             }
         });
         return futureEvents;
+
     }*/
+
 
 
 }

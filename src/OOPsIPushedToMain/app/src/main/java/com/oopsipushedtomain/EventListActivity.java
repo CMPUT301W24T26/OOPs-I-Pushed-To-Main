@@ -159,7 +159,9 @@ public class EventListActivity extends AppCompatActivity {
         super.onResume();
 
 
+
         /*FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
         firebaseAccess.getAllEvents().thenAccept(events -> {
             eventDataList.clear();
             eventDataList.addAll(events);
@@ -169,6 +171,7 @@ public class EventListActivity extends AppCompatActivity {
             Log.e("EventListActivity", "Error fetching events", e);
             return null;
         });*/
+
 
 
 
