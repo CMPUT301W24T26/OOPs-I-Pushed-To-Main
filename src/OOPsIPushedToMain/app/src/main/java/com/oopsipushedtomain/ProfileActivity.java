@@ -415,6 +415,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(ProfileActivity.this, EventListActivity.class);
+                intent.putExtra("userId", userId); // Assuming userId is the ID of the current user
                 startActivity(intent);
             }
         });

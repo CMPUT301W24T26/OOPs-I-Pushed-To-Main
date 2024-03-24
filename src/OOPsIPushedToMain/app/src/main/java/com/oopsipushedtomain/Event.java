@@ -68,6 +68,12 @@ public class Event implements Serializable {
      */
     private List<String> signedUpAttendees;
 
+
+    /**
+     * The UID of user who created the event
+     */
+    private String creatorId; // New attribute for the creator's ID
+
     /**
      * The UID of the event poster image
      */
@@ -109,7 +115,7 @@ public class Event implements Serializable {
      * @param posterUrl     The URL to an image for the event.
      * @param attendeeLimit The maximum number of attendees for the event. Use 0 or a negative number to indicate no limit.
      */
-    public Event(String title, String startTime, String endTime, String description, String location, String posterUrl, int attendeeLimit) {
+    public Event(String title, String startTime, String endTime, String description, String location, String posterUrl, int attendeeLimit, String creatorId) {
         this.title = title;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -118,6 +124,7 @@ public class Event implements Serializable {
         this.posterUrl = posterUrl;
         this.attendeeLimit = attendeeLimit; // Optional
         this.signedUpAttendees = new ArrayList<>(); // Initialize attendees list
+        this.creatorId = creatorId;
     }
 
     /**
@@ -133,7 +140,7 @@ public class Event implements Serializable {
      * @param posterUrl     The URL to an image for the event.
      * @param attendeeLimit The maximum number of attendees for the event. Use 0 or a negative number to indicate no limit.
      */
-    public Event(String eventId, String title, String startTime, String endTime, String description, String location, String posterUrl, int attendeeLimit) {
+    public Event(String eventId, String title, String startTime, String endTime, String description, String location, String posterUrl, int attendeeLimit, String creatorId) {
         this.eventId = eventId;
         this.title = title;
         this.startTime = startTime;
@@ -143,6 +150,7 @@ public class Event implements Serializable {
         this.posterUrl = posterUrl;
         this.attendeeLimit = attendeeLimit; // Optional
         this.signedUpAttendees = new ArrayList<>(); // Initialize attendees list
+        this.creatorId = creatorId;
     }
 
 
@@ -197,6 +205,7 @@ public class Event implements Serializable {
         event.put("attendeeLimit", attendeeLimit);
         event.put("eventImage", imageUID);
         event.put("signedUpAttendees", signedUpAttendees); // Include the attendees list
+        event.put("creatorId", creatorId); // Include creatorId in the event map
 
         firebaseAccess.storeDataInFirestore(eventId, event);
 
@@ -376,6 +385,23 @@ public class Event implements Serializable {
      */
     public void setSignedUpAttendees(List<String> signedUpAttendees) {
         this.signedUpAttendees = signedUpAttendees;
+    }
+
+    /**
+     * Gets the creatorId for the event.
+     * @return the creatorId
+     */
+    public String getCreatorId() {
+        return creatorId;
+    }
+
+    /**
+     * Sets the creatorId of the event.
+     *
+     * @param creatorId the creatorId to set
+     */
+    public void setCreatorId(String creatorId) {
+        this.creatorId = creatorId;
     }
 
 

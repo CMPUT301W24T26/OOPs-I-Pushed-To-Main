@@ -79,7 +79,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     /**
      * The UID of the user
      */
-    private String currentUserUID;
+    private String userId;
 
     /**
      * The UID of the event
@@ -110,11 +110,16 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewLimitAttendeeButton = findViewById(R.id.btnViewLimitAttendees);
         deleteButton = findViewById(R.id.btnDeleteEvent);
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
-        currentUserUID = CustomFirebaseAuth.getInstance().getCurrentUserID();
+
 
         eventStartTimeEdit.setOnClickListener(v -> showDateTimePicker(eventStartTimeEdit));
         eventEndTimeEdit.setOnClickListener(v -> showDateTimePicker(eventEndTimeEdit));
 
+        // Retrieve the userId passed from EventListActivity
+        Intent intent_a = getIntent();
+        if (intent_a != null) {
+            userId = intent_a.getStringExtra("userId");
+        }
 
 
         Event event = (Event) getIntent().getSerializableExtra("selectedEvent");
@@ -125,9 +130,11 @@ public class EventDetailsActivity extends AppCompatActivity {
             eventEndTimeEdit.setText(event.getEndTime());
             eventDescriptionEdit.setText(event.getDescription());
 
-//            determineUserRole(currentUserUID, event.getEventId(), this::updateUIForRole);
-
             eventID = event.getEventId();
+
+            determineUserRole(userId, eventID, this::updateUIForRole);
+
+
         }
 
 
@@ -270,6 +277,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     private void deleteEvent(String eventId) { // eventId passed as a parameter
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
         firebaseAccess.deleteDataFromFirestore(eventId);
+        finish();
         /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").document(eventId).delete().addOnSuccessListener(aVoid -> {
             Toast.makeText(EventDetailsActivity.this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
@@ -293,7 +301,7 @@ public class EventDetailsActivity extends AppCompatActivity {
                     Event event = document.toObject(Event.class);
                     if (event != null && event.getSignedUpAttendees().size() < event.getAttendeeLimit()) {
                         // Proceed with signing up the user
-                        eventRef.update("signedUpAttendees", FieldValue.arrayUnion(currentUserUID))
+                        eventRef.update("signedUpAttendees", FieldValue.arrayUnion(userId))
                                 .addOnSuccessListener(aVoid -> Toast.makeText(EventDetailsActivity.this, "Signed up successfully", Toast.LENGTH_SHORT).show())
                                 .addOnFailureListener(e -> Toast.makeText(EventDetailsActivity.this, "Sign up failed, limit exceeded", Toast.LENGTH_SHORT).show());
                     } else {
