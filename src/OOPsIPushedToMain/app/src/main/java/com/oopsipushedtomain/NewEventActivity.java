@@ -55,6 +55,8 @@ public class NewEventActivity extends AppCompatActivity {
      * The view of the event poster
      */
     private ImageView newEventPosterEdit;
+
+    private String creatorId;
     /**
      * The reference to the create event button
      */
@@ -75,6 +77,11 @@ public class NewEventActivity extends AppCompatActivity {
         initializeViews();
 
         setupListeners();
+        // Retrieve the userId passed from EventListActivity
+        Intent intent = getIntent();
+        if (intent != null) {
+            creatorId = intent.getStringExtra("userId");
+        }
 
     }
 
@@ -113,7 +120,7 @@ public class NewEventActivity extends AppCompatActivity {
             String endTime = newEventEndTimeEdit.getText().toString();
             String description = newEventDescriptionEdit.getText().toString();
             // TODO: Add functionality for location, posterURL, attendeeLimit
-            Event newEvent = new Event(title, startTime, endTime, description, "testlocation", "testURL", 15);
+            Event newEvent = new Event(title, startTime, endTime, description, "testlocation", "testURL", 15, creatorId);
             newEvent.addEventToDatabase();
             finish();
             //Intent intent = new Intent(NewEventActivity.this, EventDetailsActivity.class);
