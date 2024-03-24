@@ -828,7 +828,7 @@ public class FirebaseAccess {
 
         }
 
-    }
+
 
 
     /*public CompletableFuture<ArrayList<Event>> getAllEvents() {
@@ -848,4 +848,5 @@ public class FirebaseAccess {
         return futureEvents;
     }*/
 
+    }
 }
