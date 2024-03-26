@@ -15,11 +15,11 @@ import java.util.List;
  * ProfileListAdapter is an adapter class for populating a RecyclerView with Profile objects.
  * It binds the data to the RecyclerView and manages the ViewHolder.
  */
-public class ProfileListAdapter extends RecyclerView.Adapter<ProfileListAdapter.ProfileViewHolder> {
+public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ProfileViewHolder> {
     /**
      * List to hold profile data
      */
-    private List<Profile> profileList;
+    private List<User> profileList;
     /**
      * The context the adapter was called from
      */
@@ -36,7 +36,7 @@ public class ProfileListAdapter extends RecyclerView.Adapter<ProfileListAdapter.
      * @param profileList The list of profiles to show
      * @param listener The listener to deal with clicking on an item
      */
-    public ProfileListAdapter(Context context, List<Profile> profileList, OnItemClickListener listener) {
+    public UserListAdapter(Context context, List<User> profileList, OnItemClickListener listener) {
         this.context = context;
         this.profileList = profileList;
         this.listener = listener;
@@ -97,7 +97,7 @@ public class ProfileListAdapter extends RecyclerView.Adapter<ProfileListAdapter.
      */
     @Override
     public void onBindViewHolder(@NonNull ProfileViewHolder holder, int position) {
-        Profile profile = profileList.get(position);
+        User profile = profileList.get(position);
         holder.nameTextView.setText(profile.getName()); // Set name to TextView
         // Set other details to views as needed
     }

@@ -285,6 +285,33 @@ public class User {
 
     }
 
+    //New user constructor, uses firebaseAccess class, to load multiple users at once.
+    public User(Map<String, Object> userData) {
+
+        InitDatabase();
+
+
+        this.uid = (String) userData.get("uid");
+        this.address = (String) userData.get("address");
+
+        Object birthdayObj = userData.get("birthday");
+        if (birthdayObj instanceof Timestamp) {
+            this.birthday = ((Timestamp) birthdayObj).toDate();
+        } else {
+            birthday = null;
+        }
+
+        this.email = (String) userData.get("email");
+        this.homepage = (String) userData.get("homepage");
+        this.name = (String) userData.get("name");
+        this.nickname = (String) userData.get("nickname");
+        this.phone = (String) userData.get("phone");
+        this.imageUID = (String) userData.get("profileImage");
+        this.fid = (String) userData.get("fid");
+
+
+    }
+
 
     /**
      * Updates all fields in the class
