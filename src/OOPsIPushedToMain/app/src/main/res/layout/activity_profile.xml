@@ -15,7 +15,8 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintVertical_bias="0.0"
+        android:padding="10dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/profileContentLayout"
@@ -185,7 +186,7 @@
                 app:layout_constraintStart_toStartOf="@id/scanQRCodeButton"
                 app:layout_constraintTop_toBottomOf="@id/scanQRCodeButton" />
 
-            <Switch
+            <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/toggleGeolocationSwitch"
                 android:layout_width="0dp"
                 android:layout_height="48dp"

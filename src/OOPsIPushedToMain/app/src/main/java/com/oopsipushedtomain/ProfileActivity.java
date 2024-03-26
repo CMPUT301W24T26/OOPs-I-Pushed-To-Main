@@ -12,6 +12,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -22,6 +23,7 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.DialogFragment;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 
@@ -62,7 +64,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
     /**
      * Reference to the geo-location toggle
      */
-    private Switch toggleGeolocationSwitch;
+    private SwitchCompat toggleGeolocationSwitch;
 
     /**
      * The reference to the view of the profile image
@@ -262,6 +264,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         String phone = user.getPhone();
         String email = user.getEmail();
         Date birthday = user.getBirthday();
+        Boolean geolocation = user.getGeolocation();
 
         // Update the fields
         if (name != null) {
@@ -292,6 +295,10 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
 
         if (email != null) {
             emailValue.setText(email);
+        }
+
+        if (geolocation != null) {
+            toggleGeolocationSwitch.setChecked(geolocation);
         }
     }
 
@@ -392,7 +399,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         scanQRCodeButton = findViewById(R.id.scanQRCodeButton);
         adminButton = findViewById(R.id.adminButton);
 
-        // Initialize switch
+        // Initialize geolocation switch
         toggleGeolocationSwitch = findViewById(R.id.toggleGeolocationSwitch);
 
         // Load user data into views
@@ -438,6 +445,13 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
 
             }
 
+        });
+        toggleGeolocationSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+            {
+                user.setGeolocation(isChecked);
+            }
         });
     }
 }

@@ -111,6 +111,13 @@ public class User {
      * The UID of the user's profile picture
      */
     private String imageUID = null;
+
+    /**
+     * Whether the user has geolocation enabled or not
+     * Default to false for privacy reasons
+     */
+    private Boolean geolocation = false;
+
     /**
      * The Firebase Installation ID (fid)
      */
@@ -228,6 +235,7 @@ public class User {
         data.put("phone", phone);
         data.put("profileImage", imageUID);
         data.put("fid", fid);
+        data.put("geolocation", geolocation);
 
 
         // Create a new document and set all parameters
@@ -320,6 +328,7 @@ public class User {
                         phone = (String) data.get("phone");
                         imageUID = (String) data.get("profileImage");
                         fid = (String) data.get("fid");
+                        geolocation = (Boolean) data.get("geolocation");
 
                         // Load the announcements
                         // ChatGPT: How do I load an array list from firebase
@@ -472,6 +481,27 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("fid", this.fid);
+        userDocRef.update(data);
+    }
+
+    /**
+     * Gets the user's geolocation preference
+     * @return geolocation Whether the user has geolocation enabled or disabled
+     */
+    public Boolean getGeolocation() {
+        return geolocation;
+    }
+
+    /**
+     * Sets the user's geolocation preference
+     * @param geolocation The user's geolocation preference
+     */
+    public void setGeolocation(Boolean geolocation) {
+        this.geolocation = geolocation;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("geolocation", this.geolocation);
         userDocRef.update(data);
     }
 

@@ -22,6 +22,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
+import com.oopsipushedtomain.Geolocation.MapActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -70,7 +71,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     /**
      * The references to the buttons
      */
-    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton;
+    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton;
 
     /**
      * The UID of the user
@@ -107,6 +108,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         deleteButton = findViewById(R.id.btnDeleteEvent);
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
         currentUserUID = CustomFirebaseAuth.getInstance().getCurrentUserID();
+        viewMapButton = findViewById(R.id.btnViewMap);
 
         eventStartTimeEdit.setOnClickListener(v -> showDateTimePicker(eventStartTimeEdit));
         eventEndTimeEdit.setOnClickListener(v -> showDateTimePicker(eventEndTimeEdit));
@@ -182,6 +184,12 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewEventQRCodeButton.setOnClickListener(v -> {
             //Intent intent = new Intent(this, ViewEventQRCodeActivity.class);
             //startActivity(intent);
+        });
+
+        viewMapButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, MapActivity.class);
+            intent.putExtra("eventId", eventID);
+            startActivity(intent);
         });
 
         deleteButton.setOnClickListener(v -> {
