@@ -127,6 +127,7 @@ public class EventListActivity extends AppCompatActivity {
                     Log.d("EventListActivity", "Clicked event ID: " + eventId);
 
                     Intent intent = new Intent(EventListActivity.this, EventDetailsActivity.class);
+                    intent.putExtra("eventId", eventId);
                     intent.putExtra("selectedEvent", selectedEvent);
                     startActivity(intent);
                 } else {
