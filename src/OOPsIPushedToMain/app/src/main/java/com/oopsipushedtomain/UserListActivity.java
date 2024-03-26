@@ -1,5 +1,6 @@
 package com.oopsipushedtomain;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -17,19 +18,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ProfileListActivity is responsible for displaying a list of user profiles retrieved from a database.
- * It utilizes a RecyclerView to display the profiles using ProfileListAdapter.
+ * UserListActivity is responsible for displaying a list of users retrieved from a database.
+ * It utilizes a RecyclerView to display the users using UserListAdapter.
  */
 public class UserListActivity extends AppCompatActivity {
     /**
-     * RecyclerView to display profiles
+     * RecyclerView to display users
      */
-    RecyclerView profilesRecyclerView;
+    RecyclerView usersRecyclerView;
     /**
-     * Adapter for profiles
+     * Adapter for users
      */
-    UserListAdapter profileAdapter;
-    private List<User> profileList = new ArrayList<>();
+    UserListAdapter userAdapter;
+    private List<User> userList = new ArrayList<>();
 
     /**
      * Initializes the parameters of the class
@@ -38,125 +39,96 @@ public class UserListActivity extends AppCompatActivity {
      *                           previously being shut down then this Bundle contains the data it most
      *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
      */
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_profile_list); // Layout for activity
+        setContentView(R.layout.activity_user_list); // Layout for activity
 
         /**
-         * List to store profiles
+         * List to store users
          */
 
-        profilesRecyclerView = findViewById(R.id.profilesRecyclerView); // Initialize RecyclerView
-        profilesRecyclerView.setLayoutManager(new LinearLayoutManager(this)); // Set layout manager
+        usersRecyclerView = findViewById(R.id.usersRecyclerView); // Initialize RecyclerView
+        usersRecyclerView.setLayoutManager(new LinearLayoutManager(this)); // Set layout manager
 
         // Initialize adapter and set it to RecyclerView
-        profileAdapter = new UserListAdapter(this, profileList, new OnItemClickListener() {
+        userAdapter = new UserListAdapter(this, userList, new OnItemClickListener() {
             @Override
-            public void onItemClick(User profile) {
-                showDeleteConfirmationDialog(profile);
+            public void onItemClick(User user) {
+                showDeleteConfirmationDialog(user);
             }
         });
 
-        profilesRecyclerView.setAdapter(profileAdapter); // Don't forget to set the adapter to the RecyclerView
+        usersRecyclerView.setAdapter(userAdapter); // Don't forget to set the adapter to the RecyclerView
 
-        fetchProfiles(); // Fetch profiles from Firestore and populate the RecyclerView
+        fetchUsers(); // Fetch users from Firestore and populate the RecyclerView
     }
 
     /**
-     * Shows a confirmation dialog for deleting a profile
-     * @param profile The profile selected
+     * Shows a confirmation dialog for deleting a users
+     *
+     * @param user The user selected
      */
-    private void showDeleteConfirmationDialog(User profile) {
+    private void showDeleteConfirmationDialog(User user) {
         new AlertDialog.Builder(this)
-                .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete this profile?")
+                .setTitle("Delete User")
+                .setMessage("Are you sure you want to delete this User?")
                 .setPositiveButton(android.R.string.yes, (dialog, which) -> {
-                    deleteProfile(profile);
+                    deleteUser(user);
                 })
                 .setNegativeButton(android.R.string.no, null)
                 .show();
     }
 
     /**
-     * Deletes a profile on the database
-     * @param profile The profile to delete
+     * Deletes a specified user from the database. This method utilizes the FirebaseAccess class
+     * to perform the deletion based on the user's unique identifier (UID). It is designed to delete the
+     * user without requiring additional parameters for inner collections or documents, simplifying the deletion process.
+     *
+     * @param user The User object representing the user to be deleted. It must contain a valid UID.
+     *                This method directly uses the UID of the provided User object to identify and delete
+     *                the corresponding user in the database.
      */
-    private void deleteProfile(User profile) {
+    private void deleteUser(User user) {
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.USERS);
-        firebaseAccess.deleteDataFromFirestore(profile.getUid(), null, null); // Assuming method signature might need adjusting
+        firebaseAccess.deleteDataFromFirestore(user.getUid(), null, null); // Assuming method signature might need adjusting
 
-        // Assuming deleteDataFromFirestore doesn't provide direct success/failure callbacks,
-        // you may need to implement these inside the FirebaseAccess method itself,
-        // or adjust your architecture to allow for callback handling.
+        // Note: If the FirebaseAccess class's deleteDataFromFirestore method is asynchronous and does not
+        // provide a mechanism for success/failure callbacks, you may need to implement these callbacks
+        // within the FirebaseAccess class or adapt your application's architecture to handle such cases.
     }
 
-
     /**
-     * Method to fetch profiles from the database.
-     * Uses Firebase-Firestore to query the "users" collection.
+     * Fetches and loads users from the database asynchronously. This method creates a background
+     * thread to query the database using the FirebaseAccess class, specifically targeting the USERS collection.
+     * Each retrieved user is transformed into a User object, and the list of User objects is then
+     * used to update the UI. This method ensures that UI updates are performed on the UI thread, adhering
+     * to Android's threading model.
      */
-//    private void fetchProfiles() {
-//        FirebaseFirestore db = FirebaseFirestore.getInstance(); // Get instance of Firestore database
-//        db.collection("users").get().addOnCompleteListener(task -> {
-//            if (task.isSuccessful()) {
-//                profileList.clear(); // Clear existing profile list
-//                for (DocumentSnapshot document : task.getResult()) {
-//                    Profile profile = new Profile();
-//                    profile.setUserId(document.getId()); // Set user ID
-//
-//                    // Set profile details from document fields
-//                    profile.setName(document.getString("name"));
-//                    profile.setNickname(document.getString("nickname"));
-//
-//                    // Convert birthday from Timestamp to String
-//                    Timestamp birthdayTimestamp = document.getTimestamp("birthday");
-//                    if (birthdayTimestamp != null) {
-//                        Date birthdayDate = birthdayTimestamp.toDate();
-//                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-//                        profile.setBirthday(sdf.format(birthdayDate)); // Format birthday as string
-//                    } else {
-//                        profile.setBirthday(null);
-//                    }
-//
-//                    profile.setHomepage(document.getString("homepage"));
-//                    profile.setAddress(document.getString("address"));
-//                    profile.setPhone(document.getString("phone"));
-//
-//                    profile.setEmail(document.getString("email"));
-//
-//                    profileList.add(profile); // Add profile to list
-//                }
-//                profileAdapter.notifyDataSetChanged(); // Notify adapter of data change
-//            } else {
-//                Log.d("ProfileListActivity", "Error getting documents: ", task.getException());
-//            }
-//        });
-//    }
-
-
-    private void fetchProfiles() {
+    private void fetchUsers() {
         new Thread(() -> {
             try {
                 FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.USERS);
-                ArrayList<Map<String, Object>> profileMaps = firebaseAccess.getAllDocuments(null, null);
+                ArrayList<Map<String, Object>> userMaps = firebaseAccess.getAllDocuments(null, null);
 
-                // Assuming the direct access will give you a list of maps synchronously
+                // Transform each map into a User object and collect them into a temporary list
                 List<User> tempList = new ArrayList<>();
-                for (Map<String, Object> profileMap : profileMaps) {
-                    tempList.add(new User(profileMap));
+                for (Map<String, Object> userMap : userMaps) {
+                    tempList.add(new User(userMap));
                 }
 
-                // Since the UI cannot be updated from a background thread, post the UI update to run on the UI thread
+                // Update the UI with the fetched users, ensuring the operation is performed on the UI thread
                 runOnUiThread(() -> {
-                    profileList.clear();
-                    profileList.addAll(tempList);
-                    profileAdapter.notifyDataSetChanged();
+                    userList.clear();
+                    userList.addAll(tempList);
+                    userAdapter.notifyDataSetChanged();
                 });
             } catch (Exception e) {
-                Log.e("ProfileListActivity", "Error fetching profiles: ", e);
-                runOnUiThread(() -> Toast.makeText(UserListActivity.this, "Failed to fetch profiles", Toast.LENGTH_SHORT).show());
+                Log.e("UserListActivity", "Error fetching users: ", e);
+                runOnUiThread(() -> Toast.makeText(UserListActivity.this, "Failed to fetch users", Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
 }
+

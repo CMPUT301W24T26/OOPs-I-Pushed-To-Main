@@ -7,7 +7,7 @@
     tools:context=".UserListActivity">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/profilesRecyclerView"
+        android:id="@+id/usersRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="16dp" />

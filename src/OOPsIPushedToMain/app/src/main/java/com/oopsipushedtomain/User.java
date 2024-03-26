@@ -285,12 +285,25 @@ public class User {
 
     }
 
-    //New user constructor, uses firebaseAccess class, to load multiple users at once.
+    /**
+     * Constructs a User instance directly from a map of data, typically retrieved from a database.
+     * This constructor is ideal for batch loading users when the data is already available,
+     * avoiding the need to individually query each user's data from the database.
+     * It initializes user attributes directly from the provided map, which should contain
+     * keys corresponding to user attribute names and values matching the attribute types.
+     *
+     * @param userData A map containing user data, where each key corresponds to a user attribute name
+     *                 and the associated value is the attribute value. The map is expected to have
+     *                 entries for all user attributes, including uid, address, birthday, email,
+     *                 homepage, name, nickname, phone, profileImage, and fid.
+     *                 The birthday should be provided as a Timestamp object, which will be converted to a Date.
+     *                 If any attributes are missing or null, the corresponding user attribute will be initialized
+     *                 to a default state (null for objects, empty string for strings, etc.).
+     */
     public User(Map<String, Object> userData) {
+        InitDatabase(); // Initialize database references
 
-        InitDatabase();
-
-
+        // Directly assign attribute values from the map, with type checking and conversion as necessary
         this.uid = (String) userData.get("uid");
         this.address = (String) userData.get("address");
 
@@ -298,7 +311,7 @@ public class User {
         if (birthdayObj instanceof Timestamp) {
             this.birthday = ((Timestamp) birthdayObj).toDate();
         } else {
-            birthday = null;
+            this.birthday = null; // Set to null if the birthday data is not in Timestamp format
         }
 
         this.email = (String) userData.get("email");
@@ -309,7 +322,8 @@ public class User {
         this.imageUID = (String) userData.get("profileImage");
         this.fid = (String) userData.get("fid");
 
-
+        // Note: Since this constructor does not load data asynchronously from the database,
+        // there is no need for a DataLoadedListener parameter or callback mechanism here.
     }
 
 
