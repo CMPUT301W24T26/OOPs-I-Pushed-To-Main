@@ -19,11 +19,8 @@ jobs:
         cache: gradle
 
     # Navigate to the Android app directory
-    - name: Change to Android App directory
-      run: cd src/OOPsIPushedToMain/
-
     - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      run: cd src/OOPsIPushedToMain/ && chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew build
     - name: Run Unit Tests
