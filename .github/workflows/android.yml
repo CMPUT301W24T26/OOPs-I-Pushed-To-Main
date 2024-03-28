@@ -22,6 +22,6 @@ jobs:
     - name: Grant execute permission for gradlew
       run: cd src/OOPsIPushedToMain/ && chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew build
+      run: cd src/OOPsIPushedToMain/ && ./gradlew build
     - name: Run Unit Tests
-      run: ./gradlew test --tests "com.oopsipushedtomain.FirebaseAccessUnitTest"
+      run: cd src/OOPsIPushedToMain/ && ./gradlew test --tests "com.oopsipushedtomain.FirebaseAccessUnitTest"
