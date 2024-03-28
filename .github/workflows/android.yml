@@ -20,7 +20,7 @@ jobs:
 
     # Navigate to the Android app directory
     - name: Change to Android App directory
-      run: cd OOPs-I-Pushed-To-Main/src/OOPsIPushedToMain/
+      run: cd src/OOPsIPushedToMain/
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
