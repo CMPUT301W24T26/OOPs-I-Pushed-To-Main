@@ -25,3 +25,4 @@ jobs:
       run: cd src/OOPsIPushedToMain/ && ./gradlew build
     - name: Run Unit Tests
       run: cd src/OOPsIPushedToMain/ && ./gradlew test --tests "com.oopsipushedtomain.FirebaseAccessUnitTest"
+
