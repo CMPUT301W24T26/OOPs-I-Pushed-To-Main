@@ -179,7 +179,6 @@ public class FirebaseAccess {
 
 
     // Chat GPT: Is there a way to wait until data is confirmed stored in Firebase database using a future
-
     
     /**
      * Generates a new UID for the specified database type and inner collection
