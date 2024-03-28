@@ -10,6 +10,7 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
+
 /**
  * AdminActivity is the entry point for administrators.
  * It hosts the AdminDashboardFragment to provide administrative functionalities.
