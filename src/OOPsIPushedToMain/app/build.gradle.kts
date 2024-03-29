@@ -67,14 +67,26 @@ dependencies {
     androidTestImplementation("org.mockito:mockito-core:4.0.0")
 }
 
-// Custom task to run a specific instrumented test
-task runSpecificTest {
+tasks.register("runSpecificTest") {
     doLast {
-        def testClass = project.hasProperty('testClass') ? project.testClass : ''
-        if (testClass) {
-            android.adbExe.execute(["shell", "am", "instrument", "-w", "-e", "class", testClass, "your.package.name.test/androidx.test.runner.AndroidJUnitRunner"])
+        val testClass = if (project.hasProperty("testClass")) project.property("testClass") as String else ""
+
+        if (testClass.isNotBlank()) {
+            project.exec {
+                commandLine(
+                    "adb",
+                    "shell",
+                    "am",
+                    "instrument",
+                    "-w",
+                    "-e",
+                    "class",
+                    testClass,
+                    "your.package.name.test/androidx.test.runner.AndroidJUnitRunner"
+                )
+            }
         } else {
-            throw new GradleException("No test class specified. Use -PtestClass to specify one.")
+            throw GradleException("No test class specified. Use -PtestClass to specify one.")
         }
     }
 }
