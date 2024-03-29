@@ -18,6 +18,9 @@ jobs:
          java-version: '17'
          distribution: 'temurin'
          cache: gradle
+         
+      - name: Set executable permissions on gradlew
+        run: chmod +x ./gradlew
           
       - name: Cache Gradle and wrapper
         uses: actions/cache@v2
