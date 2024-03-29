@@ -20,7 +20,7 @@ jobs:
          cache: gradle
          
       - name: Set executable permissions on gradlew
-        run: chmod +x ./gradlew
+        run: cd src/OOPsIPushedToMain/ && chmod +x ./gradlew
           
       - name: Cache Gradle and wrapper
         uses: actions/cache@v2
