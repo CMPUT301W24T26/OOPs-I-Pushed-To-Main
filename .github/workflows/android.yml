@@ -24,7 +24,6 @@ jobs:
     - name: Build with Gradle
       run: cd src/OOPsIPushedToMain/ && ./gradlew build
     - name: Show Help
-      run: cd src/OOPsIPushedToMain/ && ./gradlew help --task
     - name: Run Unit Tests
-      run: cd src/OOPsIPushedToMain/ && ./gradlew test --tests "com.oopsipushedtomain.FirebaseAccessUnitTest"
+      run: cd src/OOPsIPushedToMain/ && ./gradlew test "com.oopsipushedtomain.FirebaseAccessUnitTest"
 
