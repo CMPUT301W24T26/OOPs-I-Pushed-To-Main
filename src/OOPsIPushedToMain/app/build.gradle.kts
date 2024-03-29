@@ -82,7 +82,7 @@ tasks.register("runSpecificTest") {
                     "-e",
                     "class",
                     testClass,
-                    "your.package.name.test/androidx.test.runner.AndroidJUnitRunner"
+                    "com.oopsipushedtomain.test/androidx.test.runner.AndroidJUnitRunner"
                 )
             }
         } else {
