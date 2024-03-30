@@ -2,7 +2,9 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.OOPsIPushedToMain" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+         <item name="colorPrimary">@color/my_light_primary</item>
+        <item name="colorAccent">@color/my_light_accent</item>
+        <item name="backgroundTint">@color/my_light_transparent_background</item>
     </style>
 
     <style name="Theme.OOPsIPushedToMain" parent="Base.Theme.OOPsIPushedToMain" />
