@@ -55,6 +55,8 @@ public class EventListActivity extends AppCompatActivity {
      */
     private String userId;
 
+    private FirebaseAccess firebaseAccess;
+
     private Button eventCreateButton, eventSortButton;
 
     /**
@@ -78,8 +80,10 @@ public class EventListActivity extends AppCompatActivity {
         }
 
         initializeViews();
-
         setupListeners();
+
+        firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        fetchEvents();
     }
 
     /**
@@ -158,20 +162,13 @@ public class EventListActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
-
-        /*FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-
-        firebaseAccess.getAllEvents().thenAccept(events -> {
+        FirestoreEventUtils.getAllEvents(events -> {
             eventDataList.clear();
             eventDataList.addAll(events);
             runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
-        }).exceptionally(e -> {
-            // Handle exceptions
-            Log.e("EventListActivity", "Error fetching events", e);
-            return null;
-        });*/
-
+        });
 
 
 

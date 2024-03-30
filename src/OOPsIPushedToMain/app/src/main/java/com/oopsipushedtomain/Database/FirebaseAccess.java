@@ -1066,25 +1066,4 @@ public class FirebaseAccess {
     }
 
 
-
-    /*public CompletableFuture<ArrayList<Event>> getAllEvents () {
-        CompletableFuture<ArrayList<Event>> futureEvents = new CompletableFuture<>();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                ArrayList<Event> events = new ArrayList<>();
-                for (QueryDocumentSnapshot document : task.getResult()) {
-                    events.add(document.toObject(Event.class));
-                }
-                futureEvents.complete(events);
-            } else {
-                futureEvents.completeExceptionally(task.getException());
-            }
-        });
-        return futureEvents;
-
-    }*/
-
-
-
 }
