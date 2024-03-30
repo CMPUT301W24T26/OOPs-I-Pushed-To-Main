@@ -11,20 +11,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: set up JDK 11
+    - name: set up JDK 21
       uses: actions/setup-java@v3
       with:
-        java-version: '11'
+        java-version: '21'
         distribution: 'temurin'
         cache: gradle
 
     # Navigate to the Android app directory
-    - name: Change to Android App directory
-      run: cd OOPs-I-Pushed-To-Main/src/OOPsIPushedToMain/
-
     - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Build with Gradle
-      run: ./gradlew build
-    - name: Run Unit Tests
-      run: ./gradlew test --tests "com.oopsipushedtomain.FirebaseAccessUnitTest"
+      run: cd src/OOPsIPushedToMain/ && chmod +x gradlew
+    # - name: Build with Gradle
+    #   run: cd src/OOPsIPushedToMain/ && ./gradlew build
+    - name: Test Firebase Access
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 29
+        script: cd src/OOPsIPushedToMain/ && ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.oopsipushedtomain.FirebaseAccessUnitTest
