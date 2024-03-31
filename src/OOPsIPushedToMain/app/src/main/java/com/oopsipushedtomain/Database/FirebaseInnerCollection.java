@@ -31,5 +31,9 @@ public enum FirebaseInnerCollection {
     /**
      * The announcements collection
      */
-    announcements
+    announcements,
+    /**
+     * The check in coordiates for an event
+     */
+    checkInCoords
 }

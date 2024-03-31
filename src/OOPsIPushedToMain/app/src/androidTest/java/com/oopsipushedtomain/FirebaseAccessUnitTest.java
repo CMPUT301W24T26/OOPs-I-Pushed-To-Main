@@ -1,10 +1,12 @@
 package com.oopsipushedtomain;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -29,6 +31,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Unit test for Firebase Access
+ * The test use .get(), the app should use .thenAccept() or .thenApply()
+ */
 public class FirebaseAccessUnitTest {
 
     /**
@@ -149,277 +155,359 @@ public class FirebaseAccessUnitTest {
     @Test
     public void testGetDataFromFirestore() {
         // Get the outer collection data from Firestore
-        Map<String, Object> data = database.getDataFromFirestore(outerUID);
-        assertEquals(data.toString(), outerTestData.toString());
+        try {
+            Map<String, Object> data = database.getDataFromFirestore(outerUID).get();
+            assertEquals(data.toString(), outerTestData.toString());
 
-        // Get the inner collection data from Firestore
-        data = database.getDataFromFirestore(outerUID, innerColl, innerUID);
-        assertEquals(data.toString(), innerTestData.toString());
+            // Get the inner collection data from Firestore
+            data = database.getDataFromFirestore(outerUID, innerColl, innerUID).get();
+            assertEquals(data.toString(), innerTestData.toString());
 
-        // Test getting data that doesn't exist in Firestore
-        data = database.getDataFromFirestore("NOEXIST");
-        assertNull(data);
+            // Test getting data that doesn't exist in Firestore
+            data = database.getDataFromFirestore("NOEXIST").get();
+            assertNull(data);
 
-        // Test getting non-existent data for an inner collection
-        data = database.getDataFromFirestore(outerUID, innerColl, "NOEXIST");
-        assertNull(data);
+            // Test getting non-existent data for an inner collection
+            data = database.getDataFromFirestore(outerUID, innerColl, "NOEXIST").get();
+            assertNull(data);
 
-        // Inner collection is valid, outer collection is not
-        data = database.getDataFromFirestore("NOEXIST", innerColl, innerUID);
-        assertNull(data);
+            // Inner collection is valid, outer collection is not
+            data = database.getDataFromFirestore("NOEXIST", innerColl, innerUID).get();
+            assertNull(data);
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestGetData", "Error: " + e.getMessage());
+            fail();
+        }
+
     }
 
 
     @Test
     public void testGetImageFromFirestore() {
-        // Get the preloaded image from firestore
-        Map<String, Object> image = database.getImageFromFirestore(imageUID, imageType);
+        try {
+            // Get the preloaded image from firestore
+            Map<String, Object> image = database.getImageFromFirestore(imageUID, imageType).get();
 
-        // Due to the compression algorithm, it is not possible to compare the images
-        assertNotNull(image);
-        assertEquals(imageData.get("origin"), image.get("origin"));
-        assertEquals(imageData.get("type"), image.get("type"));
+            // Due to the compression algorithm, it is not possible to compare the images
+            assertNotNull(image);
+            assertEquals(imageData.get("origin"), image.get("origin"));
+            assertEquals(imageData.get("type"), image.get("type"));
 
-        // Get an image that does not exist
-        image = database.getImageFromFirestore("NOEXIST", imageType);
+            // Get an image that does not exist
+            image = database.getImageFromFirestore("NOEXIST", imageType).get();
 
-        // Due to the compression algorithm, it is not possible to compare the images
-        assertNull(image);
+            // Due to the compression algorithm, it is not possible to compare the images
+            assertNull(image);
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestGetImage", "Error: " + e.getMessage());
+            fail();
+        }
     }
 
 
     @Test
     public void testDeleteDataFromFirestore() {
-        // Delete the inner document from Firestore
-        database.deleteDataFromFirestore(outerUID, innerColl, innerUID);
+        try {
+            // Delete the inner document from Firestore
+            database.deleteDataFromFirestore(outerUID, innerColl, innerUID).get();
 
-        // Check if it was deleted
-        Map<String, Object> data = database.getDataFromFirestore(outerUID, innerColl, innerUID);
-        assertNull(data);
+            // Check if it was deleted
+            Map<String, Object> data = database.getDataFromFirestore(outerUID, innerColl, innerUID).get();
+            assertNull(data);
 
-        // Delete the outer document
-        database.deleteDataFromFirestore(outerUID);
+            // Delete the outer document
+            database.deleteDataFromFirestore(outerUID).get();
 
-        // Check if it was deleted
-        data = database.getDataFromFirestore(outerUID);
-        assertNull(data);
+            // Check if it was deleted
+            data = database.getDataFromFirestore(outerUID).get();
+            assertNull(data);
 
-        // Ensure the app does not crash when deleting a non-existent document
-        database.deleteDataFromFirestore("NOEXIST");
+            // Ensure the app does not crash when deleting a non-existent document
+            database.deleteDataFromFirestore("NOEXIST").get();
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestDeleteData", "Error: " + e.getMessage());
+            fail();
+        }
     }
 
 
     @Test
     public void testDeleteImageFromFirestore() {
-        // Delete the test image from Firestore
-        database.deleteImageFromFirestore(outerUID, imageUID, imageType);
+        try {
+            // Delete the test image from Firestore
+            database.deleteImageFromFirestore(outerUID, imageUID, imageType).get();
 
-        // Attempt to retrieve the image and its link
-        Map<String, Object> imageData = database.getImageFromFirestore(imageUID, imageType);
-        Map<String, Object> linkData = database.getDataFromFirestore(outerUID, innerImagesColl, imageUID);
+            // Attempt to retrieve the image and its link
+            Map<String, Object> imageData = database.getImageFromFirestore(imageUID, imageType).get();
+            Map<String, Object> linkData = database.getDataFromFirestore(outerUID, innerImagesColl, imageUID).get();
 
-        // The result should be null
-        assertNull(imageData);
-        assertNull(linkData);
+            // The result should be null
+            assertNull(imageData);
+            assertNull(linkData);
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestDeleteImage", "Error: " + e.getMessage());
+            fail();
+        }
     }
+
 
     @Test
     public void testStoreDataInFirestore() {
-        // Store data into an outer collection
-        Map<String, String> storeUID = database.storeDataInFirestore(outerUID, outerTestData);
-        Map<String, Object> data = database.getDataFromFirestore(outerUID);
-        assertEquals(data.toString(), outerTestData.toString());
-        assertEquals(outerUID, storeUID.get("outer"));
+        try {
+            // Store data into an outer collection
+            Map<String, String> storeUID = database.storeDataInFirestore(outerUID, outerTestData);
+            Map<String, Object> data = database.getDataFromFirestore(outerUID).get();
+            assertEquals(data.toString(), outerTestData.toString());
+            assertEquals(outerUID, storeUID.get("outer"));
 
-        // Store data into an inner collection
-        storeUID = database.storeDataInFirestore(outerUID, innerColl, innerUID, innerTestData);
-        data = database.getDataFromFirestore(outerUID, innerColl, innerUID);
-        assertEquals(data.toString(), innerTestData.toString());
-        assertEquals(innerUID, storeUID.get("inner"));
+            // Store data into an inner collection
+            storeUID = database.storeDataInFirestore(outerUID, innerColl, innerUID, innerTestData);
+            data = database.getDataFromFirestore(outerUID, innerColl, innerUID).get();
+            assertEquals(data.toString(), innerTestData.toString());
+            assertEquals(innerUID, storeUID.get("inner"));
 
-        // Test creating a new outer document
-        storeUID = database.storeDataInFirestore(null, outerTestData);
-        data = database.getDataFromFirestore(storeUID.get("outer"));
-        assertEquals(data.get("UID"), storeUID.get("outer"));
+            // Test creating a new outer document
+            storeUID = database.storeDataInFirestore(null, outerTestData);
+            data = database.getDataFromFirestore(storeUID.get("outer")).get();
+            assertEquals(data.get("UID"), storeUID.get("outer"));
 
-        // Test creating a new inner document (announcements)
-        storeUID = database.storeDataInFirestore(storeUID.get("outer"), FirebaseInnerCollection.announcements, null, innerTestData);
-        data = database.getDataFromFirestore(storeUID.get("outer"), FirebaseInnerCollection.announcements, storeUID.get("inner"));
-        assertEquals(data.get("UID"), storeUID.get("inner"));
+            // Test creating a new inner document (announcements)
+            storeUID = database.storeDataInFirestore(storeUID.get("outer"), FirebaseInnerCollection.announcements, null, innerTestData);
+            data = database.getDataFromFirestore(storeUID.get("outer"), FirebaseInnerCollection.announcements, storeUID.get("inner")).get();
+            assertEquals(data.get("UID"), storeUID.get("inner"));
 
-        // Delete the new document
-        database.deleteDataFromFirestore(storeUID.get("outer"));
+            // Delete the new document
+            database.deleteDataFromFirestore(storeUID.get("outer")).get();
 
-        // Test creating a new inner document for an image
-        assertThrows(IllegalArgumentException.class, () -> database.storeDataInFirestore(outerUID, FirebaseInnerCollection.eventPosters, null, innerTestData));
+            // Test creating a new inner document for an image
+            assertThrows(IllegalArgumentException.class, () -> database.storeDataInFirestore(outerUID, FirebaseInnerCollection.eventPosters, null, innerTestData));
 
-        // Test creating a new event to check in to
-        assertThrows(IllegalArgumentException.class, () -> database.storeDataInFirestore(outerUID, FirebaseInnerCollection.checkedInEvents, null, innerTestData));
+            // Test creating a new event to check in to
+            assertThrows(IllegalArgumentException.class, () -> database.storeDataInFirestore(outerUID, FirebaseInnerCollection.checkedInEvents, null, innerTestData));
 
-        // Test not specifying inner collection
-        assertThrows(IllegalArgumentException.class, () -> database.storeDataInFirestore(outerUID, null, innerUID, innerTestData));
+            // Test not specifying inner collection
+            assertThrows(IllegalArgumentException.class, () -> database.storeDataInFirestore(outerUID, null, innerUID, innerTestData));
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestStoreData", "Error: " + e.getMessage());
+            fail();
+        }
 
     }
+
 
     @Test
     public void testStoreImageInFirestore() {
-        // Store an image in Firestore
-        String storeUID = database.storeImageInFirestore(outerUID, imageUID, ImageType.eventPosters, testImage);
 
-        // Retrieve the image
-        Map<String, Object> image = database.getImageFromFirestore(imageUID, ImageType.eventPosters);
+        try {
+            // Store an image in Firestore
+            String storeUID = database.storeImageInFirestore(outerUID, imageUID, ImageType.eventPosters, testImage);
 
-        // Get the data from the linked collection
-        Map<String, Object> data = database.getDataFromFirestore(outerUID, FirebaseInnerCollection.eventPosters, storeUID);
+            // Retrieve the image
+            Map<String, Object> image = database.getImageFromFirestore(imageUID, ImageType.eventPosters).get();
 
-        // Test
-        assertEquals(storeUID, imageUID);           // Image creation
-        assertEquals(data.get("UID"), imageUID);    // Link
-        assertNotNull(image);                       // Actual image
+            // Get the data from the linked collection
+            Map<String, Object> data = database.getDataFromFirestore(outerUID, FirebaseInnerCollection.eventPosters, storeUID).get();
 
-
-        // Store an image with data in firestore
-        storeUID = database.storeImageInFirestore(outerUID, imageUID, ImageType.eventQRCodes, testImage, innerTestData);
-
-        // Retrieve the image
-        image = database.getImageFromFirestore(imageUID, ImageType.eventQRCodes);
-
-        // Get the data from the linked collection
-        data = database.getDataFromFirestore(outerUID, FirebaseInnerCollection.eventQRCodes, storeUID);
+            // Test
+            assertEquals(storeUID, imageUID);           // Image creation
+            assertEquals(data.get("UID"), imageUID);    // Link
+            assertNotNull(image);                       // Actual image
 
 
-        // Test
-        assertEquals(storeUID, imageUID);           // Image creation
-        assertEquals(data.get("UID"), imageUID);    // Link
-        assertNotNull(image);                       // Actual image
-        assertEquals(innerTestData.get("Inner1"), image.get("Inner1"));
+            // Store an image with data in firestore
+            storeUID = database.storeImageInFirestore(outerUID, imageUID, ImageType.eventQRCodes, testImage, innerTestData);
 
-        // Store an image with no UID given
-        storeUID = database.storeImageInFirestore(outerUID, null, ImageType.promoQRCodes, testImage);
+            // Retrieve the image
+            image = database.getImageFromFirestore(imageUID, ImageType.eventQRCodes).get();
 
-        // Retrieve the image
-        image = database.getImageFromFirestore(storeUID, ImageType.promoQRCodes);
+            // Get the data from the linked collection
+            data = database.getDataFromFirestore(outerUID, FirebaseInnerCollection.eventQRCodes, storeUID).get();
 
-        // Get the data from the linked collection
-        data = database.getDataFromFirestore(outerUID, FirebaseInnerCollection.promoQRCodes, storeUID);
 
-        // Test
-        assertEquals(storeUID, data.get("UID"));
-        assertNotNull(image);
+            // Test
+            assertEquals(storeUID, imageUID);           // Image creation
+            assertEquals(data.get("UID"), imageUID);    // Link
+            assertNotNull(image);                       // Actual image
+            assertEquals(innerTestData.get("Inner1"), image.get("Inner1"));
 
-        // Delete the image to clean up
-        database.deleteImageFromFirestore(outerUID, storeUID, ImageType.promoQRCodes);
+            // Store an image with no UID given
+            storeUID = database.storeImageInFirestore(outerUID, null, ImageType.promoQRCodes, testImage);
 
-        // Test invalid database
-        FirebaseAccess database2 = new FirebaseAccess(FirestoreAccessType.IMAGES);
-        assertThrows(IllegalArgumentException.class, () -> database2.storeImageInFirestore(outerUID, imageUID, imageType, testImage));
+            // Retrieve the image
+            image = database.getImageFromFirestore(storeUID, ImageType.promoQRCodes).get();
+
+            // Get the data from the linked collection
+            data = database.getDataFromFirestore(outerUID, FirebaseInnerCollection.promoQRCodes, storeUID).get();
+
+            // Test
+            assertEquals(storeUID, data.get("UID"));
+            assertNotNull(image);
+
+            // Delete the image to clean up
+            database.deleteImageFromFirestore(outerUID, storeUID, ImageType.promoQRCodes).get();
+
+            // Test invalid database
+            FirebaseAccess database2 = new FirebaseAccess(FirestoreAccessType.IMAGES);
+            assertThrows(IllegalArgumentException.class, () -> database2.storeImageInFirestore(outerUID, imageUID, imageType, testImage));
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestStoreImage", "Error: " + e.getMessage());
+            fail();
+        }
     }
+
 
     @Test
     public void testDeleteAllDocumentsFromFirestore() {
-        if (performDeleteAll) {
-            // Delete all the documents in Firestore
-            database.deleteAllDataInFirestore();
+        try {
+            if (performDeleteAll) {
+                // Delete all the documents in Firestore
+                database.deleteAllDataInFirestore().get();
 
-            // Check if the data was deleted and the collection still exits
-            Map<String, Object> data = database.getDataFromFirestore("XXXX");
-            assertEquals("XXXX", data.get("UID"));
-        } else {
-            Log.d("FirebaseAccessTest", "Skipped Delete All");
+                // Check if the data was deleted and the collection still exits
+                Map<String, Object> data = database.getDataFromFirestore("XXXX").get();
+                assertNull(data);
+            } else {
+                Log.d("FirebaseAccessTest", "Skipped Delete All");
+            }
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestDeleteAll", "Error: " + e.getMessage());
+            fail();
         }
     }
+
 
     @Test
     public void testGetAllDocumentsFromFirestore() {
-        // Add a document to the collection
-        database.storeDataInFirestore(outerUID, outerTestData);
+        try {
+            // Add a document to the collection
+            database.storeDataInFirestore(outerUID, outerTestData);
 
-        // Get the list of all documents in the outer collection
-        ArrayList<Map<String, Object>> dataList = database.getAllDocuments();
-        assertNotNull(dataList);
+            // Get the list of all documents in the outer collection
+            ArrayList<Map<String, Object>> dataList = database.getAllDocuments().get();
+            assertNotNull(dataList);
 
-        // Iterate through the list and confirm the added document is in the list
-        boolean addedDocExists = false;
-        for (Map<String, Object> data : dataList) {
-            if (Objects.equals((String) data.get("UID"), outerUID)) {
-                addedDocExists = true;
+            // Iterate through the list and confirm the added document is in the list
+            boolean addedDocExists = false;
+            for (Map<String, Object> data : dataList) {
+                if (Objects.equals((String) data.get("UID"), outerUID)) {
+                    addedDocExists = true;
+                }
             }
-        }
-        assertTrue(addedDocExists);
+            assertTrue(addedDocExists);
 
-        // Try to get a document from a non-existent inner collection
-        // Simulates an empty collection
-        dataList = database.getAllDocuments(outerUID, FirebaseInnerCollection.profilePictures);
-        assertNull(dataList);
+            // Try to get a document from a non-existent inner collection
+            // Simulates an empty collection
+            dataList = database.getAllDocuments(outerUID, FirebaseInnerCollection.profilePictures).get();
+            assertNull(dataList);
 
-        // Add a document to this inner collection
-        database.storeDataInFirestore(outerUID, innerColl, innerUID, innerTestData);
+            // Add a document to this inner collection
+            database.storeDataInFirestore(outerUID, innerColl, innerUID, innerTestData);
 
-        // Get the list of all documents in the inner collection
-        dataList = database.getAllDocuments(outerUID, innerColl);
-        assertNotNull(dataList);
+            // Get the list of all documents in the inner collection
+            dataList = database.getAllDocuments(outerUID, innerColl).get();
+            assertNotNull(dataList);
 
-        // Confirm the added document is in the list
-        addedDocExists = false;
-        for (Map<String, Object> data : dataList) {
-            if (Objects.equals((String) data.get("UID"), innerUID)) {
-                addedDocExists = true;
+            // Confirm the added document is in the list
+            addedDocExists = false;
+            for (Map<String, Object> data : dataList) {
+                if (Objects.equals((String) data.get("UID"), innerUID)) {
+                    addedDocExists = true;
+                }
             }
+            assertTrue(addedDocExists);
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestGetAll", "Error: " + e.getMessage());
+            fail();
         }
-        assertTrue(addedDocExists);
 
     }
 
+
     @Test
     public void testGetAllRelatedImagesFromFirestore() {
-        // Add an image to the collection
-        database.storeImageInFirestore(outerUID, imageUID, imageType, testImage);
+        try {
+            // Add an image to the collection
+            database.storeImageInFirestore(outerUID, imageUID, imageType, testImage);
 
-        // Get all the images from this collection
-        ArrayList<Map<String, Object>> dataList = database.getAllRelatedImagesFromFirestore(outerUID, imageType);
-        assertNotNull(dataList);
+            // Get all the images from this collection
+            ArrayList<Map<String, Object>> dataList = database.getAllRelatedImagesFromFirestore(outerUID, imageType).get();
+            assertNotNull(dataList);
 
-        // Check to see if the added image is in the list
-        boolean addedDocExists = false;
-        for (Map<String, Object> data : dataList) {
-            if (Objects.equals((String) data.get("UID"), imageUID)) {
-                addedDocExists = true;
+            // Check to see if the added image is in the list
+            boolean addedDocExists = false;
+            for (Map<String, Object> data : dataList) {
+                if (Objects.equals((String) data.get("UID"), imageUID)) {
+                    addedDocExists = true;
+                }
             }
-        }
-        assertTrue(addedDocExists);
+            assertTrue(addedDocExists);
 
-        // Try to get images from an empty collection
-        dataList = database.getAllRelatedImagesFromFirestore(outerUID, ImageType.profilePictures);
-        assertNull(dataList);
+            // Try to get images from an empty collection
+            dataList = database.getAllRelatedImagesFromFirestore(outerUID, ImageType.profilePictures).get();
+            assertNull(dataList);
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestGetAllRelatedImages", "Error: " + e.getMessage());
+            fail();
+        }
     }
 
     @Test
     public void testGetAllImagesFromFirestore() {
-        // Add an image to the collection
-        database.storeImageInFirestore(outerUID, imageUID, imageType, testImage);
+        try {
+            // Add an image to the collection
+            database.storeImageInFirestore(outerUID, imageUID, imageType, testImage);
 
-        // Get all of the images of this type
-        ArrayList<Map<String, Object>> dataList = database.getAllImagesFromFirestore(imageType);
-        assertNotNull(dataList);
+            // Get all of the images of this type
+            ArrayList<Map<String, Object>> dataList = database.getAllImagesFromFirestore(imageType).get();
+            assertNotNull(dataList);
 
-        // Check to see if the added image is in the list
-        boolean addedDocExists = false;
-        for (Map<String, Object> data : dataList) {
-            Log.d("FirebaseAccessTest", "UID: " + data.get("UID"));
-            if (Objects.equals((String) data.get("UID"), imageUID)) {
-                addedDocExists = true;
+            // Check to see if the added image is in the list
+            boolean addedDocExists = false;
+            for (Map<String, Object> data : dataList) {
+                Log.d("FirebaseAccessTest", "UID: " + data.get("UID"));
+                if (Objects.equals((String) data.get("UID"), imageUID)) {
+                    addedDocExists = true;
+                }
             }
+            assertTrue(addedDocExists);
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestGetAllImages", "Error: " + e.getMessage());
+            fail();
         }
-        assertTrue(addedDocExists);
 
     }
 
     @After
     public void cleanUpDatabase() {
-        // Delete all of the new documents and images
-        database.deleteImageFromFirestore(outerUID, imageUID, imageType);
-        database.deleteImageFromFirestore(outerUID, imageUID, ImageType.eventPosters);
-        database.deleteDataFromFirestore(outerUID);
+        try {
+            // Delete all of the new documents and images
+            database.deleteImageFromFirestore(outerUID, imageUID, imageType).get();
+            database.deleteImageFromFirestore(outerUID, imageUID, ImageType.eventPosters).get();
+            database.deleteDataFromFirestore(outerUID).get();
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("CleanUp", "Error: " + e.getMessage());
+            fail();
+        }
     }
 
 

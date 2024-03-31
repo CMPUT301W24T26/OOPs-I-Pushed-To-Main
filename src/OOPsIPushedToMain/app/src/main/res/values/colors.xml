@@ -4,4 +4,24 @@
     <color name="white">#FFFFFFFF</color>
     <color name="button_positive">#009688</color>
     <color name="button_negative">#673AB7</color>
+    <color name="text_background">#141F8BDF</color>
+    <color name="button_color">#304FFE</color>
+
+
+<!--    Material Colors-->
+    <color name="colorPrimary">#1A237E</color>
+    <color name="colorPrimaryDark">#304FFE</color>
+    <color name="colorAccent">#7C4DFF</color>
+
+<!--    Dark Mode-->
+    <color name="my_dark_primary">#2AEDEB</color>
+    <color name="my_dark_accent">#32E756</color>
+    <color name="my_dark_transparent_background">#0DFFFFFF</color>
+
+
+<!--    Light Mode-->
+    <color name="my_light_primary">#022545</color>
+    <color name="my_light_accent">#1C6329</color>
+    <color name="my_light_transparent_background">#0D000000</color>
+
 </resources>

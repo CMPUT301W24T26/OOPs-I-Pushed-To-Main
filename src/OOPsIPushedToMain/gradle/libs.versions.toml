@@ -9,6 +9,7 @@ material = "1.11.0"
 activity = "1.8.0"
 constraintlayout = "2.1.4"
 firebaseMessaging = "23.4.1"
+material3 = "1.2.1"
 navigationFragment = "2.7.7"
 fragmentTesting = "1.6.2"
 espressoContrib = "3.5.1"
@@ -16,6 +17,8 @@ glide = "5.0.0-rc01"
 
 [libraries]
 androidx-espresso-core = { module = "androidx.support.test.espresso:espresso-core", version.ref = "espressoCoreVersion" }
+androidx-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+androidx-espresso-intents = { module = "androidx.test.espresso:espresso-intents", version.ref = "espressoCore" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

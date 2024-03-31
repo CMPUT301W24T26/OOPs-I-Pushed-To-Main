@@ -22,8 +22,8 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
         }
     }
@@ -45,12 +45,12 @@ dependencies {
 
 //    implementation(files("C:/Users/matte/AppData/Local/Android/Sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.ext.junit)
-    androidTestImplementation(libs.espresso.core)
-    androidTestImplementation("androidx.test:core")
-    debugImplementation("androidx.fragment:fragment-testing:1.4.0")
-    androidTestImplementation("androidx.test.espresso:espresso-intents:3.4.0")
+//    testImplementation(libs.junit)
+//    androidTestImplementation(libs.ext.junit)
+//    androidTestImplementation(libs.espresso.core)
+//    androidTestImplementation("androidx.test:core")
+//    debugImplementation("androidx.fragment:fragment-testing:1.4.0")
+//    androidTestImplementation("androidx.test.espresso:espresso-intents:3.4.0")
 
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
@@ -65,4 +65,9 @@ dependencies {
 
     // Mockito for testing
     androidTestImplementation("org.mockito:mockito-core:4.0.0")
+
+    // Testing dependancies
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.intents)
 }

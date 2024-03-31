@@ -23,7 +23,12 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
+
+import com.google.firebase.encoders.ObjectEncoder;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -32,6 +37,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  * Activity for displaying and editing an attendee's profile.
@@ -428,11 +434,35 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         scanQRCodeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Add a new document to the database
+                database.storeDataInFirestore("matteotest", new HashMap<>());
+
+                HashMap<String, Object> inData = new HashMap<>();
+                inData.put("test", "this is a test");
+                database.storeDataInFirestore("matteotest", FirebaseInnerCollection.announcements, "TEST", inData);
+
+                // Get the document
+                database.getDataFromFirestore("matteotest").thenAccept(data -> {
+                    Log.d("Testing", "Data: " + data.get("UID"));
+                });
+
+                // Get the inner document
+                database.getDataFromFirestore("matteotest", FirebaseInnerCollection.announcements, "TEST").thenAccept(data -> {
+                    Log.d("Testing", "Data: " + data.get("test"));
+                });
+
+                // Delete the documents
+                database.deleteDataFromFirestore("matteotest").thenAccept(vdd -> {
+                    Log.d("Testing", "Delete Complete");
+                });
+
+
+
                 // Switch to the scanning activity and scan
-                Intent intent = new Intent(getApplicationContext(), QRScanner.class);
+//                Intent intent = new Intent(getApplicationContext(), QRScanner.class);
 
                 // Start the activity
-                qrCodeActivityResultLauncher.launch(intent);
+//                qrCodeActivityResultLauncher.launch(intent);
 
                 // This is asynchronous. DO NOT PUT CODE HERE
 
@@ -440,4 +470,8 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
 
         });
     }
+
+    // Database test
+    FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
 }
