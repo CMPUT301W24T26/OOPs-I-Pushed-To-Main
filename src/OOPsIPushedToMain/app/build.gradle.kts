@@ -62,12 +62,16 @@ dependencies {
     //Add the ZXing library for the QR code scanner https://github.com/zxing/zxing
     implementation("com.journeyapps:zxing-android-embedded:4.2.0")
     implementation("com.google.zxing:core:3.4.0")
+    //include the Jackson jackson-databind, allowing to use ObjectMapper and other related classes for JSON processing
+    implementation ("com.fasterxml.jackson.core:jackson-databind:2.4.+")
 
     // Mockito for testing
     androidTestImplementation("org.mockito:mockito-core:4.0.0")
+
 
     // Testing dependancies
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.androidx.espresso.intents)
+
 }

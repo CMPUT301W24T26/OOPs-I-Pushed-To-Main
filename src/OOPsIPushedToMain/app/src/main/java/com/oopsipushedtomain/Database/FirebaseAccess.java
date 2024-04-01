@@ -13,6 +13,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.oopsipushedtomain.Event;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -1055,11 +1056,13 @@ public class FirebaseAccess {
                 database.storeDataInFirestore("XXXX", newData);
             }
 
+
             return null;
         };
 
         // Return the future
         return callableToCompletableFuture(firestoreTask);
+
     }
 
 
