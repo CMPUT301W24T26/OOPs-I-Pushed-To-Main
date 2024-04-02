@@ -22,6 +22,7 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
@@ -65,7 +66,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
     /**
      * Reference to the geo-location toggle
      */
-    private Switch toggleGeolocationSwitch;
+    private SwitchCompat toggleGeolocationSwitch;
 
     /**
      * The reference to the view of the profile image

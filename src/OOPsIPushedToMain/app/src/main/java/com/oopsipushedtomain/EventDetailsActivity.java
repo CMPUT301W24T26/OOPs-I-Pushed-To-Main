@@ -18,7 +18,6 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
-import com.google.firebase.firestore.auth.User;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
@@ -31,6 +30,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -104,6 +104,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
+        CompletableFuture<Event> future = new CompletableFuture<>();
 
         eventTitleEdit = findViewById(R.id.event_details_organizer_title_e);
         eventStartTimeEdit = findViewById(R.id.event_details_organizer_start_time_e);
@@ -130,14 +131,39 @@ public class EventDetailsActivity extends AppCompatActivity {
         }
 
         eventID = getIntent().getStringExtra("selectedEventId");
-        Log.d("EventDetailsActivity", eventID);
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
         event = null;
         try {
+            Log.e("t", "trying to get event");
             firebaseAccess.getDataFromFirestore(eventID).thenAccept(datalist -> {
+                Log.e("t", "event loading");
+                Log.e("x", datalist.get("UID").toString());
 //                Log.d("adf", datalist.get(eventID));
-                event = (Event) datalist.get(eventID);
+//                event = datalist;
+//                datalist.forEach((key, value) -> Log.d("map", key + ":" + value));
+                event = new Event(
+                        datalist.get("UID").toString(),
+                        datalist.get("title").toString(),
+                        datalist.get("startTime").toString(),
+                        datalist.get("description").toString(),
+                        datalist.get("location").toString(),
+                        datalist.get("posterUrl").toString(),
+                        (int) datalist.get("attendeeLimit"),
+                        datalist.get("creatorId").toString()
+                );
+//                event = new Event();
+//                event.setEventId(datalist.get("UID").toString());
+//                event.setTitle(datalist.get("title").toString());
+//                event.setStartTime(datalist.get("startTime").toString());
+//                event.setDescription(datalist.get("description").toString());
+//                event.setLocation(datalist.get("location").toString());
+//                event.setPosterUrl(datalist.get("posterUrl").toString());
+//                event.setAttendeeLimit((int) datalist.get("attendeeLimit"));
+//                event.setCreatorId(datalist.get("creatorId").toString());
+                future.complete(event);
+                Log.e("t", "event loaded??");
             });
+            Log.e("t", "event loaded?");
         } catch (Exception e) {
             Log.e("EventDetailsActivity", String.valueOf(e));
         }
@@ -148,12 +174,12 @@ public class EventDetailsActivity extends AppCompatActivity {
             eventEndTimeEdit.setText(event.getEndTime());
             eventDescriptionEdit.setText(event.getDescription());
 
-            eventID = event.getEventId();
+//            eventID = event.getEventId();
 
             determineUserRole(userId, eventID, this::updateUIForRole);
 
 
-        }
+        } else Log.e("t", "event is null");
 
 
 
