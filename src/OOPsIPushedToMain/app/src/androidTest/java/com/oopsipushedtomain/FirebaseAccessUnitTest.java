@@ -496,6 +496,49 @@ public class FirebaseAccessUnitTest {
 
     }
 
+    @Test
+    public void testGetDataWithFieldEqualTo() {
+        try {
+            Map<String, Object> sendData = new HashMap<>();
+            sendData.put("Test", "Test");
+
+            // Store in outer collection
+            database.storeDataInFirestore(outerUID, sendData);
+
+            // Get from the outer collection
+            ArrayList<Map<String, Object>> data = database.getDataWithFieldEqualTo("Test", "Test").get();
+
+            // Check the data
+            boolean dataRecieved = false;
+            for (Map<String, Object> doc : data){
+                if (Objects.equals((String) doc.get("UID"), outerUID)){
+                    dataRecieved = true;
+                }
+            }
+            assertTrue(dataRecieved);
+
+            // Store in inner collection
+            database.storeDataInFirestore(outerUID,innerColl,innerUID, sendData);
+
+            // Get from the outer collection
+            data = database.getDataWithFieldEqualTo(outerUID,innerColl, innerUID, "Test", "Test").get();
+            // Check the data
+            dataRecieved = false;
+            for (Map<String, Object> doc : data){
+                if (Objects.equals((String) doc.get("UID"), innerUID)){
+                    dataRecieved = true;
+                }
+            }
+            assertTrue(dataRecieved);
+
+
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("TestGetData", "Error: " + e.getMessage());
+            fail();
+        }
+    }
+
     @After
     public void cleanUpDatabase() {
         try {

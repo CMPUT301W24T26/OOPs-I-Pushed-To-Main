@@ -10,6 +10,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
+
+import java.util.Map;
 
 /**
  * The first page that the user sees. Checks to see if the current app installation has been run
@@ -40,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private User user;
 
+    private FirebaseAccess database;
+
     /**
      * Sets the on click listener for the button on the page
      * The button will open the profile page with a set user id
@@ -54,13 +60,55 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Attempt to find the FID of the user in the database
+        database = new FirebaseAccess(FirestoreAccessType.USERS);
+
+        // Get the FID of the current user
+        GetFIDUtil.GetFID(new GetFIDUtil.DataLoadedListener() {
+            @Override
+            public void onDataLoaded(String fid) {
+                // Get all of the users to compare to the FID
+                findUser(fid);
+            }
+        });
+
+
 
         // Initialize database reference to Announcements collection
         db = FirebaseFirestore.getInstance();
         usersRef = db.collection("users");
 
         // Obtain FID and work with it
-        getUserFID();
+//        getUserFID();
+    }
+
+    public void findUser(String fid){
+        // Check if there are any documents matching the FID
+        database.getDataWithFieldEqualTo("fid", fid).thenAccept(dataList -> {
+            if (dataList == null){
+                // No user found, create a new one
+                Log.d("FID", "User not found, creating new and opening their page");
+                User.createNewObject().thenAccept(newUser -> {
+                    newUser.setFID(fid);
+
+                    // Start the profile page
+                    Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                    intent.putExtra("userID", newUser.getUID());
+                    startActivity(intent);
+                });
+            } else {
+                // User already exists, open their page
+                Log.d("FID", "User already exists, opening their page");
+
+                // Get the user, FID should be unique
+                Map<String, Object> data = dataList.get(0);
+
+                // Start the profile page
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                intent.putExtra("userID", (String) data.get("UID"));
+                startActivity(intent);
+            }
+        });
     }
 
     /**
@@ -83,55 +131,55 @@ public class MainActivity extends AppCompatActivity {
      * User and open their profile page.
      * @param fid Firebase Installation ID to search for in the database
      */
-    void findUser(String fid) {
-        // Get all documents in 'users' where the 'fid' field is equal to the current FID
-        usersRef.whereEqualTo("fid", fid).get().addOnCompleteListener(getUserTask -> {
-            String userId = "";
-            if (getUserTask.isSuccessful()) {
-                for (DocumentSnapshot document : getUserTask.getResult()) {
-                    // If we get here, that means we have found a document matching the
-                    // FID we're looking for, so set the flag to true.
-                    this.setFoundFID(true);
-                    userId = document.getId();
-                    Log.d("FSDF", "Found user " + userId);
-                    break;
-                }
-                if (this.getFoundFID()) {
-                    Log.d("FID", "User already exists, opening their page");
-                    Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-                    // Create the user
-//                    user = new User(userId);
-                    // Pass the user
-                    intent.putExtra("userID", userId);
-                    startActivity(intent);
-                } else {  // FID does not already exist, add to database
-                    Log.d("FID", "User not found, creating new and opening their page");
-
-                    // Aync move to the new activity
-                    User.createNewObject().thenAccept(newUser -> {
-                        user = newUser;
-                        user.setFID(fid);
-                        registerFID(fid);
-                    });
-
-
-//                    user = new User();
-////                    MainActivity.this.user = user;
-//                    user.setFID(fid);
-//                    registerFID(fid);
-
-//                    user = new User(new User.UserCreatedListener() {
-//                        @Override
-//                        public void onDataLoaded(User user) {
-//                            MainActivity.this.user = user;
-//                            user.setFid(fid);
-//                            registerFID(fid);
-//                        }
+//    void findUser(String fid) {
+//        // Get all documents in 'users' where the 'fid' field is equal to the current FID
+//        usersRef.whereEqualTo("fid", fid).get().addOnCompleteListener(getUserTask -> {
+//            String userId = "";
+//            if (getUserTask.isSuccessful()) {
+//                for (DocumentSnapshot document : getUserTask.getResult()) {
+//                    // If we get here, that means we have found a document matching the
+//                    // FID we're looking for, so set the flag to true.
+//                    this.setFoundFID(true);
+//                    userId = document.getId();
+//                    Log.d("FSDF", "Found user " + userId);
+//                    break;
+//                }
+//                if (this.getFoundFID()) {
+//                    Log.d("FID", "User already exists, opening their page");
+//                    Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+//                    // Create the user
+////                    user = new User(userId);
+//                    // Pass the user
+//                    intent.putExtra("userID", userId);
+//                    startActivity(intent);
+//                } else {  // FID does not already exist, add to database
+//                    Log.d("FID", "User not found, creating new and opening their page");
+//
+//                    // Aync move to the new activity
+//                    User.createNewObject().thenAccept(newUser -> {
+//                        user = newUser;
+//                        user.setFID(fid);
+//                        registerFID(fid);
 //                    });
-                }
-            }
-        });
-    }
+//
+//
+////                    user = new User();
+//////                    MainActivity.this.user = user;
+////                    user.setFID(fid);
+////                    registerFID(fid);
+//
+////                    user = new User(new User.UserCreatedListener() {
+////                        @Override
+////                        public void onDataLoaded(User user) {
+////                            MainActivity.this.user = user;
+////                            user.setFid(fid);
+////                            registerFID(fid);
+////                        }
+////                    });
+//                }
+//            }
+//        });
+//    }
 
     /**
      * The FID does not already exist in the database, so we create a new 'users' document and
