@@ -16,6 +16,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.oopsipushedtomain.Event;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +39,7 @@ import java.util.concurrent.Future;
  * @see FirestoreAccessType
  * @see ImageType
  */
-public class FirebaseAccess {
+public class FirebaseAccess implements Serializable {
 
     /**
      * A reference to the collection
@@ -281,7 +282,7 @@ public class FirebaseAccess {
      * @param data    The data to write to the document
      * @return A map containing the UID of the outer document Map.get("outer")
      */
-    public Map<String, String> storeDataInFirestore(String docName, Map<String, Object> data) {
+    public Map<String, Object> storeDataInFirestore(String docName, Map<String, Object> data) {
         return this.storeDataInFirestore(docName, null, null, data);
     }
 
@@ -296,7 +297,7 @@ public class FirebaseAccess {
      * @param data          The data to write to the inner document
      * @return A map containing the UID of the outer document Map.get("outer") and the UID of the inner document Map.get("inner")
      */
-    public Map<String, String> storeDataInFirestore(String outerDocName, FirebaseInnerCollection innerCollName, String innerDocName, Map<String, Object> data) {
+    public Map<String, Object> storeDataInFirestore(String outerDocName, FirebaseInnerCollection innerCollName, String innerDocName, Map<String, Object> data) {
         boolean isValidDatabase = false;
         // Check for a valid combination of outer and inner collection
         switch (this.databaseType) {
@@ -384,14 +385,15 @@ public class FirebaseAccess {
             return null;
         };
 
-        // Execute the store, no need to return the future (probably)
-        executorService.submit(firestoreTask);
+        // Map to return
+        Map<String, Object> outData = new HashMap<>();
+        // Execute the store
+        outData.put("future", callableToCompletableFuture(firestoreTask));
 
         // Return the UID of the documents
-        Map<String, String> outNames = new HashMap<>();
-        outNames.put("outer", outerDocName);
-        outNames.put("inner", innerDocName);
-        return outNames;
+        outData.put("outer", outerDocName);
+        outData.put("inner", innerDocName);
+        return outData;
     }
 
     /**

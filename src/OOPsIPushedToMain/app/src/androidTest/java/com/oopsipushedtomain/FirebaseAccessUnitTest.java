@@ -262,29 +262,29 @@ public class FirebaseAccessUnitTest {
     public void testStoreDataInFirestore() {
         try {
             // Store data into an outer collection
-            Map<String, String> storeUID = database.storeDataInFirestore(outerUID, outerTestData);
+            Map<String, Object> storeUID = database.storeDataInFirestore(outerUID, outerTestData);
             Map<String, Object> data = database.getDataFromFirestore(outerUID).get();
             assertEquals(data.toString(), outerTestData.toString());
-            assertEquals(outerUID, storeUID.get("outer"));
+            assertEquals(outerUID, (String) storeUID.get("outer"));
 
             // Store data into an inner collection
             storeUID = database.storeDataInFirestore(outerUID, innerColl, innerUID, innerTestData);
             data = database.getDataFromFirestore(outerUID, innerColl, innerUID).get();
             assertEquals(data.toString(), innerTestData.toString());
-            assertEquals(innerUID, storeUID.get("inner"));
+            assertEquals(innerUID, (String) storeUID.get("inner"));
 
             // Test creating a new outer document
             storeUID = database.storeDataInFirestore(null, outerTestData);
-            data = database.getDataFromFirestore(storeUID.get("outer")).get();
-            assertEquals(data.get("UID"), storeUID.get("outer"));
+            data = database.getDataFromFirestore((String) storeUID.get("outer")).get();
+            assertEquals(data.get("UID"), (String) storeUID.get("outer"));
 
             // Test creating a new inner document (announcements)
-            storeUID = database.storeDataInFirestore(storeUID.get("outer"), FirebaseInnerCollection.announcements, null, innerTestData);
-            data = database.getDataFromFirestore(storeUID.get("outer"), FirebaseInnerCollection.announcements, storeUID.get("inner")).get();
-            assertEquals(data.get("UID"), storeUID.get("inner"));
+            storeUID = database.storeDataInFirestore((String) storeUID.get("outer"), FirebaseInnerCollection.announcements, null, innerTestData);
+            data = database.getDataFromFirestore((String) storeUID.get("outer"), FirebaseInnerCollection.announcements, (String) storeUID.get("inner")).get();
+            assertEquals(data.get("UID"), (String) storeUID.get("inner"));
 
             // Delete the new document
-            database.deleteDataFromFirestore(storeUID.get("outer")).get();
+            database.deleteDataFromFirestore((String) storeUID.get("outer")).get();
 
             // Test creating a new inner document for an image
             assertThrows(IllegalArgumentException.class, () -> database.storeDataInFirestore(outerUID, FirebaseInnerCollection.eventPosters, null, innerTestData));

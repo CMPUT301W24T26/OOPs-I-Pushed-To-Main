@@ -22,7 +22,6 @@ import org.junit.Test;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.Optional;
 
 public class UserUnitTest {
 
@@ -32,7 +31,13 @@ public class UserUnitTest {
     @Before
     public void setUp(){
         // Create a new user
-        user = new User();
+        try {
+            user = User.createNewObject().get();
+        } catch (Exception e) {
+            // There was an error, the test failed
+            Log.e("SetUp", "Error: " + e.getMessage());
+            fail();
+        }
 
         // Set the test image
         Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
@@ -262,7 +267,7 @@ public class UserUnitTest {
             // Wait for a bit
             Thread.sleep(2000);
 
-            data = database.getDataFromFirestore(user.getUid(), FirebaseInnerCollection.checkedInEvents, "FAKEEVENT").get();
+            data = database.getDataFromFirestore(user.getUID(), FirebaseInnerCollection.checkedInEvents, "FAKEEVENT").get();
         } catch (Exception e) {
             // There was an error, the test failed
             Log.e("TestCheckIn", "Error: " + e.getMessage());
@@ -284,7 +289,7 @@ public class UserUnitTest {
             // Wait for a bit
             Thread.sleep(2000);
 
-            data = database.getDataFromFirestore(user.getUid(), FirebaseInnerCollection.checkedInEvents, "FAKEEVENT").get();
+            data = database.getDataFromFirestore(user.getUID(), FirebaseInnerCollection.checkedInEvents, "FAKEEVENT").get();
         } catch (Exception e) {
             // There was an error, the test failed
             Log.e("TestCheckIn", "Error: " + e.getMessage());
@@ -297,7 +302,7 @@ public class UserUnitTest {
         assertEquals(2, count);
     }
 
-    
+
     @After
     public void cleanUp(){
         // Delete the user

@@ -20,6 +20,7 @@ import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,49 +97,83 @@ public class User {
     private boolean dataIsCurrent = false;
 
     /**
-     * Generates a new user and uploads them to the database
-     * Instantiates all parameters to null. They need to be set later
+     * Generates a new user
+     * Sets the database reference only, use User.createNewObject to create a new object
      */
-    public User() {
+    private User() {
         // Create a reference to the users database
         database = new FirebaseAccess(FirestoreAccessType.USERS);
 
-        // Create a hash map for all string variables and set all fields to null
-        HashMap<String, Object> data = new HashMap<>();
-        data.put("address", address);
-        data.put("birthday", birthday);
-        data.put("email", email);
-        data.put("homepage", homepage);
-        data.put("name", name);
-        data.put("nickname", nickname);
-        data.put("phone", phone);
-        data.put("fid", fid);
-
-        // Upload the data to the database
-        Map<String, String> uidData = database.storeDataInFirestore(null, data);
-        this.uid = uidData.get("outer");
-
-        // Data is current
-        dataIsCurrent = true;
     }
 
     /**
-     * Creates an instance of the new user class given a UID.
-     * Loads the data from the database
+     * Creates a new User object
      *
-     * @param userID The UID of the user to find in the database
+     * @return A completable future to get the user
      */
-    public User(String userID) {
-        // Create a reference to the users database
-        database = new FirebaseAccess(FirestoreAccessType.USERS);
+    public static CompletableFuture<User> createNewObject() {
+        return User.createNewObject(null);
+    }
 
-        // Load the user from the database
-        // Store data in the class
-        this.updateUserFromDatabase().thenAccept(result -> {
-            // The data is current
-            dataIsCurrent = true;
-        });
+    /**
+     * Creates a new User object
+     *
+     * @param UID The UID of the user to create. If null, creates a new one
+     * @return A completable future to get the user
+     */
+    public static CompletableFuture<User> createNewObject(String UID) {
+        User createdUser;
+        CompletableFuture<User> future = new CompletableFuture<>();
 
+        // If the UID is null, create a new User
+        if (UID == null) {
+            createdUser = new User();
+
+            // Create a hash map for all string variables and set all fields to null
+            HashMap<String, Object> data = new HashMap<>();
+            data.put("address", "Bye");
+            data.put("birthday", null);
+            data.put("email", null);
+            data.put("homepage", null);
+            data.put("name", null);
+            data.put("nickname", null);
+            data.put("phone", null);
+            data.put("fid", null);
+
+            // Upload the data to the database
+            Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);
+
+            // Set the UID
+            createdUser.uid = (String) storeReturn.get("outer");
+
+            // Wait for the data to be stored before completing the future
+            CompletableFuture<Void> storeFuture = (CompletableFuture<Void>) storeReturn.get("future");
+            assert storeFuture != null;
+            storeFuture.thenAccept(result -> {
+                // Data is current
+                createdUser.dataIsCurrent = true;
+                future.complete(createdUser);
+            });
+
+            // Return the future
+            return future;
+        } else {
+            // Otherwise create a new user and load in the data
+            createdUser = new User();
+
+            // Set the UID of the user
+            createdUser.uid = UID;
+
+            // Update the user details
+            createdUser.updateUserFromDatabase().thenAccept(result -> {
+                // Data is current
+                createdUser.dataIsCurrent = true;
+                future.complete(createdUser);
+            });
+
+            // Return the future
+            return future;
+        }
 
     }
 
@@ -147,7 +182,7 @@ public class User {
      *
      * @param data The Firestore data
      */
-    public void parseFirestoreData(Map<String, Object> data) {
+    private void parseFirestoreData(Map<String, Object> data) {
         // Store the data in the class
         this.address = (String) data.get("address");
         this.birthday = (Date) data.get("birthday");
@@ -219,7 +254,7 @@ public class User {
      *
      * @return The UID of the user
      */
-    public String getUid() {
+    public String getUID() {
         return uid;
     }
 
@@ -641,6 +676,7 @@ public class User {
 
     /**
      * Deletes the current user from the database
+     *
      * @return A future for waiting for the operation to complete
      */
     public CompletableFuture<Void> deleteUser() {

@@ -99,14 +99,26 @@ public class MainActivity extends AppCompatActivity {
                 if (this.getFoundFID()) {
                     Log.d("FID", "User already exists, opening their page");
                     Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-                    intent.putExtra("userId", userId);
+                    // Create the user
+//                    user = new User(userId);
+                    // Pass the user
+                    intent.putExtra("userID", userId);
                     startActivity(intent);
                 } else {  // FID does not already exist, add to database
                     Log.d("FID", "User not found, creating new and opening their page");
-                    user = new User();
-                    MainActivity.this.user = user;
-                    user.setFID(fid);
-                    registerFID(fid);
+
+                    // Aync move to the new activity
+                    User.createNewObject().thenAccept(newUser -> {
+                        user = newUser;
+                        newUser.setFID(fid);
+                        registerFID(fid);
+                    });
+
+
+//                    user = new User();
+////                    MainActivity.this.user = user;
+//                    user.setFID(fid);
+//                    registerFID(fid);
 
 //                    user = new User(new User.UserCreatedListener() {
 //                        @Override
@@ -129,8 +141,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void registerFID(String fid) {
         Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-
-        intent.putExtra("userId", user.getUid());
+        intent.putExtra("userID", user.getUID());
         startActivity(intent);
     }
 

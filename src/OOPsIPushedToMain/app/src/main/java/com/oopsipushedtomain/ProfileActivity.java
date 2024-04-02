@@ -99,8 +99,10 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                     ((ImageView)profileImageView).setImageBitmap(photo);
                     // Upload the image to storage
                     // TODO: un-hardcode userID
-                    user = new User("USER-9DRH1BAQZQMGZJEZFMGL");
-                    user.setProfileImage(photo);
+                    User.createNewObject("USER-9DRH1BAQZQMGZJEZFMGL").thenAccept(newUser -> {
+                        user = newUser;
+                        user.setProfileImage(photo);
+                    });
                 }
             }
     );
@@ -123,8 +125,10 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                     ((ImageView) profileImageView).setImageURI(result);
                     // Upload the image to storage
                     // TODO: un-hardcode userID
-                    user = new User("USER-9DRH1BAQZQMGZJEZFMGL");
-                    user.setProfileImage(picture);
+                    User.createNewObject("USER-9DRH1BAQZQMGZJEZFMGL").thenAccept(newUser -> {
+                        user = newUser;
+                        user.setProfileImage(picture);
+                    });
                 }
             }
     );
@@ -142,18 +146,28 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         setContentView(R.layout.activity_profile);
 
         // Load the information about the given user
-        userId = getIntent().getStringExtra("userId");
-        user = new User(userId);
-        initializeViews();
+        userId = getIntent().getStringExtra("userID");
+
+        // Create the new user Asyc
+        User.createNewObject(userId).thenAccept(newUser -> {
+            runOnUiThread(() -> {
+                // Assign the user user
+                user = newUser;
+
+                initializeViews();
+
+                CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
+
+                // Initialize UI elements and load attendee data
+                initializeViews();
+
+                // Setup listeners for interactive elements
+                setupListeners();
+            });
+        });
 
 
-        CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
 
-        // Initialize UI elements and load attendee data
-        initializeViews();
-
-        // Setup listeners for interactive elements
-        setupListeners();
 
         // Set-up ImageView and set on-click listener
         profileImageView = findViewById(R.id.profileImageView);
