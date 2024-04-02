@@ -3,13 +3,7 @@ package com.oopsipushedtomain;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
-import android.icu.util.TimeUnit;
-import com.google.firebase.installations.FirebaseInstallations;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -109,14 +103,19 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(intent);
                 } else {  // FID does not already exist, add to database
                     Log.d("FID", "User not found, creating new and opening their page");
-                    user = new User(new User.UserCreatedListener() {
-                        @Override
-                        public void onDataLoaded(User user) {
-                            MainActivity.this.user = user;
-                            user.setFid(fid);
-                            registerFID(fid);
-                        }
-                    });
+                    user = new User();
+                    MainActivity.this.user = user;
+                    user.setFID(fid);
+                    registerFID(fid);
+
+//                    user = new User(new User.UserCreatedListener() {
+//                        @Override
+//                        public void onDataLoaded(User user) {
+//                            MainActivity.this.user = user;
+//                            user.setFid(fid);
+//                            registerFID(fid);
+//                        }
+//                    });
                 }
             }
         });
@@ -130,13 +129,9 @@ public class MainActivity extends AppCompatActivity {
      */
     private void registerFID(String fid) {
         Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-        user.UpdateAllDataFields(new User.DataLoadedListener() {
-            @Override
-            public void onDataLoaded() {
-                intent.putExtra("userId", user.getUid());
-                startActivity(intent);
-            }
-        });
+
+        intent.putExtra("userId", user.getUid());
+        startActivity(intent);
     }
 
     /**

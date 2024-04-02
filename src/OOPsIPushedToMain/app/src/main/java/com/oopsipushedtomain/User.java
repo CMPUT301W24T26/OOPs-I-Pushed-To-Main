@@ -10,53 +10,20 @@
 
 package com.oopsipushedtomain;
 
-import android.app.Activity;
-import android.app.Application;
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.annotation.NonNull;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.Firebase;
-import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
-import com.oopsipushedtomain.ProfileActivity;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Database.ImageType;
 
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * This class defines and represents a user
@@ -72,6 +39,9 @@ import java.util.concurrent.Executors;
  * @see ProfileActivity
  */
 public class User {
+
+    FirebaseAccess database;
+
     // User parameters
     /**
      * The UID of the user
@@ -79,9 +49,9 @@ public class User {
     private String uid;
     /**
      * The address of the user
-     * It says hi when you create a new account
+     * It says Bye when you create a new account
      */
-    private String address = "Hello";
+    private String address = "Bye"; // Changing this breaks a test
     /**
      * The birthday of the user
      */
@@ -110,112 +80,28 @@ public class User {
     /**
      * The UID of the user's profile picture
      */
-    private String imageUID = null;
+    private String profileImageUID = null;
+    /**
+     * The user's profile picture
+     */
+    private Bitmap profileImage = null;
     /**
      * The Firebase Installation ID (fid)
      */
     private String fid = null;
 
-    // Announcements
     /**
-     * The array list to store annoncements for this user
+     * Whether the data in the class is current
      */
-    private ArrayList<String> announcementsList;
-
-    // Database parameters
-    /**
-     * A reference to the Firestore database
-     */
-    private FirebaseFirestore db;
-    /**
-     * A reference to the users collection
-     */
-    private CollectionReference userRef;
-    /**
-     * A reference to the doucment for this user
-     */
-    private DocumentReference userDocRef;
-    /**
-     * A reference to the events collection for each user
-     */
-    private CollectionReference userEventRef;
-
-
-    // Firebase storage
-    /**
-     * A reference to Firebase Storage
-     */
-    private FirebaseStorage storage;
-    /**
-     * A reference to the storage pool for images
-     */
-    private StorageReference storageRef;
-
-    /**
-     * Interface for checking when data is loaded into the user
-     */
-    public interface DataLoadedListener {
-        /**
-         * Call back for when data is loaded into the user
-         */
-        void onDataLoaded();
-    }
-
-    /**
-     * Interface for checking when a new user is created
-     */
-    public interface UserCreatedListener {
-        /**
-         * Callback for passing back the created user when creating a new user
-         * @param user The new user that was created
-         */
-        void onDataLoaded(User user);
-    }
-
-    /**
-     * Interface for checking when the image is loaded from the database
-     */
-    public interface OnBitmapReceivedListener {
-        /**
-         * Callback for passing back the user's profile picture when it was received
-         * @param bitmap The received bitmap
-         */
-        void onBitmapReceived(Bitmap bitmap);
-    }
-
-    /**
-     * Initializes the database parameters for accessing firestore
-     */
-    public void InitDatabase() {
-        db = FirebaseFirestore.getInstance();
-        userRef = db.collection("users");
-        storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference();
-    }
-
+    private boolean dataIsCurrent = false;
 
     /**
      * Generates a new user and uploads them to the database
      * Instantiates all parameters to null. They need to be set later
-     *
-     * @param listener The listener for determining when the transfer is complete
      */
-    public User(UserCreatedListener listener) {
-        // Initialize the database
-        InitDatabase();
-
-        // Create array list
-        announcementsList = new ArrayList<>();
-
-        // Get the user id of a new document
-        uid = userRef.document().getId().toUpperCase();
-        uid = "USER-" + uid;
-
-        // Get the UID for an image
-        imageUID = userRef.document().getId().toUpperCase();
-        imageUID = "IMGE-" + imageUID;
-
-        Log.e("asdf", "test");
+    public User() {
+        // Create a reference to the users database
+        database = new FirebaseAccess(FirestoreAccessType.USERS);
 
         // Create a hash map for all string variables and set all fields to null
         HashMap<String, Object> data = new HashMap<>();
@@ -226,134 +112,138 @@ public class User {
         data.put("name", name);
         data.put("nickname", nickname);
         data.put("phone", phone);
-        data.put("profileImage", imageUID);
         data.put("fid", fid);
 
+        // Upload the data to the database
+        Map<String, String> uidData = database.storeDataInFirestore(null, data);
+        this.uid = uidData.get("outer");
 
-        // Create a new document and set all parameters
-        userRef.document(uid).set(data);
-
-        // Set the document reference to this document
-        userDocRef = userRef.document(uid);
-
-
-        Log.e("asdf2", "test");
-        // Create the inner collection for events
-        userEventRef = userDocRef.collection("events");
-
-        // Create empty data to force creation of the document
-        HashMap<String, String> emptyData = new HashMap<>();
-
-        // Add the documents
-        userEventRef.document("checkedin").set(emptyData);
-        userEventRef.document("created").set(emptyData);
-        userEventRef.document("signedup").set(emptyData);
-
-        // Notify complete
-        listener.onDataLoaded(this);
+        // Data is current
+        dataIsCurrent = true;
     }
 
     /**
      * Creates an instance of the new user class given a UID.
      * Loads the data from the database
      *
-     * @param userID   The UID of the user to find in the database
-     * @param listener Listener for checking when file transfer is complete
+     * @param userID The UID of the user to find in the database
      */
-    public User(String userID, DataLoadedListener listener) {
-        // Initialize database
-        InitDatabase();
+    public User(String userID) {
+        // Create a reference to the users database
+        database = new FirebaseAccess(FirestoreAccessType.USERS);
 
-        // Create array list
-        announcementsList = new ArrayList<>();
+        // Load the user from the database
+        // Store data in the class
+        this.updateUserFromDatabase().thenAccept(result -> {
+            // The data is current
+            dataIsCurrent = true;
+        });
 
-        // Set the document ID
-        uid = userID;
-        userDocRef = userRef.document(uid);
 
-        // Set the events document id
-        userEventRef = userDocRef.collection("events");
+    }
 
-        // Set the fields of the class
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                UpdateAllDataFields(listener);
-                ;
-            }
-        }).start();
+    /**
+     * Stores the received Firestore data in the class
+     *
+     * @param data The Firestore data
+     */
+    public void parseFirestoreData(Map<String, Object> data) {
+        // Store the data in the class
+        this.address = (String) data.get("address");
+        this.birthday = (Date) data.get("birthday");
+        this.email = (String) data.get("email");
+        this.homepage = (String) data.get("homepage");
+        this.name = (String) data.get("name");
+        this.nickname = (String) data.get("nickname");
+        this.phone = (String) data.get("phone");
+        this.fid = (String) data.get("fid");
 
     }
 
 
     /**
-     * Updates all fields in the class
-     * Needs to be called before getting any data
+     * Updates the user from the database
      *
-     * @param listener Listener for checking when data transfer is complete
+     * @return A completable future for waiting for data to be received
      */
-    public void UpdateAllDataFields(DataLoadedListener listener) {
-        // Get the data in the document
-        userDocRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        // Get the data from the query - there should only be 1 document
-                        Map<String, Object> data = document.getData();
+    public CompletableFuture<Void> updateUserFromDatabase() {
+        // Create the future to return
+        CompletableFuture<Void> future = new CompletableFuture<>();
 
-                        // Get Single element fields
-                        assert data != null;
-                        address = (String) data.get("address");
-                        Object birthdayObject = data.get("birthday");
-                        if (birthdayObject instanceof Timestamp) {
-                            birthday = ((Timestamp) birthdayObject).toDate();
-                        } else {
-                            // Handle the case where birthday is null or not a Timestamp. You could set a default value or leave it as null
-                            birthday = null; // or set a default date if appropriate
-                        }
-                        email = (String) data.get("email");
-                        homepage = (String) data.get("homepage");
-                        name = (String) data.get("name");
-                        nickname = (String) data.get("nickname");
-                        phone = (String) data.get("phone");
-                        imageUID = (String) data.get("profileImage");
-                        fid = (String) data.get("fid");
+        // Check if the data is already current
+        if (!dataIsCurrent) {
+            // Get the data from firestore
+            database.getDataFromFirestore(this.uid).thenAccept(data -> {
+                // Load into the class
+                parseFirestoreData(data);
 
-                        // Load the announcements
-                        // ChatGPT: How do I load an array list from firebase
-                        try {
-                            List<Object> rawList = (List<Object>) data.get("announcements");
-                            Log.d("Firebase", "Array list loading");
+                // Get the profile picture
+                if (this.profileImageUID == null) {
+                    // No image was ever uploaded, just set it to null
+                    this.profileImage = null;
 
-                            // Convert each element a string
-                            if (rawList != null) {
-                                for (Object item : rawList) {
-                                    if (item instanceof String) {
-                                        announcementsList.add((String) item);
-                                    }
-                                }
-                            }
-                        } catch (ClassCastException e) {
-                            Log.d("Firebase", "Array list loading failed");
-                        }
+                    // Complete the future
+                    future.complete(null);
 
-
-                        // Inform complete
-                        Log.d("Firebase", "Data Loaded");
-                        listener.onDataLoaded();
-
-                    } else {
-                        Log.d("Firebase", "No such document");
-                    }
+                    // Data is current
+                    dataIsCurrent = true;
                 } else {
-                    Log.d("Firebase Failure", "get failed with ", task.getException());
+                    // Get the image from firebase
+                    database.getImageFromFirestore(this.uid, ImageType.profilePictures).thenAccept(imageData -> {
+                        // Store in the class
+                        this.profileImage = (Bitmap) imageData.get("image");
+
+                        // Complete the future
+                        future.complete(null);
+
+                        // Data is current
+                        dataIsCurrent = true;
+                    });
                 }
-            }
-        });
+            });
+        } else {
+            // Data is current, just complete the future
+            future.complete(null);
+        }
+
+        // Return the future
+        return future;
     }
 
+    /*
+        Getters
+     */
+
+    /**
+     * Gets the UID for the user
+     *
+     * @return The UID of the user
+     */
+    public String getUid() {
+        return uid;
+    }
+
+
+    /**
+     * Gets the address of the user
+     *
+     * @return The address of the user
+     */
+    public CompletableFuture<String> getAddress() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.address);
+        });
+
+        // Return the future
+        return future;
+    }
 
     /**
      * Updates the user's address
@@ -367,7 +257,28 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("address", this.address);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the birthday of the user
+     *
+     * @return The birthday of the user
+     */
+    public CompletableFuture<Date> getBirthday() {
+        // Create a future to return
+        CompletableFuture<Date> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.birthday);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -382,7 +293,28 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("birthday", this.birthday);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the email of the user
+     *
+     * @return The email of the user
+     */
+    public CompletableFuture<String> getEmail() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.email);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -397,7 +329,28 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("email", this.email);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the homepage of the user
+     *
+     * @return The homepage of the user
+     */
+    public CompletableFuture<String> getHomepage() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.homepage);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -412,7 +365,28 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("homepage", this.homepage);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the name of the user
+     *
+     * @return The name of the user
+     */
+    public CompletableFuture<String> getName() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.name);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -427,7 +401,33 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("name", this.name);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+
+    /*
+        Setters
+     */
+
+    /**
+     * Gets the nickname of the user
+     *
+     * @return The nickname of the user
+     */
+    public CompletableFuture<String> getNickname() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.nickname);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -442,7 +442,85 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("nickname", this.nickname);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the image string of the user
+     *
+     * @return The image string of the user
+     */
+    public CompletableFuture<String> getProfileImageUID() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.profileImageUID);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Gets the FID of the user
+     *
+     * @return The FID of the user
+     */
+    public CompletableFuture<String> getFID() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.fid);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Updates the user's FID
+     *
+     * @param fid The fid of the installation
+     */
+    public void setFID(String fid) {
+        // Update in the class
+        this.fid = fid;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("fid", this.fid);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the phone number of the user
+     *
+     * @return The phone number of the user
+     */
+    public CompletableFuture<String> getPhone() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.phone);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -457,26 +535,29 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("phone", this.phone);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
     }
 
     /**
-     * Updates the user's FID
-     *
-     * @param fid The fid of the installation
+     * Gets the users profile image from the database.
+     * The Bitmap profile image is passed out through the future
      */
-    public void setFid(String fid) {
-        // Update in the class
-        this.fid = fid;
+    public CompletableFuture<Bitmap> getProfileImage() {
+        // Create a future to return
+        CompletableFuture<Bitmap> future = new CompletableFuture<>();
 
-        // Update in database
-        HashMap<String, Object> data = new HashMap<>();
-        data.put("fid", this.fid);
-        userDocRef.update(data);
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.profileImage);
+        });
+
+        // Return the future
+        return future;
+
     }
-
-
-    // ChatGPT: How can you upload an image to firebase?
 
     /**
      * Sets the user's profile image in the database
@@ -484,180 +565,42 @@ public class User {
      * @param profileImage The image to store as a bitmap
      */
     public void setProfileImage(Bitmap profileImage) {
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.e("Firebase Storage", "Invalid imageUID, cannot upload image.");
-            return;
-        }
-        // Convert the bitmap to PNG for upload
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        profileImage.compress(Bitmap.CompressFormat.PNG, 100, baos);
-        byte[] data = baos.toByteArray();
+        // Update in the class
+        this.profileImage = profileImage;
 
-        // Upload the image to firebase
-        UploadTask uploadTask = storageRef.child(imageUID).putBytes(data);
-        uploadTask.addOnSuccessListener(taskSnapshot -> {
-            Log.d("Firebase Storage", "Image upload successful");
-        }).addOnFailureListener(exception -> {
-            Log.d("Firebase Storage", "Image upload failed");
-        });
+        // Update in database
+        if (this.profileImageUID == null) {
+            this.profileImageUID = database.storeImageInFirestore(this.uid, null, ImageType.profilePictures, profileImage);
+        } else {
+            database.storeImageInFirestore(this.uid, this.profileImageUID, ImageType.profilePictures, profileImage);
+        }
+
     }
-    // ChatGPT: How can you delete an image to firebase storage?
+
+
+    /*
+        Deleters
+     */
 
     /**
      * Deletes the user's profile image in the database
      */
     public void deleteProfileImage() {
         // Check if there is an image to delete
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.d("Firebase Storage", "No image to delete.");
+        if (profileImageUID == null || profileImageUID.isEmpty()) {
+            Log.d("User", "No image to delete!");
             return;
         }
 
-        // Delete the image from Firebase Storage
-        StorageReference fileRef = storageRef.child(imageUID);
-        fileRef.delete().addOnSuccessListener(aVoid -> {
-            Log.d("Firebase Storage", "Image successfully deleted");
-        }).addOnFailureListener(e -> {
-            Log.d("Firebase Storage", "Error deleting image", e);
-        });
+        // Set the image to null
+        this.profileImage = null;
+
+        // Delete the image from the database
+        database.deleteImageFromFirestore(this.uid, this.profileImageUID, ImageType.profilePictures);
+
+        // Set the image UID to null
+        this.profileImageUID = null;
     }
-
-    /**
-     * Gets the UID for the user
-     *
-     * @return The UID of the user
-     */
-    public String getUid() {
-//        this.UpdateAllDataFields();
-        return uid;
-    }
-
-    /**
-     * Gets the address of the user
-     *
-     * @return The address of the user
-     */
-    public String getAddress() {
-//        this.UpdateAllDataFields();
-        return address;
-    }
-
-    /**
-     * Gets the birthday of the user
-     *
-     * @return The birthday of the user
-     */
-    public Date getBirthday() {
-//        this.UpdateAllDataFields();
-        return birthday;
-    }
-
-    /**
-     * Gets the email of the user
-     *
-     * @return The email of the user
-     */
-    public String getEmail() {
-//        this.UpdateAllDataFields();
-        return email;
-    }
-
-    /**
-     * Gets the homepage of the user
-     *
-     * @return The homepage of the user
-     */
-    public String getHomepage() {
-//        this.UpdateAllDataFields();
-        return homepage;
-    }
-
-    /**
-     * Gets the name of the user
-     *
-     * @return The name of the user
-     */
-    public String getName() {
-//        this.UpdateAllDataFields();
-        return name;
-    }
-
-    /**
-     * Gets the nickname of the user
-     *
-     * @return The nickname of the user
-     */
-    public String getNickname() {
-//        this.UpdateAllDataFields();
-        return nickname;
-    }
-
-    /**
-     * Gets the phone number of the user
-     *
-     * @return The phone number of the user
-     */
-    public String getPhone() {
-//        this.UpdateAllDataFields();
-        return phone;
-    }
-
-    /**
-     * Gets the image string of the user
-     *
-     * @return The image string of the user
-     */
-    public String getImageUID() {
-        return imageUID;
-    }
-
-
-    /**
-     * Gets the FID of the user
-     *
-     * @return The FID of the user
-     */
-    public String getFid() {
-//        this.UpdateAllDataFields();
-        return fid;
-    }
-
-
-    // ChatGPT: Now i want to do the reverse and load the image and convert it back to a bitmap
-
-    /**
-     * Gets the users profile image from the database.
-     * The Bitmap profile image is passed out through the listener
-     * @param listener The listener to to see when data transfer is finished
-     */
-    public void getProfileImage(OnBitmapReceivedListener listener) {
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.d("User", "No imageUID available for user: " + uid);
-            // Call the listener with a null or default bitmap
-            listener.onBitmapReceived(null); // or pass a default Bitmap
-            return;
-        }
-
-        StorageReference profileImageRef = storageRef.child(imageUID);
-        final long ONE_MEGABYTE = 1024 * 1024;
-        profileImageRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(bytes -> {
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            listener.onBitmapReceived(bitmap);
-        }).addOnFailureListener(e -> {
-            Log.e("User", "Failed to load profile image for user: " + uid, e);
-            listener.onBitmapReceived(null); // or pass a default Bitmap on failure
-        });
-    }
-
-    /**
-     * Gets the array list containing the announcements
-     *
-     * @return The announcements array list
-     */
-    public ArrayList<String> getAnnouncementsList() {
-        return announcementsList;
-    }
-
 
     /**
      * Checks a user into the specified event.
@@ -666,46 +609,55 @@ public class User {
      * @param eventID The UID of the event
      */
     public void checkIn(String eventID) {
-        // Check to see if the user has checked in before
-        DocumentReference checkInRef = userEventRef.document("checkedin");
-        checkInRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                DocumentSnapshot document = task.getResult();
-                // Check if document exists
-                if (document.exists()) {
-                    // Check if this event is already there, if it is, increment that count
-                    if (document.get(eventID) != null) {
-                        // Get the field in the map
-                        String countField = eventID + ".count";
+        // Check to see if the user has checked in already
+        database.getDataFromFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID).thenAccept(data -> {
+            // If there is no data create a new one
+            if (data == null) {
+                // Create a map for the new event data
+                HashMap<String, Object> eventInfo = new HashMap<>();
 
-                        // Update the count
-                        checkInRef.update(countField, FieldValue.increment(1));
+                // Add the data to the internal map
+                int count = 1;
+                eventInfo.put("count", count);
+                eventInfo.put("date-time", new Date());
+                eventInfo.put("location", new GeoPoint(0, 0));
 
-                    } else {
-                        // Event does not already exist, make a new event
-                        HashMap<String, Object> data = new HashMap<>();
-                        HashMap<String, Object> internalMap = new HashMap<>();
+                // Store the data into firestore
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, eventInfo);
+            } else {
+                // Just update the count
+                long count = (long) data.get("count");
+                data.put("count", count + 1);
 
-                        // Add the data to the internal map
-                        internalMap.put("count", 1);
-                        internalMap.put("date-time", new Date());
-                        internalMap.put("location", new GeoPoint(0, 0));
-
-                        // Add the map to the document
-                        data.put(eventID, internalMap);
-                        checkInRef.update(data);
-                    }
-
-                    // Subscribe the user to notifications
-                    FirebaseMessaging.getInstance().subscribeToTopic(eventID);
-
-                } else {
-                    Log.d("Firebase Check In", "No such document");
-                }
+                // Write the new data back
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
 
             }
+
+            // Sign the user up for notifications for the event
+            FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+        });
+    }
+
+    /**
+     * Deletes the current user from the database
+     * @return A future for waiting for the operation to complete
+     */
+    public CompletableFuture<Void> deleteUser() {
+        // Create the future to return
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        // Delete their profile picture
+        if (profileImageUID != null) {
+            this.deleteProfileImage();
+        }
+
+        // Then delete the user from the database
+        database.deleteDataFromFirestore(this.uid).thenAccept(result -> {
+            future.complete(null);
         });
 
+        // Return the future
+        return future;
     }
 }
