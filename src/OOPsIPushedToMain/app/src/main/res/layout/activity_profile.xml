@@ -2,71 +2,70 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#FFFFFFFF">
+    android:layout_height="match_parent">
 
-    <ScrollView
-        android:id="@+id/scrollViewProfile"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/profileContentLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="15sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        android:padding="10dp">
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Profile Image -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/profileImageView"
+            android:layout_width="125dp"
+            android:layout_height="125dp"
+            android:padding="3sp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/default_image"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:shapeAppearanceOverlay="@style/CircularShape"
+            app:strokeColor="?attr/colorAccent"
+            app:strokeWidth="5sp" />
+
+        <!-- Name TextView -->
+        <TextView
+            android:id="@+id/nameTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="20dp"
+            android:hint="Enter your name"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/profileImageView"
+            app:layout_constraintTop_toTopOf="@id/profileImageView" />
+
+        <!-- Nickname TextView -->
+        <TextView
+            android:id="@+id/nicknameTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Enter your nickname"
+            app:layout_constraintStart_toStartOf="@id/nameTextView"
+            app:layout_constraintTop_toBottomOf="@id/nameTextView" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/profileContentLayout"
+            android:id="@+id/info_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <!-- Profile Image -->
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/profileImageView"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/default_image"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:shapeAppearanceOverlay="@style/CircularShape" />
-
-            <!-- Name TextView -->
-            <TextView
-                android:id="@+id/nameTextView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:hint="Enter your name"
-                android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/profileImageView"
-                app:layout_constraintTop_toTopOf="@id/profileImageView" />
-
-            <!-- Nickname TextView -->
-            <TextView
-                android:id="@+id/nicknameTextView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:hint="Enter your nickname"
-                app:layout_constraintStart_toStartOf="@id/nameTextView"
-                app:layout_constraintTop_toBottomOf="@id/nameTextView" />
+            android:layout_height="wrap_content"
+            android:layout_margin="15sp"
+            android:background="?attr/backgroundTint"
+            android:padding="5sp"
+            app:layout_constraintTop_toBottomOf="@id/profileImageView">
 
             <!-- Birthday Label & Value -->
             <TextView
                 android:id="@+id/birthdayLabelTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:text="Birthday:"
-                app:layout_constraintBottom_toTopOf="@id/homepageLabelTextView"
-                app:layout_constraintStart_toStartOf="@id/profileImageView"
-                app:layout_constraintTop_toBottomOf="@id/profileImageView" />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/birthdayValueTextView"
@@ -108,8 +107,6 @@
                 app:layout_constraintStart_toStartOf="@id/homepageLabelTextView"
                 app:layout_constraintTop_toBottomOf="@id/homepageValueTextView" />
 
-            <!-- Phone Number Label & Value -->
-
             <TextView
                 android:id="@+id/addressValueTextView"
                 android:layout_width="0dp"
@@ -119,6 +116,7 @@
                 app:layout_constraintBottom_toBottomOf="@+id/addressLabelTextView"
                 app:layout_constraintStart_toEndOf="@+id/addressLabelTextView" />
 
+            <!-- Phone Number Label & Value -->
             <TextView
                 android:id="@+id/phoneNumberLabelTextView"
                 android:layout_width="wrap_content"
@@ -127,7 +125,6 @@
                 app:layout_constraintStart_toStartOf="@id/addressLabelTextView"
                 app:layout_constraintTop_toBottomOf="@id/addressLabelTextView" />
 
-            <!-- Email Label & Value -->
 
             <TextView
                 android:id="@+id/phoneNumberValueTextView"
@@ -139,6 +136,7 @@
                 app:layout_constraintTop_toTopOf="@+id/phoneNumberLabelTextView"
                 tools:layout_constraintTop_toTopOf="@id/phoneNumberLabelTextView" />
 
+            <!-- Email Label & Value -->
             <TextView
                 android:id="@+id/emailLabelTextView"
                 android:layout_width="wrap_content"
@@ -156,47 +154,61 @@
                 app:layout_constraintStart_toEndOf="@+id/emailLabelTextView"
                 app:layout_constraintTop_toTopOf="@+id/emailLabelTextView" />
 
-            <Button
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <Switch
+            android:id="@+id/toggleGeolocationSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="15sp"
+            android:text="Toggle Geolocation          "
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/info_container" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/button_container"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="35sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/toggleGeolocationSwitch">
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/eventsButton"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:text="Events"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/emailLabelTextView" />
+                app:layout_constraintTop_toTopOf="parent" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/scanQRCodeButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Scan QR Code for Check-In"
-                app:layout_constraintEnd_toEndOf="@id/eventsButton"
-                app:layout_constraintStart_toStartOf="@id/eventsButton"
+                android:text="Scan QR Code"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/eventsButton" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/adminButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Admin"
-                app:layout_constraintEnd_toEndOf="@id/scanQRCodeButton"
-                app:layout_constraintStart_toStartOf="@id/scanQRCodeButton"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/scanQRCodeButton" />
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/toggleGeolocationSwitch"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginTop="16dp"
-                android:text="Toggle Geolocation"
-                app:layout_constraintEnd_toEndOf="@id/adminButton"
-                app:layout_constraintStart_toStartOf="@id/adminButton"
-                app:layout_constraintTop_toBottomOf="@id/adminButton" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </ScrollView>
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

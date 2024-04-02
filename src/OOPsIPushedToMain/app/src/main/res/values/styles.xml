@@ -4,5 +4,10 @@
     <style name="CircularShape">
         <item name="cornerSize">50%</item>
     </style>
+
+    <!-- Style for a rounded corner ShapeableImageView -->
+    <style name="RoundedCorner">
+        <item name="cornerSize">25%</item>
+    </style>
 </resources>
 

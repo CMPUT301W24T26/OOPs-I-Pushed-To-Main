@@ -16,7 +16,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
 
 import java.util.ArrayList;
 
@@ -48,6 +51,15 @@ public class EventListActivity extends AppCompatActivity {
     private ArrayAdapter<Event> eventAdapter;
 
     /**
+     * The UID of the user
+     */
+    private String userId;
+
+    private FirebaseAccess firebaseAccess;
+
+    private Button eventCreateButton, eventSortButton;
+
+    /**
      * Initializes the parameters of the class
      *
      * @param savedInstanceState If the activity is being re-initialized after
@@ -58,10 +70,20 @@ public class EventListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_list);
+        eventCreateButton = findViewById(R.id.create_event_button);
+        eventSortButton = findViewById(R.id.sort_events_button);
+
+        // Retrieve the userId passed from ProfileActivity
+        Intent intent = getIntent();
+        if (intent != null) {
+            userId = intent.getStringExtra("userId");
+        }
 
         initializeViews();
-
         setupListeners();
+
+        firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        fetchEvents();
     }
 
     /**
@@ -79,40 +101,36 @@ public class EventListActivity extends AppCompatActivity {
      */
     private void setupListeners() {
         // Create Event button functionality
-        Button createEventButton = findViewById(R.id.create_event_button);
-        createEventButton.setOnClickListener(new View.OnClickListener() {
+        eventCreateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Intent to navigate to the event creation activity
                 Intent intent = new Intent(EventListActivity.this, NewEventActivity.class);
+                intent.putExtra("userId", userId); // Assuming userId is the ID of the current user
                 startActivity(intent);
             }
         });
 
         // Sort Events button functionality
-        Button sortButton = findViewById(R.id.sort_events_button);
-        sortButton.setOnClickListener(new View.OnClickListener() {
+        eventSortButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 PopupMenu popup = new PopupMenu(EventListActivity.this, v);
-                // Inflate the popup menu from a menu resource
                 popup.getMenuInflater().inflate(R.menu.event_sort_menu, popup.getMenu());
-                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    public boolean onMenuItemClick(MenuItem item) {
-                        // Handle menu item clicks here
-                        int itemId = item.getItemId();
-                        if (itemId == R.id.sort_by_all_events) {
-                            // TODO: Handle sorting given the users corrsponding events
-                        } else if (itemId == R.id.sort_by_signed_up) {
-
-                        } else if (itemId == R.id.sort_by_user_event) {
-
-                        }
-                        // Optionally, update your ListView adapter to reflect the sorting
-                        return true;
+                popup.setOnMenuItemClickListener(item -> {
+                    int itemId = item.getItemId();
+                    if (itemId == R.id.sort_by_all_events) {
+                        fetchEvents();
+                    } else if (itemId == R.id.sort_by_signed_up) {
+                        fetchSignedUpEvents(userId);
+                    } else if (itemId == R.id.sort_by_user_event) {
+                        fetchUserCreatedEvents(userId);
+                    } else if (itemId == R.id.sort_by_date) {
+                        fetchEventsSortedByDate();
                     }
+                    return true;
                 });
-                popup.show(); // Show the popup menu
+                popup.show();
             }
         });
 
@@ -128,6 +146,7 @@ public class EventListActivity extends AppCompatActivity {
 
                     Intent intent = new Intent(EventListActivity.this, EventDetailsActivity.class);
                     intent.putExtra("selectedEvent", selectedEvent);
+                    intent.putExtra("userId", userId); // Assuming userId is the ID of the current user
                     startActivity(intent);
                 } else {
                     Log.e("EventListActivity", "The event or event ID is null.");
@@ -142,7 +161,18 @@ public class EventListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
+        FirestoreEventUtils.getAllEvents(events -> {
+            eventDataList.clear();
+            eventDataList.addAll(events);
+            runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
+        });
+
+
+
+        /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 eventDataList.clear();
@@ -158,8 +188,75 @@ public class EventListActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(EventListActivity.this, "Error getting events", Toast.LENGTH_SHORT).show();
             }
+        });*/
+    }
+
+    private void fetchEvents() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("events").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                eventDataList.clear();
+                for (DocumentSnapshot documentSnapshot : task.getResult()) {
+                    Event event = documentSnapshot.toObject(Event.class);
+                    eventDataList.add(event);
+                }
+                eventAdapter.notifyDataSetChanged();
+            } else {
+                Log.e("EventListActivity", "Error getting events", task.getException());
+            }
         });
+
     }
 
 
+    private void fetchEventsSortedByDate() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("events").orderBy("startTime", Query.Direction.ASCENDING).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                eventDataList.clear();
+                for (DocumentSnapshot documentSnapshot : task.getResult()) {
+                    Event event = documentSnapshot.toObject(Event.class);
+                    eventDataList.add(event);
+                }
+                eventAdapter.notifyDataSetChanged();
+            } else {
+                Log.e("EventListActivity", "Error getting sorted events", task.getException());
+            }
+        });
+
+    }
+
+    private void fetchSignedUpEvents(String userId) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("events").whereArrayContains("signedUpAttendees", userId)
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        eventDataList.clear();
+                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                            Event event = documentSnapshot.toObject(Event.class);
+                            eventDataList.add(event);
+                        }
+                        eventAdapter.notifyDataSetChanged();
+                    } else {
+                        Log.e("EventListActivity", "Error getting signed up events", task.getException());
+                    }
+                });
+    }
+
+    private void fetchUserCreatedEvents(String userId) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("events").whereEqualTo("creatorId", userId)
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        eventDataList.clear();
+                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                            Event event = documentSnapshot.toObject(Event.class);
+                            eventDataList.add(event);
+                        }
+                        eventAdapter.notifyDataSetChanged();
+                    } else {
+                        Log.e("EventListActivity", "Error getting user created events", task.getException());
+                    }
+                });
+    }
 }
