@@ -134,7 +134,10 @@ public class EventDetailsActivity extends AppCompatActivity {
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
         event = null;
         try {
-            event = (Event) firebaseAccess.getDataFromFirestore(eventID).get().get(eventID);
+            firebaseAccess.getDataFromFirestore(eventID).thenAccept(datalist -> {
+//                Log.d("adf", datalist.get(eventID));
+                event = (Event) datalist.get(eventID);
+            });
         } catch (Exception e) {
             Log.e("EventDetailsActivity", String.valueOf(e));
         }
