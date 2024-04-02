@@ -28,6 +28,7 @@ import org.osmdroid.views.overlay.Marker;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class MapActivity extends AppCompatActivity{
     private final int REQUEST_PERMISSIONS_REQUEST_CODE = 1;
@@ -73,7 +74,11 @@ public class MapActivity extends AppCompatActivity{
 
         eventId = getIntent().getStringExtra("eventId");
         db = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        setMarkers();
+        try {
+            setMarkers();
+        } catch (Exception e) {
+            Log.e(TAG, String.valueOf(e));
+        }
     }
 
     @Override
@@ -125,12 +130,12 @@ public class MapActivity extends AppCompatActivity{
         }
     }
 
-    private void setMarkers() {
-//        ArrayList<Map<String, Object>> markers = db.getAllDocuments(eventId, FirebaseInnerCollection.checkInCoords);
-//        Log.d(TAG, "obtained markers");
-//        for (Map<String, Object> marker : markers) {
-//            Log.d(TAG, (String) marker.get("coord"));
-//        }
+    private void setMarkers() throws ExecutionException, InterruptedException {
+        ArrayList<Map<String, Object>> markers = db.getAllDocuments(eventId, FirebaseInnerCollection.checkInCoords).get();
+        Log.d(TAG, "obtained markers");
+        for (Map<String, Object> marker : markers) {
+            Log.d(TAG, (String) marker.get("coord"));
+        }
         GeoPoint startPoint = new GeoPoint(53.5263054,-113.529379);
         Marker startMarker = new Marker(map);
         startMarker.setPosition(startPoint);
