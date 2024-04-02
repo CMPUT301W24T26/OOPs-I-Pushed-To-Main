@@ -377,9 +377,28 @@ public class FirebaseAccess implements Serializable {
             // Store the data
             Task<Void> task = null;
             if (innerCollName != null && finalInnerDocName != null) {
-                docRef.collection(innerCollName.name()).document(finalInnerDocName).set(data);
+                task = docRef.collection(innerCollName.name()).document(finalInnerDocName).set(data);
             } else {
-                docRef.set(data);
+                task = docRef.set(data);
+            }
+
+            // Convert the task to a CompletableFuture
+            CompletableFuture<Void> future = toCompletableFuture(task);
+
+            // Get the output
+            try {
+                // Block until data is retrieved
+                future.get();
+                Log.d("GetFromFirestore", "Data has been saved");
+            } catch (InterruptedException e) {
+                // Handle the interrupted exception
+                Thread.currentThread().interrupt();
+                Log.e("GetFromFirestore", "Task was interrupted: " + e.getMessage());
+                return null;
+            } catch (ExecutionException e) {
+                // Handle any other exception
+                Log.e("GetFromFirestore", "Error retrieving document: " + Objects.requireNonNull(e.getCause()).getMessage());
+                return null;
             }
 
             return null;
@@ -387,6 +406,7 @@ public class FirebaseAccess implements Serializable {
 
         // Map to return
         Map<String, Object> outData = new HashMap<>();
+
         // Execute the store
         outData.put("future", callableToCompletableFuture(firestoreTask));
 

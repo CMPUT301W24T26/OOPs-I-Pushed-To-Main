@@ -259,6 +259,15 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
      */
     private void updateUIElements() {
 
+        user.getName().thenAccept(name -> {
+            runOnUiThread(() -> {
+                if (name != null) {
+                    nameValue.setText(name);
+                }
+            });
+        });
+
+
         // Get the data from user
         // I do not like this code, but it works
         user.getName().thenAccept(name -> {

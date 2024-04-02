@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
                     // Aync move to the new activity
                     User.createNewObject().thenAccept(newUser -> {
                         user = newUser;
-                        newUser.setFID(fid);
+                        user.setFID(fid);
                         registerFID(fid);
                     });
 
