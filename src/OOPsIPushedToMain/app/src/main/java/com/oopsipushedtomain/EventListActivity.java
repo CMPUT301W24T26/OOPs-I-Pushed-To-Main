@@ -140,12 +140,12 @@ public class EventListActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // Assuming the adapter is populated with Event objects, you can cast directly to Event
                 Event selectedEvent = (Event) parent.getItemAtPosition(position);
-                if (selectedEvent != null && selectedEvent.getEventId() != null) {
+                if (selectedEvent != null) {// && selectedEvent.getEventId() != null) {
                     String eventId = selectedEvent.getEventId();
                     Log.d("EventListActivity", "Clicked event ID: " + eventId);
 
                     Intent intent = new Intent(EventListActivity.this, EventDetailsActivity.class);
-                    intent.putExtra("selectedEvent", selectedEvent);
+                    intent.putExtra("selectedEventId", selectedEvent.getEventId());
                     intent.putExtra("userId", userId); // Assuming userId is the ID of the current user
                     startActivity(intent);
                 } else {

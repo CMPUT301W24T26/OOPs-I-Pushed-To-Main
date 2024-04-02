@@ -16,6 +16,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.oopsipushedtomain.Event;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +39,7 @@ import java.util.concurrent.Future;
  * @see FirestoreAccessType
  * @see ImageType
  */
-public class FirebaseAccess {
+public class FirebaseAccess implements Serializable {
 
     /**
      * A reference to the collection

@@ -31,6 +31,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * EventDetailsActivity allows organizers to view and edit details of an event.
@@ -88,6 +89,11 @@ public class EventDetailsActivity extends AppCompatActivity {
     private String eventID;
 
     /**
+     * Event
+     */
+    private Event event;
+
+    /**
      * Initializes the class with all parameters
      *
      * @param savedInstanceState If the activity is being re-initialized after
@@ -123,8 +129,15 @@ public class EventDetailsActivity extends AppCompatActivity {
             userId = intent_a.getStringExtra("userId");
         }
 
-
-        Event event = (Event) getIntent().getSerializableExtra("selectedEvent");
+        eventID = getIntent().getStringExtra("selectedEventId");
+        Log.d("EventDetailsActivity", eventID);
+        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        event = null;
+        try {
+            event = (Event) firebaseAccess.getDataFromFirestore(eventID).get().get(eventID);
+        } catch (Exception e) {
+            Log.e("EventDetailsActivity", String.valueOf(e));
+        }
         if (event != null) {
             // Set the text for the TextViews with event details
             eventTitleEdit.setText(event.getTitle());
