@@ -24,8 +24,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
 
-import com.google.firebase.encoders.ObjectEncoder;
-import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
@@ -37,7 +35,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 /**
  * Activity for displaying and editing an attendee's profile.
@@ -102,11 +99,9 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                     ((ImageView)profileImageView).setImageBitmap(photo);
                     // Upload the image to storage
                     // TODO: un-hardcode userID
-                    user = new User("USER-9DRH1BAQZQMGZJEZFMGL", new User.DataLoadedListener() {
-                        @Override
-                        public void onDataLoaded() {
-                            user.setProfileImage(photo);
-                        }
+                    User.createNewObject("USER-9DRH1BAQZQMGZJEZFMGL").thenAccept(newUser -> {
+                        user = newUser;
+                        user.setProfileImage(photo);
                     });
                 }
             }
@@ -130,11 +125,9 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                     ((ImageView) profileImageView).setImageURI(result);
                     // Upload the image to storage
                     // TODO: un-hardcode userID
-                    user = new User("USER-9DRH1BAQZQMGZJEZFMGL", new User.DataLoadedListener() {
-                        @Override
-                        public void onDataLoaded() {
-                            user.setProfileImage(picture);
-                        }
+                    User.createNewObject("USER-9DRH1BAQZQMGZJEZFMGL").thenAccept(newUser -> {
+                        user = newUser;
+                        user.setProfileImage(picture);
                     });
                 }
             }
@@ -153,22 +146,28 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         setContentView(R.layout.activity_profile);
 
         // Load the information about the given user
-        userId = getIntent().getStringExtra("userId");
-        user = new User(userId, new User.DataLoadedListener() {
-            @Override
-            public void onDataLoaded() {
-                // Initialize the UI elements and load attendee data
+        userId = getIntent().getStringExtra("userID");
+
+        // Create the new user Asyc
+        User.createNewObject(userId).thenAccept(newUser -> {
+            runOnUiThread(() -> {
+                // Assign the user user
+                user = newUser;
+
                 initializeViews();
-            }
+
+                CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
+
+                // Initialize UI elements and load attendee data
+                initializeViews();
+
+                // Setup listeners for interactive elements
+                setupListeners();
+            });
         });
 
-        CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
 
-        // Initialize UI elements and load attendee data
-        initializeViews();
 
-        // Setup listeners for interactive elements
-        setupListeners();
 
         // Set-up ImageView and set on-click listener
         profileImageView = findViewById(R.id.profileImageView);
@@ -261,44 +260,55 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
     private void updateUIElements() {
 
         // Get the data from user
-        String name = user.getName();
-        String nickname = user.getNickname();
-        String homepage = user.getHomepage();
-        String address = user.getAddress();
-        String phone = user.getPhone();
-        String email = user.getEmail();
-        Date birthday = user.getBirthday();
+        // I do not like this code, but it works
+        user.getName().thenAccept(name -> {
+            user.getNickname().thenAccept(nickname -> {
+                user.getHomepage().thenAccept(homepage -> {
+                    user.getAddress().thenAccept(address -> {
+                       user.getPhone().thenAccept(phone -> {
+                           user.getEmail().thenAccept(email -> {
+                               user.getBirthday().thenAccept(birthday -> {
+                                   runOnUiThread(() -> {
+                                       // Update the fields
+                                       if (name != null) {
+                                           nameValue.setText(name);
+                                       }
 
-        // Update the fields
-        if (name != null) {
-            nameValue.setText(name);
-        }
+                                       if (nickname != null) {
+                                           nicknameValue.setText(nickname);
+                                       }
 
-        if (nickname != null) {
-            nicknameValue.setText(nickname);
-        }
+                                       if (birthday != null) {
+                                           // Format the date
+                                           SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                                           birthdayValue.setText(formatter.format(birthday));
+                                       }
 
-        if (birthday != null) {
-            // Format the date
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-            birthdayValue.setText(formatter.format(birthday));
-        }
+                                       if (homepage != null) {
+                                           homepageValue.setText(homepage);
+                                       }
 
-        if (homepage != null) {
-            homepageValue.setText(homepage);
-        }
+                                       if (address != null) {
+                                           addressValue.setText(address);
+                                       }
 
-        if (address != null) {
-            addressValue.setText(address);
-        }
+                                       if (phone != null) {
+                                           phoneNumberValue.setText(phone);
+                                       }
 
-        if (phone != null) {
-            phoneNumberValue.setText(phone);
-        }
+                                       if (email != null) {
+                                           emailValue.setText(email);
+                                       }
+                                   });
+                               });
+                           });
+                       });
+                    });
+                });
+            });
+        });
 
-        if (email != null) {
-            emailValue.setText(email);
-        }
+
     }
 
     /**
