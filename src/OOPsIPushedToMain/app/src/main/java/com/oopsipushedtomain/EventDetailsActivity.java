@@ -132,56 +132,51 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         eventID = getIntent().getStringExtra("selectedEventId");
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        event = null;
+        event = new Event();
         try {
-            Log.e("t", "trying to get event");
+            Log.e("EventDetailsActivity", "trying to get event");
             firebaseAccess.getDataFromFirestore(eventID).thenAccept(datalist -> {
-                Log.e("t", "event loading");
-                Log.e("x", datalist.get("UID").toString());
-//                Log.d("adf", datalist.get(eventID));
-//                event = datalist;
-//                datalist.forEach((key, value) -> Log.d("map", key + ":" + value));
-                event = new Event(
-                        datalist.get("UID").toString(),
-                        datalist.get("title").toString(),
-                        datalist.get("startTime").toString(),
-                        datalist.get("description").toString(),
-                        datalist.get("location").toString(),
-                        datalist.get("posterUrl").toString(),
-                        (int) datalist.get("attendeeLimit"),
-                        datalist.get("creatorId").toString()
-                );
-//                event = new Event();
-//                event.setEventId(datalist.get("UID").toString());
-//                event.setTitle(datalist.get("title").toString());
-//                event.setStartTime(datalist.get("startTime").toString());
-//                event.setDescription(datalist.get("description").toString());
-//                event.setLocation(datalist.get("location").toString());
-//                event.setPosterUrl(datalist.get("posterUrl").toString());
-//                event.setAttendeeLimit((int) datalist.get("attendeeLimit"));
-//                event.setCreatorId(datalist.get("creatorId").toString());
-                future.complete(event);
-                Log.e("t", "event loaded??");
+                if (datalist == null) {
+                    Log.e("EventDetailsActivity", "event is null");
+                } else {
+                    datalist.forEach((key, value) -> Log.d("map", key + ":" + value));
+//                    event = new Event(
+//                            datalist.get("UID").toString(),
+//                            datalist.get("title").toString(),
+//                            datalist.get("startTime").toString(),
+//                            datalist.get("description").toString(),
+//                            datalist.get("location").toString(),
+//                            datalist.get("posterUrl").toString(),
+//                            (int) datalist.get("attendeeLimit"),
+//                            datalist.get("creatorId").toString()
+//                    );
+//                    event = new Event();
+                    event.setEventId(datalist.get("UID").toString());
+                    event.setTitle(datalist.get("title").toString());
+                    event.setStartTime(datalist.get("startTime").toString());
+                    event.setDescription(datalist.get("description").toString());
+                    event.setLocation(datalist.get("location").toString());
+                    event.setPosterUrl(datalist.get("posterUrl").toString());
+                    event.setAttendeeLimit(Integer.valueOf(datalist.get("attendeeLimit").toString()));
+                    event.setCreatorId(datalist.get("creatorId").toString());
+
+                    // Set the text for the TextViews with event details
+                    Log.e("EventDetailsActivity", event.getTitle());
+                    runOnUiThread(() -> {
+                        eventTitleEdit.setText(event.getTitle());
+                        eventStartTimeEdit.setText(event.getStartTime());
+                        eventEndTimeEdit.setText(event.getEndTime());
+                        eventDescriptionEdit.setText(event.getDescription());
+
+                        // TODO: not currently working
+                        determineUserRole(userId, eventID, this::updateUIForRole);
+                    });
+                }
             });
-            Log.e("t", "event loaded?");
+            Log.e("EventDetailsActivity", "event loaded?");
         } catch (Exception e) {
             Log.e("EventDetailsActivity", String.valueOf(e));
         }
-        if (event != null) {
-            // Set the text for the TextViews with event details
-            eventTitleEdit.setText(event.getTitle());
-            eventStartTimeEdit.setText(event.getStartTime());
-            eventEndTimeEdit.setText(event.getEndTime());
-            eventDescriptionEdit.setText(event.getDescription());
-
-//            eventID = event.getEventId();
-
-            determineUserRole(userId, eventID, this::updateUIForRole);
-
-
-        } else Log.e("t", "event is null");
-
-
 
         eventPosterEdit.setOnClickListener(new View.OnClickListener() {
             @Override
