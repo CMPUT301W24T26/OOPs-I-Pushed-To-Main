@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
  * Methods will return futures, use .thenAccept or .thenApply to handle the output!!!
  *
  * @author Matteo Falsetti
- * @version 1.0
+ * @version 1.2
  * @see FirebaseInnerCollection
  * @see FirestoreAccessType
  * @see ImageType
