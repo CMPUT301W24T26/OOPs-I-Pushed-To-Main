@@ -36,6 +36,7 @@ public class FirestoreEventUtils {
             if (task.isSuccessful()) {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     Event event = document.toObject(Event.class);
+                    event.setEventId(document.getId());
                     events.add(event);
                 }
             } else {

@@ -22,6 +22,7 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
@@ -65,7 +66,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
     /**
      * Reference to the geo-location toggle
      */
-    private Switch toggleGeolocationSwitch;
+    private SwitchCompat toggleGeolocationSwitch;
 
     /**
      * The reference to the view of the profile image
@@ -265,44 +266,44 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
             user.getNickname().thenAccept(nickname -> {
                 user.getHomepage().thenAccept(homepage -> {
                     user.getAddress().thenAccept(address -> {
-                       user.getPhone().thenAccept(phone -> {
-                           user.getEmail().thenAccept(email -> {
-                               user.getBirthday().thenAccept(birthday -> {
-                                   runOnUiThread(() -> {
-                                       // Update the fields
-                                       if (name != null) {
-                                           nameValue.setText(name);
-                                       }
+                        user.getPhone().thenAccept(phone -> {
+                            user.getEmail().thenAccept(email -> {
+                                user.getBirthday().thenAccept(birthday -> {
+                                    runOnUiThread(() -> {
+                                        // Update the fields
+                                        if (name != null) {
+                                            nameValue.setText(name);
+                                        }
 
-                                       if (nickname != null) {
-                                           nicknameValue.setText(nickname);
-                                       }
+                                        if (nickname != null) {
+                                            nicknameValue.setText(nickname);
+                                        }
 
-                                       if (birthday != null) {
-                                           // Format the date
-                                           SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-                                           birthdayValue.setText(formatter.format(birthday));
-                                       }
+                                        if (birthday != null) {
+                                            // Format the date
+                                            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                                            birthdayValue.setText(formatter.format(birthday));
+                                        }
 
-                                       if (homepage != null) {
-                                           homepageValue.setText(homepage);
-                                       }
+                                        if (homepage != null) {
+                                            homepageValue.setText(homepage);
+                                        }
 
-                                       if (address != null) {
-                                           addressValue.setText(address);
-                                       }
+                                        if (address != null) {
+                                            addressValue.setText(address);
+                                        }
 
-                                       if (phone != null) {
-                                           phoneNumberValue.setText(phone);
-                                       }
+                                        if (phone != null) {
+                                            phoneNumberValue.setText(phone);
+                                        }
 
-                                       if (email != null) {
-                                           emailValue.setText(email);
-                                       }
-                                   });
-                               });
-                           });
-                       });
+                                        if (email != null) {
+                                            emailValue.setText(email);
+                                        }
+                                    });
+                                });
+                            });
+                        });
                     });
                 });
             });

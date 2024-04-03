@@ -9,4 +9,5 @@
     <string name="cancel">Cancel</string>
     <string name="event_title_header">Sending announcement for event:</string>
     <string name="announcements_header">Announcements</string>
+    <string name="map_header">Check-In Map</string>
 </resources>

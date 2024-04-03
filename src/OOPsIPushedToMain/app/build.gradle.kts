@@ -45,6 +45,13 @@ dependencies {
 
 //    implementation(files("C:/Users/matte/AppData/Local/Android/Sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
+    implementation(libs.androidx.preference)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation("androidx.test:core")
+    debugImplementation("androidx.fragment:fragment-testing:1.4.0")
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.4.0")
 //    testImplementation(libs.junit)
 //    androidTestImplementation(libs.ext.junit)
 //    androidTestImplementation(libs.espresso.core)
@@ -68,10 +75,11 @@ dependencies {
     // Mockito for testing
     androidTestImplementation("org.mockito:mockito-core:4.0.0")
 
+    // OpenStreetMaps
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 
     // Testing dependancies
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.androidx.espresso.intents)
-
 }
