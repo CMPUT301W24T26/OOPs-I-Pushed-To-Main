@@ -102,9 +102,9 @@ public class User {
     private String fid = null;
     /**
      * Whether the user has geolocation enabled or not
-     * Default to false for privacy reasons
+     * Default to true
      */
-    private Boolean geolocation = false;
+    private Boolean geolocation = true;
 
     /**
      * Whether the data in the class is current
@@ -154,7 +154,7 @@ public class User {
             data.put("nickname", null);
             data.put("phone", null);
             data.put("fid", null);
-            data.put("geolocation", false);  // default to false for privacy reasons
+            data.put("geolocation", true);  // default to true
 
             // Upload the data to the database
             Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);
@@ -633,8 +633,20 @@ public class User {
      * Gets the user's geolocation preference
      * @return geolocation Whether the user has geolocation enabled or disabled
      */
-    public Boolean getGeolocation() {
-        return geolocation;
+    public CompletableFuture<Boolean> getGeolocation() {
+        // Create a future to return
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.geolocation);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
