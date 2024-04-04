@@ -43,6 +43,7 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment:2.7.7")
 //    implementation(libs.glide)
 
+
 //    implementation(files("C:/Users/matte/AppData/Local/Android/Sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
     implementation(libs.androidx.preference)

@@ -81,25 +81,25 @@ public class MapActivity extends AppCompatActivity{
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        // this will refresh the osmdroid configuration on resuming.
-        // if you make changes to the configuration, use
-        // SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        // Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
-        map.onResume(); // needed for compass, my location overlays, v6.0.0 and up
-    }
+//    @Override
+//    public void onResume() {
+//        super.onResume();
+//        // this will refresh the osmdroid configuration on resuming.
+//        // if you make changes to the configuration, use
+//        // SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+//        // Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
+//        map.onResume(); // needed for compass, my location overlays, v6.0.0 and up
+//    }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        // this will refresh the osmdroid configuration on resuming.
-        // if you make changes to the configuration, use
-        // SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        // Configuration.getInstance().save(this, prefs);
-        map.onPause();  // needed for compass, my location overlays, v6.0.0 and up
-    }
+//    @Override
+//    public void onPause() {
+//        super.onPause();
+//        // this will refresh the osmdroid configuration on resuming.
+//        // if you make changes to the configuration, use
+//        // SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+//        // Configuration.getInstance().save(this, prefs);
+//        map.onPause();  // needed for compass, my location overlays, v6.0.0 and up
+//    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -131,15 +131,28 @@ public class MapActivity extends AppCompatActivity{
     }
 
     private void setMarkers() throws ExecutionException, InterruptedException {
-        ArrayList<Map<String, Object>> markers = db.getAllDocuments(eventId, FirebaseInnerCollection.checkInCoords).get();
-        Log.d(TAG, "obtained markers");
-        for (Map<String, Object> marker : markers) {
-            Log.d(TAG, (String) marker.get("coord"));
-        }
-        GeoPoint startPoint = new GeoPoint(53.5263054,-113.529379);
-        Marker startMarker = new Marker(map);
-        startMarker.setPosition(startPoint);
-        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        map.getOverlays().add(startMarker);
+        //ArrayList<Map<String, Object>> markers =
+        db.getAllDocuments(eventId, FirebaseInnerCollection.checkInCoords).thenAccept(datalist -> {
+            if (datalist == null) {
+                Log.d(TAG, "No markers found");
+            } else {
+                Log.d(TAG, "Obtained markers");
+                for (Map<String, Object> coord : datalist) {
+//                    marker.forEach((key, value) -> Log.d(TAG, key + " : " + value));
+                    com.google.firebase.firestore.GeoPoint fbGeoPoint =
+                            (com.google.firebase.firestore.GeoPoint) coord.get("marker");
+                    double lat = fbGeoPoint.getLatitude();
+                    double lon = fbGeoPoint.getLongitude();
+                    Log.d(TAG, "lat/lon " + lat + " " + lon);
+                    GeoPoint point = new GeoPoint(lat, lon);
+                    Marker marker = new Marker(map);
+                    marker.setPosition(point);
+                    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                    map.getOverlays().add(marker);
+                }
+//                runOnUiThread(() -> {
+//                });
+            }
+        });
     }
 }

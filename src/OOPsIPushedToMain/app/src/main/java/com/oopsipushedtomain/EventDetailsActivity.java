@@ -157,7 +157,7 @@ public class EventDetailsActivity extends AppCompatActivity {
                     event.setDescription(datalist.get("description").toString());
                     event.setLocation(datalist.get("location").toString());
                     event.setPosterUrl(datalist.get("posterUrl").toString());
-                    event.setAttendeeLimit(Integer.valueOf(datalist.get("attendeeLimit").toString()));
+                    event.setAttendeeLimit(Integer.parseInt(datalist.get("attendeeLimit").toString()));
                     event.setCreatorId(datalist.get("creatorId").toString());
 
                     // Set the text for the TextViews with event details
