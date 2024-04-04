@@ -15,9 +15,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,8 +30,9 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
-import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
+import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -47,7 +46,7 @@ import java.util.Map;
  * Activity for displaying and editing an attendee's profile.
  * Also sets the on click listeners for the buttons on the profile page
  */
-public class ProfileActivity extends AppCompatActivity implements EditFieldDialogFragment.EditFieldDialogListener {
+public class ProfileActivity extends AppCompatActivity{
 
     /**
      * A unique request code for getting camera permissions
@@ -184,6 +183,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
             runOnUiThread(() -> {
                 // User is created, store in the class
                 user = newUser;
+                Log.d("USER", user.getUID());
 
                 // Update the views on the new data
                 updateUIElements();
@@ -225,14 +225,165 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         /*
             Set click listeners
          */
-        // Set up the click listeners for the TextViews
-        nameValue.setOnClickListener(v -> showEditFieldDialog("Name", nameValue.getText().toString()));
-        nicknameValue.setOnClickListener(v -> showEditFieldDialog("Nickname", nicknameValue.getText().toString()));
-        birthdayValue.setOnClickListener(v -> showEditFieldDialog("Birthday", birthdayValue.getText().toString()));
-        homepageValue.setOnClickListener(v -> showEditFieldDialog("Homepage", homepageValue.getText().toString()));
-        addressValue.setOnClickListener(v -> showEditFieldDialog("Address", addressValue.getText().toString()));
-        phoneNumberValue.setOnClickListener(v -> showEditFieldDialog("Phone Number", phoneNumberValue.getText().toString()));
-        emailValue.setOnClickListener(v -> showEditFieldDialog("Email", emailValue.getText().toString()));
+        // Name
+        nameValue.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    nameValue.setText((String) input);
+                    user.setName((String) input);
+                }
+            });
+
+            // Get the name of the user
+            user.getName().thenAccept(data -> {
+                runOnUiThread(() -> {
+                    // Show the dialog
+                    textDialog.show("Edit Name", data);
+                });
+            });
+
+        });
+
+        // Nickname
+        nicknameValue.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    nicknameValue.setText((String) input);
+                    user.setNickname((String) input);
+                }
+            });
+
+            // Get the nickname of the user
+            user.getNickname().thenAccept(data -> {
+                runOnUiThread(() -> {
+                    // Show the dialog
+                    textDialog.show("Edit Nickname", data);
+                });
+            });
+
+        });
+
+        //Birthday
+        birthdayValue.setOnClickListener(v -> {
+            // This should be a date picker
+            CustomDatePickerDialog datePickerDialog = new CustomDatePickerDialog(this, input -> {
+                // Convert the input to a date
+                Date inputDate = (Date) input;
+
+                // Format the given date, ChatGPT: How do i format a string into date
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                String birthdayString = formatter.format(inputDate);
+                user.setBirthday(inputDate);
+
+                // Print the date to the screen
+                birthdayValue.setText(birthdayString);
+
+            });
+
+            // Get the nickname of the user
+            user.getBirthday().thenAccept(data -> {
+                runOnUiThread(() -> {
+                    Date defaultDate;
+                    if (data == null){
+                        defaultDate = new Date();
+                    } else
+                        defaultDate = data;
+
+                    // Show the dialog
+                    datePickerDialog.show("Edit Birthday", defaultDate);
+                });
+            });
+
+        });
+
+        // Homepage
+        homepageValue.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    homepageValue.setText((String) input);
+                    user.setHomepage((String) input);
+                }
+            });
+
+            // Get the homepage of the user
+            user.getHomepage().thenAccept(data -> {
+                runOnUiThread(() -> {
+                    // Show the dialog
+                    textDialog.show("Edit Homepage", data);
+                });
+            });
+
+        });
+
+        // Address
+        addressValue.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    addressValue.setText((String) input);
+                    user.setAddress((String) input);
+                }
+            });
+
+            // Get the address of the user
+            user.getAddress().thenAccept(data -> {
+                runOnUiThread(() -> {
+                    // Show the dialog
+                    textDialog.show("Edit Address", data);
+                });
+            });
+
+        });
+
+        // Phone number
+        phoneNumberValue.setOnClickListener(v -> {
+            // This should be a number's only
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    phoneNumberValue.setText((String) input);
+                    user.setPhone((String) input);
+                }
+            });
+
+            // Get the name of the user
+            user.getPhone().thenAccept(data -> {
+                runOnUiThread(() -> {
+                    // Show the dialog
+                    textDialog.show("Edit Phone Number", data);
+                });
+            });
+
+        });
+
+        // Email
+        emailValue.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    emailValue.setText((String) input);
+                    user.setEmail((String) input);
+                }
+            });
+
+            // Get the name of the user
+            user.getEmail().thenAccept(data -> {
+                runOnUiThread(() -> {
+                    // Show the dialog
+                    textDialog.show("Edit Email", data);
+                });
+            });
+
+        });
+
 
         // Set up click listeners for the buttons
         eventsButton.setOnClickListener(view -> {
@@ -287,7 +438,8 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                 if (birthday != null) {
                     // Format the date
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-                    birthdayValue.setText(formatter.format(birthday));
+                    String birthdayString = formatter.format(birthday);
+                    birthdayValue.setText(birthdayString);
                 }
             });
         });
@@ -303,7 +455,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         });
 
         // Update the address
-        user.getNickname().thenAccept(address -> {
+        user.getAddress().thenAccept(address -> {
             runOnUiThread(() -> {
                 // Update the fields
                 if (address != null) {
@@ -313,7 +465,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         });
 
         // Update the phone
-        user.getNickname().thenAccept(phone -> {
+        user.getPhone().thenAccept(phone -> {
             runOnUiThread(() -> {
                 // Update the fields
                 if (phone != null) {
@@ -323,7 +475,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         });
 
         // Update the email
-        user.getNickname().thenAccept(email -> {
+        user.getEmail().thenAccept(email -> {
             runOnUiThread(() -> {
                 // Update the fields
                 if (email != null) {
@@ -361,7 +513,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                                 }
 
                                 // Perform the proper action
-                                if (cameraEnabled){
+                                if (cameraEnabled) {
                                     // Open the camera
                                     Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                                     cameraResultLauncher.launch(cameraIntent);
@@ -438,75 +590,10 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         }
     }
 
-
-    /**
-     * Handles the positive click action from the edit field dialog.
-     * Updates the corresponding profile field with the new value entered by the user.
-     *
-     * @param dialog     The dialog that was clicked on
-     * @param fieldName  The field name that was clicked on
-     * @param fieldValue The value of the dialog
-     */
-    @Override
-    public void onDialogPositiveClick(DialogFragment dialog, String fieldName, String
-            fieldValue) {
-
-        // Update the corresponding field in your UI based on fieldName
-        Map<String, Object> update = new HashMap<>();
-        switch (fieldName) {
-            case "Name":
-                nameValue.setText(fieldValue);
-                user.setName(fieldValue);
-                break;
-            case "Nickname":
-                nicknameValue.setText(fieldValue);
-                user.setNickname(fieldValue);
-                break;
-            case "Birthday":
-                birthdayValue.setText(fieldValue);
-
-                // Format the given date, ChatGPT: How do i format a string into date
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-                try {
-                    Date birthday = formatter.parse(fieldValue);
-                    user.setBirthday(birthday);
-                } catch (ParseException e) {
-                    Log.d("ProfileActivity", "Date formatting failed");
-                }
-                break;
-            case "Homepage":
-                homepageValue.setText(fieldValue); // Corrected to update homepageTextView
-                user.setHomepage(fieldValue);
-                break;
-            case "Address":
-                addressValue.setText(fieldValue); // Corrected to update addressTextView
-                user.setAddress(fieldValue);
-                break;
-            case "Phone Number":
-                phoneNumberValue.setText(fieldValue); // Corrected to update phoneNumberTextView
-                user.setPhone(fieldValue);
-                break;
-            case "Email":
-                emailValue.setText(fieldValue); // Corrected to update emailTextView
-                user.setEmail(fieldValue);
-                break;
-        }
-    }
-
-    /**
-     * Handles the positive click action from the edit field dialog.
-     *
-     * @param dialog The dialog that was clicked on
-     */
-    @Override
-    public void onDialogNegativeClick(DialogFragment dialog) {
-        // User touched the dialog's negative button
-    }
-
     /**
      * Shows the edit field dialog for a field on the page using its current value
      *
-     * @param fieldName The field we are editing
+     * @param fieldName  The field we are editing
      * @param fieldValue The value of the field
      */
     public void showEditFieldDialog(String fieldName, String fieldValue) {

@@ -13,6 +13,7 @@ package com.oopsipushedtomain;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Database.FirebaseAccess;
@@ -21,9 +22,11 @@ import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
 import java.io.Serializable;
+import java.sql.Time;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -192,7 +195,9 @@ public class User {
     private void parseFirestoreData(Map<String, Object> data) {
         // Store the data in the class
         this.address = (String) data.get("address");
-        this.birthday = (Date) data.get("birthday");
+        if (data.get("birthday") != null) {
+            this.birthday = ((Timestamp) Objects.requireNonNull(data.get("birthday"))).toDate();
+        }
         this.email = (String) data.get("email");
         this.homepage = (String) data.get("homepage");
         this.name = (String) data.get("name");
