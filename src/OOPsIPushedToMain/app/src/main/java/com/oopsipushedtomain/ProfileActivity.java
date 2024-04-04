@@ -33,6 +33,7 @@ import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
+import com.oopsipushedtomain.DialogInputListeners.PhonePickerDialog;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -46,7 +47,7 @@ import java.util.Map;
  * Activity for displaying and editing an attendee's profile.
  * Also sets the on click listeners for the buttons on the profile page
  */
-public class ProfileActivity extends AppCompatActivity{
+public class ProfileActivity extends AppCompatActivity {
 
     /**
      * A unique request code for getting camera permissions
@@ -288,7 +289,7 @@ public class ProfileActivity extends AppCompatActivity{
             user.getBirthday().thenAccept(data -> {
                 runOnUiThread(() -> {
                     Date defaultDate;
-                    if (data == null){
+                    if (data == null) {
                         defaultDate = new Date();
                     } else
                         defaultDate = data;
@@ -345,15 +346,24 @@ public class ProfileActivity extends AppCompatActivity{
         // Phone number
         phoneNumberValue.setOnClickListener(v -> {
             // This should be a number's only
-            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+            PhonePickerDialog textDialog = new PhonePickerDialog(this, input -> {
                 // If the input is not null, set the name
                 if (input != null) {
-                    phoneNumberValue.setText((String) input);
-                    user.setPhone((String) input);
+                    // Format the number
+                    String formattedNumber = PhonePickerDialog.formatPhoneNumber((String) input);
+
+                    // If the format was successful
+                    if (formattedNumber == null) {
+                        // Invalid format
+                        Toast.makeText(this, "Format: XXXXXXXXXX", Toast.LENGTH_SHORT).show();
+                    } else {
+                        phoneNumberValue.setText(formattedNumber);
+                        user.setPhone((String) input);
+                    }
                 }
             });
 
-            // Get the name of the user
+            // Get the phone number of the user
             user.getPhone().thenAccept(data -> {
                 runOnUiThread(() -> {
                     // Show the dialog
@@ -374,7 +384,7 @@ public class ProfileActivity extends AppCompatActivity{
                 }
             });
 
-            // Get the name of the user
+            // Get the email of the user
             user.getEmail().thenAccept(data -> {
                 runOnUiThread(() -> {
                     // Show the dialog
@@ -404,6 +414,8 @@ public class ProfileActivity extends AppCompatActivity{
 
         // Set up click listener for the profile image
         profileImageView.setOnClickListener(v -> handleProfileImageClick());
+
+        // Set up 
     }
 
     /**
@@ -469,7 +481,13 @@ public class ProfileActivity extends AppCompatActivity{
             runOnUiThread(() -> {
                 // Update the fields
                 if (phone != null) {
-                    phoneNumberValue.setText(phone);
+                    String formattedNumber = PhonePickerDialog.formatPhoneNumber((String) phone);
+
+                    // If the format was successful
+                    if (formattedNumber != null) {
+                        // Invalid format
+                        phoneNumberValue.setText(formattedNumber);
+                    }
                 }
             });
         });

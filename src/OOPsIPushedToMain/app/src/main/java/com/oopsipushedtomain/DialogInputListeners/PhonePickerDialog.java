@@ -1,17 +1,22 @@
 package com.oopsipushedtomain.DialogInputListeners;
 
+
+import static androidx.core.content.ContextCompat.getSystemService;
+
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.text.InputType;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
-public class InputTextDialog {
+public class PhonePickerDialog {
 
     private Context context;
     private DialogInputListener listener;
 
-    public InputTextDialog(Context context, DialogInputListener listener) {
+    public PhonePickerDialog(Context context, DialogInputListener listener) {
         this.context = context;
         this.listener = listener;
     }
@@ -20,6 +25,7 @@ public class InputTextDialog {
         // Create an edit text
         EditText editText = new EditText(context);
         editText.setText(defaultValue);
+        editText.setInputType(InputType.TYPE_CLASS_NUMBER);
 
         // Create the dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -31,6 +37,8 @@ public class InputTextDialog {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String userInput = editText.getText().toString();
+
+                // Return to the listener
                 listener.onInputReceived(userInput);
             }
         });
@@ -48,7 +56,20 @@ public class InputTextDialog {
         dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         dialog.show();
 
+
         // Open the keyboard
         editText.requestFocus();
     }
+
+    public static String formatPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.length() != 10) {
+            return null; // or throw an exception
+        }
+
+        return "(" + phoneNumber.substring(0, 3) + ") "
+                + phoneNumber.substring(3, 6) + "-"
+                + phoneNumber.substring(6);
+    }
+
+
 }
