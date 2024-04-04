@@ -103,7 +103,7 @@ public class User {
      * Whether the user has geolocation enabled
      * Defaults to true
      */
-    private boolean geolocation = true;
+    private boolean geolocation = false;
 
     /**
      * Generates a new user
@@ -148,7 +148,7 @@ public class User {
             data.put("nickname", null);
             data.put("phone", null);
             data.put("fid", null);
-            data.put("geolocation", true);
+            data.put("geolocation", false);
 
             // Upload the data to the database
             Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);

@@ -31,6 +31,7 @@ import androidx.fragment.app.DialogFragment;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Database.ImageType;
 import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.DialogInputListeners.PhonePickerDialog;
@@ -53,9 +54,12 @@ public class ProfileActivity extends AppCompatActivity {
      * A unique request code for getting camera permissions
      */
     private static final int MY_PERMISSIONS_REQUEST_CAMERA = 100; // A unique request code
+    private static final int MY_PERMISSIONS_REQUEST_LOCATION = 110; // A unique request code
     // Database test
     FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.EVENTS);
     boolean cameraEnabled;
+    boolean locationEnabled;
+    boolean initialRun = true;
     /**
      * Declare the user
      */
@@ -89,12 +93,14 @@ public class ProfileActivity extends AppCompatActivity {
                 Log.d("ProfileActivity", "ActivityResult received");
                 if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                     Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
-                    ((ImageView) profileImageView).setImageBitmap(photo);
-                    // Upload the image to storage
-                    // TODO: un-hardcode userID
-                    User.createNewObject("USER-9DRH1BAQZQMGZJEZFMGL").thenAccept(newUser -> {
-                        user = newUser;
-                        user.setProfileImage(photo);
+                    runOnUiThread(() -> {
+                        ((ImageView) profileImageView).setImageBitmap(photo);
+                        if (user != null) {
+                            FirebaseAccess innerDatabase = new FirebaseAccess(FirestoreAccessType.USERS);
+                            innerDatabase.storeImageInFirestore(user.getUID(), null, ImageType.profilePictures, photo);
+                        } else {
+                            Log.d("ProfileActivity", "User object is null");
+                        }
                     });
                 }
             }
@@ -113,14 +119,18 @@ public class ProfileActivity extends AppCompatActivity {
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     }
-                    Bitmap picture = BitmapFactory.decodeStream(inputStream);
-                    ((ImageView) profileImageView).setImageURI(result);
-                    // Upload the image to storage
-                    // TODO: un-hardcode userID
-                    User.createNewObject("USER-9DRH1BAQZQMGZJEZFMGL").thenAccept(newUser -> {
-                        user = newUser;
-                        user.setProfileImage(picture);
+                    InputStream finalInputStream = inputStream;
+                    runOnUiThread(() -> {
+                        Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
+                        ((ImageView) profileImageView).setImageURI(result);
+                        if (user != null) {
+                            FirebaseAccess innerDatabase = new FirebaseAccess(FirestoreAccessType.USERS);
+                            innerDatabase.storeImageInFirestore(user.getUID(), null, ImageType.profilePictures, picture);
+                        } else {
+                            Log.d("ProfileActivity", "User object is null");
+                        }
                     });
+
                 }
             }
     );
@@ -191,6 +201,10 @@ public class ProfileActivity extends AppCompatActivity {
 
                 // TODO: Implement a proper sign in feature
                 CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
+
+                // Request location permissions
+                handleGeolocationToggled();
+                initialRun = false;
 
 
             });
@@ -415,7 +429,8 @@ public class ProfileActivity extends AppCompatActivity {
         // Set up click listener for the profile image
         profileImageView.setOnClickListener(v -> handleProfileImageClick());
 
-        // Set up 
+        // Set up click listener for the geolocation toggle
+        toggleGeolocationSwitch.setOnClickListener(v -> handleGeolocationToggled());
     }
 
     /**
@@ -578,6 +593,36 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+    // ChatGPT: How do I request location permission in android?
+    private void handleGeolocationToggled() {
+        // Check for geolocation permissions
+        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            // At least one of the permissions are not granted, request them
+            ActivityCompat.requestPermissions(ProfileActivity.this,  new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+
+        } else {
+            locationEnabled = true;
+        }
+
+        // Set the user's preference
+        if (locationEnabled) {
+            user.setGeolocation(toggleGeolocationSwitch.isChecked());
+        } else {
+            user.setGeolocation(false);
+            toggleGeolocationSwitch.setChecked(false);
+
+            // Show a toast
+            if (!initialRun) {
+                Toast.makeText(ProfileActivity.this, "Location Permission Required", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+
+
     /**
      * Handles when permissions are requested
      *
@@ -602,6 +647,18 @@ public class ProfileActivity extends AppCompatActivity {
                     cameraEnabled = false;
                     // Show a message saying camera permission is required
                     Toast.makeText(ProfileActivity.this, "Camera Permissions Required!!", Toast.LENGTH_LONG).show();
+                }
+                return;
+            }
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
+                if (grantResults.length > 0
+                        && (grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        || grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
+                    // At least one was granted
+                    locationEnabled = true;
+                } else {
+                    // Location denyed
+                    locationEnabled = false;
                 }
                 return;
             }
