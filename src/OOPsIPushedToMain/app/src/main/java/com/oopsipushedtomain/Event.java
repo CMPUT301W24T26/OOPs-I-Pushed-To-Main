@@ -153,6 +153,33 @@ public class Event implements Serializable {
         this.creatorId = creatorId;
     }
 
+    /**
+     * Constructs an Event instance from a map of properties.
+     * This constructor is useful for creating an Event object from Firestore document data.
+     *
+     * @param properties A map containing event properties.
+     */
+    public Event(Map<String, Object> properties) {
+        this.eventId = (String) properties.get("eventId");
+        this.title = (String) properties.get("title");
+        this.startTime = (String) properties.get("startTime");
+        this.endTime = (String) properties.get("endTime");
+        this.description = (String) properties.get("description");
+        this.location = (String) properties.get("location");
+        this.posterUrl = (String) properties.get("posterUrl");
+        this.attendeeLimit = properties.get("attendeeLimit") instanceof Number ? ((Number) properties.get("attendeeLimit")).intValue() : 0;
+        this.creatorId = (String) properties.get("creatorId");
+        // Ensure signedUpAttendees is properly initialized from the properties map.
+        // This requires handling the case where signedUpAttendees might not be present or is a List<String>.
+        Object signedUpAttendeesObj = properties.get("signedUpAttendees");
+        if (signedUpAttendeesObj instanceof List) {
+            this.signedUpAttendees = (List<String>) signedUpAttendeesObj;
+        } else {
+            this.signedUpAttendees = new ArrayList<>();
+        }
+    }
+
+
 
     /**
      * No-argument constructor so that Event can be deserialized
@@ -194,8 +221,7 @@ public class Event implements Serializable {
         imageUID = eventRef.document().getId().toUpperCase();
         imageUID = "IMGE-" + imageUID;
 
-
-        Map<String, Object> event = new HashMap<>();
+        /*Map<String, Object> event = new HashMap<>();
         event.put("title", title);
         event.put("startTime", startTime);
         event.put("endTime", endTime);
@@ -205,9 +231,17 @@ public class Event implements Serializable {
         event.put("attendeeLimit", attendeeLimit);
         event.put("eventImage", imageUID);
         event.put("signedUpAttendees", signedUpAttendees); // Include the attendees list
-        event.put("creatorId", creatorId); // Include creatorId in the event map
+        event.put("creatorId", creatorId); // Include creatorId in the event map*/
 
-        firebaseAccess.storeDataInFirestore(eventId, event);
+        // Prepare event data
+        Map<String, Object> event = prepareEventData();
+
+        try {
+            Map<String, Object> result = firebaseAccess.storeDataInFirestore(eventId, event);
+            Log.d("Event", "Event added/updated successfully: " + result);
+        } catch (Exception e) {
+            Log.e("Event", "Error adding/updating event", e);
+        }
 
 
         /*db.collection("events").document(eventId).set(event).addOnSuccessListener(aVoid -> {
@@ -219,6 +253,20 @@ public class Event implements Serializable {
         });*/
     }
 
+    private Map<String, Object> prepareEventData() {
+        Map<String, Object> event = new HashMap<>();
+        event.put("title", title);
+        event.put("startTime", startTime);
+        event.put("endTime", endTime);
+        event.put("description", description);
+        event.put("location", location);
+        event.put("posterUrl", posterUrl);
+        event.put("attendeeLimit", attendeeLimit);
+        event.put("eventImage", imageUID);
+        event.put("signedUpAttendees", signedUpAttendees);
+        event.put("creatorId", creatorId);
+        return event;
+    }
 
     /**
      * Generates a QR Code for this event
