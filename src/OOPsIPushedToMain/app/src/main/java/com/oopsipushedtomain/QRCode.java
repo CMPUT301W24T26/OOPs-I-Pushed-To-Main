@@ -20,10 +20,14 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Database.ImageType;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 
 /**
@@ -56,30 +60,10 @@ public class QRCode {
      */
     private Bitmap qrCodeImage = null;
 
-    // Database parameters
     /**
      * A reference to the Firestore database
      */
-    private FirebaseFirestore db;
-    /**
-     * A reference to the QR codes collection
-     */
-    private CollectionReference qrCodeRef;
-    /**
-     * A reference to the document correspoinding to this qr code
-     */
-    private DocumentReference qrCodeDocRef;
-
-
-    // Firebase storage
-    /**
-     * A reference to the Firebase Storage
-     */
-    private FirebaseStorage storage;
-    /**
-     * A reference to the storage pool for images
-     */
-    private StorageReference storageRef;
+    FirebaseAccess database;
 
 
     /**
@@ -115,42 +99,13 @@ public class QRCode {
     }
 
     /**
-     * Initializes the database parameters for accessing firestore
-     */
-    public void InitDatabase() {
-        db = FirebaseFirestore.getInstance();
-        qrCodeRef = db.collection("qrcodes");
-        storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference();
-    }
-
-    /**
      * Generates a new qr code for the given text. It will store it into the database
      *
      * @param text The text that is shown when scanning the qr code
      */
     public QRCode(String text) {
         // Initialize the database
-        InitDatabase();
-
-        // Get the user id of a new document
-        qrCodeUID = qrCodeRef.document().getId().toUpperCase();
-        qrCodeUID = "QRCD-" + qrCodeUID;
-
-        // Get the UID for an image
-        imageUID = qrCodeRef.document().getId().toUpperCase();
-        imageUID = "IMGE-" + imageUID;
-
-        // Create a hash map for all variables
-        HashMap<String, Object> data = new HashMap<>();
-        data.put("qrString", null);
-        data.put("qrImage", imageUID);
-
-        // Create a new document and set all parameters
-        qrCodeRef.document(qrCodeUID).set(data);
-
-        // Set the document reference to this document
-        qrCodeDocRef = qrCodeRef.document(qrCodeUID);
+        database = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
         // Generate the code
         try {
@@ -169,11 +124,11 @@ public class QRCode {
      */
     public QRCode(String qrCodeID, DataLoadedListener listener) {
         // Initialize database
-        InitDatabase();
+        database = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
         // Set the document ID
         qrCodeUID = qrCodeID;
-        qrCodeDocRef = qrCodeRef.document(qrCodeUID);
+        database.getImageFromFirestore(qrCodeUID, ImageType.eventQRCodes);
 
         // Set the fields of the class
         new Thread(new Runnable() {
@@ -209,38 +164,38 @@ public class QRCode {
      *
      * @param listener The listener to determine when data is received
      */
-    public void UpdateAllDataFields(QRCode.NewCodeListener listener) {
-        // Get the data in the document
-        qrCodeDocRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        // Get the data from the query - there should only be 1 document
-                        Map<String, Object> data = document.getData();
-
-                        // Get Single element fields
-                        assert data != null;
-                        qrString = (String) data.get("qrString");
-                        imageUID = (String) data.get("qrImage");
-
-                        assert imageUID != null;
-                        Log.d("QR Code", imageUID);
-
-                        // Inform complete
-                        Log.d("Firebase", "Data Loaded");
-                        listener.onDataInitialized();
-
-                    } else {
-                        Log.d("Firebase", "No such document");
-                    }
-                } else {
-                    Log.d("Firebase Failure", "get failed with ", task.getException());
-                }
-            }
-        });
-    }
+//    public void UpdateAllDataFields(QRCode.NewCodeListener listener) {
+//        // Get the data in the document
+//        qrCodeDocRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+//            @Override
+//            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+//                if (task.isSuccessful()) {
+//                    DocumentSnapshot document = task.getResult();
+//                    if (document.exists()) {
+//                        // Get the data from the query - there should only be 1 document
+//                        Map<String, Object> data = document.getData();
+//
+//                        // Get Single element fields
+//                        assert data != null;
+//                        qrString = (String) data.get("qrString");
+//                        imageUID = (String) data.get("qrImage");
+//
+//                        assert imageUID != null;
+//                        Log.d("QR Code", imageUID);
+//
+//                        // Inform complete
+//                        Log.d("Firebase", "Data Loaded");
+//                        listener.onDataInitialized();
+//
+//                    } else {
+//                        Log.d("Firebase", "No such document");
+//                    }
+//                } else {
+//                    Log.d("Firebase Failure", "get failed with ", task.getException());
+//                }
+//            }
+//        });
+//    }
 
 
     /**
@@ -249,36 +204,51 @@ public class QRCode {
      * @param listener The listener for determining when the data transfer is done
      */
     public void loadQrCodeImage(QRCode.OnBitmapReceivedListener listener) {
-        StorageReference profileImageRef = storageRef.child(imageUID);
+        if (qrCodeImage != null) {
+            // If the image is already loaded, use it directly.
+            listener.onBitmapReceived(qrCodeImage);
+            return;
+        }
 
-        // Down load the image
-        final long ONE_MEGABYTE = 1024 * 1024;
-        profileImageRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(bytes -> {
-            // Convert to a bitmap
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            Log.d("QR Code", "Image successfully loaded");
-            listener.onBitmapReceived(bitmap);
-        }).addOnFailureListener(e -> {
-            Log.d("QR Code", "Image failed to download");
+        // Initialize FirebaseAccess for QR Codes
+        database = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
+        // Asynchronously get the image from Firestore
+        CompletableFuture<Map<String, Object>> future = database.getImageFromFirestore(imageUID, ImageType.eventQRCodes);
+
+        future.thenAccept(data -> {
+            if (data != null) {
+                // Image was successfully retrieved, so get the bitmap, set it to the class variable, and call the listener
+                qrCodeImage = (Bitmap) data.get("image");
+                Log.d("QR Code", "Image successfully loaded");
+                listener.onBitmapReceived(qrCodeImage);
+            } else {
+                // Data was null, so the image wasn't found
+                Log.d("QR Code", "Image failed to download");
+                listener.onBitmapReceived(null);
+            }
+        }).exceptionally(e -> {
+            // Handle any exceptions that occurred during the retrieval
+            Log.d("QR Code", "Image failed to download", e);
             listener.onBitmapReceived(null);
+            return null;
         });
     }
-
 
     /**
      * Stores the QR code string in the database
      *
      * @param qrString The string to store
      */
-    private void setQrString(String qrString) {
-        // Update in the class
-        this.qrString = qrString;
-
-        // Update in database
-        HashMap<String, Object> data = new HashMap<>();
-        data.put("qrString", this.qrString);
-        qrCodeDocRef.update(data);
-    }
+//    private void setQrString(String qrString) {
+//        // Update in the class
+//        this.qrString = qrString;
+//
+//        // Update in database
+//        HashMap<String, Object> data = new HashMap<>();
+//        data.put("qrString", this.qrString);
+//        qrCodeDocRef.update(data);
+//    }
 
 
     /**
@@ -286,24 +256,24 @@ public class QRCode {
      *
      * @param qrCodeImage The image to upload
      */
-    private void setQrImage(Bitmap qrCodeImage) {
-        // Store the image in the object
-        this.qrCodeImage = qrCodeImage;
-
-        // Convert the bitmap to PNG for upload
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        qrCodeImage.compress(Bitmap.CompressFormat.PNG, 100, baos);
-        byte[] data = baos.toByteArray();
-
-        // Upload the image to firebase
-        UploadTask uploadTask = storageRef.child(imageUID).putBytes(data);
-        uploadTask.addOnSuccessListener(taskSnapshot -> {
-            Log.d("QR Code", "Image upload successful");
-        }).addOnFailureListener(exception -> {
-            Log.d("QR Code", "Image upload failed");
-        });
-
-    }
+//    private void setQrImage(Bitmap qrCodeImage) {
+//        // Store the image in the object
+//        this.qrCodeImage = qrCodeImage;
+//
+//        // Convert the bitmap to PNG for upload
+//        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//        qrCodeImage.compress(Bitmap.CompressFormat.PNG, 100, baos);
+//        byte[] data = baos.toByteArray();
+//
+//        // Upload the image to firebase
+//        UploadTask uploadTask = storageRef.child(imageUID).putBytes(data);
+//        uploadTask.addOnSuccessListener(taskSnapshot -> {
+//            Log.d("QR Code", "Image upload successful");
+//        }).addOnFailureListener(exception -> {
+//            Log.d("QR Code", "Image upload failed");
+//        });
+//
+//    }
 
     /**
      * Gets the string of the QR code
@@ -318,7 +288,7 @@ public class QRCode {
     // ChatGPT, How would I use ZXing to generate a QR code?
 
     /**
-     * Generates a QR code from the given text
+     * Generates a QR code from the given text and stores in the database
      *
      * @param text The text stored in the QR code
      * @throws WriterException If the QR code fails to write
@@ -340,16 +310,8 @@ public class QRCode {
                 bmp.setPixel(x, y, matrix.get(x, y) ? Color.BLACK : Color.WHITE);
             }
         }
-
-        // Store the bitmap in the class
-        qrCodeImage = bmp;
-        qrString = text;
-
-        // Store in the database
-        setQrString(text);
-        setQrImage(bmp);
-
-
+        // Store QRCode
+        database.storeImageInFirestore(text, null, ImageType.eventQRCodes, bmp, null);
     }
 
 }
