@@ -6,15 +6,12 @@ import android.util.Log;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -22,13 +19,9 @@ import java.util.concurrent.CompletableFuture;
  * Represents an QR code within the application.
  * This class is used to model QR codes, including their details such as string and the UIDs linking them to their image and
  * what they are linked to, start and end times.
- *
- * <p>
- * Outstanding issues:
- * - Need to implement a delete function to remove it from the database
  */
 public class QRCode {
-    // Storing the string and bitmap of the qrcode
+
     /**
      * The UID of the image associated with this QR code
      */
@@ -48,8 +41,6 @@ public class QRCode {
 
     /**
      * Generates a new qr code for the given text. It will store it into the database
-     *
-     * @param text The text that is shown when scanning the qr code
      */
     private QRCode() {
         // Initialize the database
@@ -59,8 +50,8 @@ public class QRCode {
 
     /**
      * Loads QRCode from database
-     * @param eventID
-     * @param imageType
+     * @param eventID   The id of the event
+     * @param imageType Type of QR code for the event: event check in code or event promo code
      * @return
      */
     public static CompletableFuture<QRCode> loadQRCodeObject(String eventID, ImageType imageType) {
@@ -117,13 +108,13 @@ public class QRCode {
         createQRCode.setQrImage(bmp);
 
         // Store QRCode
-        createQRCode.database.storeImageInFirestore(eventID, imageUID, imageType, bmp, null);
-
+        String rt = createQRCode.database.storeImageInFirestore(eventID, imageUID, imageType, bmp, null);
+        if (rt == null) {Log.d("QRCODE", "QRCode storing on creation failed");};
         return createQRCode;
     }
 
     /**
-     * Sets image UID
+     * Sets imageUID variable
      * @param imageUID
      */
     public void setImageUID(String imageUID) {
@@ -131,14 +122,28 @@ public class QRCode {
     }
 
     /**
-     * Loads a QR code image from Firebase Storage
-     *
-     * @param listener The listener for determining when the data transfer is done
+     * Gets qrCodeImage Bitmap (image data)
+     * @return
      */
     public Bitmap getQRCodeImage() {
         return qrCodeImage;
     }
 
+    /**
+     * Loads the QR code image into the database
+     *
+     * @param qrCodeImage The image to upload
+     */
+    private void setQrImage(Bitmap qrCodeImage) {
+        // Store the image in the object
+        this.qrCodeImage = qrCodeImage;
+    }
+
+    /**
+     * Updates current QRCode object with image data from the database
+     * @param imageType
+     * @return
+     */
     public CompletableFuture<Void> updateQRCodeFromDatabase(ImageType imageType) {
         // Create the future to return
         CompletableFuture<Void> future = new CompletableFuture<>();
@@ -152,16 +157,6 @@ public class QRCode {
 
         // Return the future
         return future;
-    }
-
-    /**
-     * Loads the QR code image into the database
-     *
-     * @param qrCodeImage The image to upload
-     */
-    private void setQrImage(Bitmap qrCodeImage) {
-        // Store the image in the object
-        this.qrCodeImage = qrCodeImage;
     }
 
 }
