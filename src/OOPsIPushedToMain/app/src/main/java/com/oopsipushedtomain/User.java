@@ -97,6 +97,12 @@ public class User {
     private boolean dataIsCurrent = false;
 
     /**
+     * Whether the user has geolocation enabled
+     * Defaults to true
+     */
+    private boolean geolocation = true;
+
+    /**
      * Generates a new user
      * Sets the database reference only, use User.createNewObject to create a new object
      */
@@ -139,6 +145,7 @@ public class User {
             data.put("nickname", null);
             data.put("phone", null);
             data.put("fid", null);
+            data.put("geolocation", true);
 
             // Upload the data to the database
             Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);
@@ -436,6 +443,39 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("name", this.name);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the user's geolocation preference
+     * @return The location preference of the user
+     */
+    public CompletableFuture<Boolean> getGeolocation() {
+        // Create a future to return
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.geolocation);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Sets the user's geolocation preference
+     */
+    public void setGeolocation(Boolean geolocation) {
+        // Update in the class
+        this.geolocation = geolocation;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("geolocation", this.geolocation);
         database.storeDataInFirestore(this.uid, data);
     }
 

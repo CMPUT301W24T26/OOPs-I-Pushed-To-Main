@@ -1,9 +1,12 @@
 package com.oopsipushedtomain;
 
+import android.Manifest;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
@@ -12,6 +15,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -23,6 +27,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
@@ -44,16 +50,20 @@ import java.util.Map;
 public class ProfileActivity extends AppCompatActivity implements EditFieldDialogFragment.EditFieldDialogListener {
 
     /**
+     * A unique request code for getting camera permissions
+     */
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA = 100; // A unique request code
+    // Database test
+    FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.EVENTS);
+    boolean cameraEnabled;
+    /**
      * Declare the user
      */
     private User user;
-
     /**
      * Declare a QRCode for scanning
      */
     private QRCode qrCode;
-
-
     /**
      * Declare UI elements for labels and values
      */
@@ -62,34 +72,16 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
      * Declare UI elements for buttons
      */
     private Button eventsButton, scanQRCodeButton, adminButton;
-
     /**
      * Reference to the geo-location toggle
      */
     private SwitchCompat toggleGeolocationSwitch;
-
     /**
      * The reference to the view of the profile image
      */
     private View profileImageView;
     /**
-     * The reference to the image drawable
-     */
-    private Drawable defaultImage;
-
-    /**
-     * The UID of the user
-     */
-    private String userId; // Get from bundle
-
-
-    /**
-     * Activity result launcher for getting the result of the QRCodeScan
-     */
-    private ActivityResultLauncher<Intent> qrCodeActivityResultLauncher;
-
-    /**
-     * Getting the result from the camera
+     * Get the image from the camera
      */
     private final ActivityResultLauncher<Intent> cameraResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -97,7 +89,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                 Log.d("ProfileActivity", "ActivityResult received");
                 if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                     Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
-                    ((ImageView)profileImageView).setImageBitmap(photo);
+                    ((ImageView) profileImageView).setImageBitmap(photo);
                     // Upload the image to storage
                     // TODO: un-hardcode userID
                     User.createNewObject("USER-9DRH1BAQZQMGZJEZFMGL").thenAccept(newUser -> {
@@ -107,7 +99,6 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                 }
             }
     );
-
     /**
      * Getting the result from the photo gallery for image upload
      */
@@ -133,6 +124,45 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
                 }
             }
     );
+    /**
+     * The reference to the image drawable
+     */
+    private Drawable defaultImage;
+    /**
+     * The UID of the user
+     */
+    private String userId; // Get from bundle
+    /**
+     * Activity result launcher for getting the result of the QRCodeScan
+     * Performs the correct action depending on the type of QR code scanned.
+     */
+    private ActivityResultLauncher<Intent> qrCodeActivityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+        // ChatGPT, How do I pass a variable back to the calling activity?, Can you give me the code for registerForActivityResult()
+        // Register the activity result
+        @Override
+        public void onActivityResult(ActivityResult o) {
+            if (o.getResultCode() == Activity.RESULT_OK) {
+                // Get the data
+                Intent data = o.getData();
+
+                // If the data is not null, load the QR code
+                if (data != null) {
+                    String qrCodeString = data.getStringExtra("result");
+
+                    // Check the user into the event
+                    user.checkIn(qrCodeString);
+
+                    // Show the scanned data
+                    Toast.makeText(getApplicationContext(), "Checked into event: " + qrCodeString, Toast.LENGTH_LONG).show();
+                    Log.d("QR Code", "Checked into event: " + qrCodeString);
+
+                } else {
+                    Toast.makeText(getApplicationContext(), "Data Error", Toast.LENGTH_LONG).show();
+                    Log.d("QR Code", "QR Code Not Scanned");
+                }
+            }
+        }
+    });
 
     /**
      * Initializes the activity and sets up the UI elements
@@ -149,110 +179,80 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         // Load the information about the given user
         userId = getIntent().getStringExtra("userID");
 
-        // Create the new user Asyc
+        // Create a new User object from the userID
         User.createNewObject(userId).thenAccept(newUser -> {
             runOnUiThread(() -> {
-                // Assign the user user
+                // User is created, store in the class
                 user = newUser;
 
-                initializeViews();
+                // Update the views on the new data
+                updateUIElements();
 
+                // TODO: Implement a proper sign in feature
                 CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
 
-                // Initialize UI elements and load attendee data
-                initializeViews();
 
-                // Setup listeners for interactive elements
-                setupListeners();
             });
         });
 
 
+        /*
+            Find views
+         */
+        // TextViews
+        nameValue = findViewById(R.id.nameTextView);
+        nicknameValue = findViewById(R.id.nicknameTextView);
+        birthdayValue = findViewById(R.id.birthdayValueTextView);
+        homepageValue = findViewById(R.id.homepageValueTextView);
+        addressValue = findViewById(R.id.addressValueTextView);
+        phoneNumberValue = findViewById(R.id.phoneNumberValueTextView);
+        emailValue = findViewById(R.id.emailValueTextView);
 
+        // Buttons
+        eventsButton = findViewById(R.id.eventsButton);
+        scanQRCodeButton = findViewById(R.id.scanQRCodeButton);
+        adminButton = findViewById(R.id.adminButton);
 
-        // Set-up ImageView and set on-click listener
+        // Switch
+        toggleGeolocationSwitch = findViewById(R.id.toggleGeolocationSwitch);
+
+        // Profile pictures
         profileImageView = findViewById(R.id.profileImageView);
+        // Get the default profile picture
         defaultImage = ((ImageView) profileImageView).getDrawable();
-        profileImageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Drawable currentImage = ((ImageView) profileImageView).getDrawable();
-                if (currentImage.equals(defaultImage)) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
-                    builder.setTitle("Update Profile Image");
-                    builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery"},
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    switch (which) {
-                                        case 0: // Take Photo
-                                            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                            cameraResultLauncher.launch(cameraIntent);
-                                            break;
-                                        case 1: // Choose from Gallery
-                                            galleryResultLauncher.launch("image/*");
-                                            break;
-                                    }
-                                }
-                            });
-                    builder.show();
-                } else {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
-                    builder.setTitle("Update Profile Image");
-                    builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    switch (which) {
-                                        case 0: // Take Photo
-                                            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                            cameraResultLauncher.launch(cameraIntent);
-                                            break;
-                                        case 1: // Choose from Gallery
-                                            galleryResultLauncher.launch("image/*");
-                                            break;
-                                        case 2: // Delete Photo
-                                            if (user != null) {
-                                                user.deleteProfileImage();
-                                                ((ImageView) profileImageView).setImageDrawable(defaultImage);
-                                            }
-                                            break;
-                                    }
-                                }
-                            });
-                    builder.show();
-                }
-            }
+
+
+        /*
+            Set click listeners
+         */
+        // Set up the click listeners for the TextViews
+        nameValue.setOnClickListener(v -> showEditFieldDialog("Name", nameValue.getText().toString()));
+        nicknameValue.setOnClickListener(v -> showEditFieldDialog("Nickname", nicknameValue.getText().toString()));
+        birthdayValue.setOnClickListener(v -> showEditFieldDialog("Birthday", birthdayValue.getText().toString()));
+        homepageValue.setOnClickListener(v -> showEditFieldDialog("Homepage", homepageValue.getText().toString()));
+        addressValue.setOnClickListener(v -> showEditFieldDialog("Address", addressValue.getText().toString()));
+        phoneNumberValue.setOnClickListener(v -> showEditFieldDialog("Phone Number", phoneNumberValue.getText().toString()));
+        emailValue.setOnClickListener(v -> showEditFieldDialog("Email", emailValue.getText().toString()));
+
+        // Set up click listeners for the buttons
+        eventsButton.setOnClickListener(view -> {
+            Intent intent = new Intent(ProfileActivity.this, EventListActivity.class);
+            intent.putExtra("userId", user.getUID()); // Assuming userId is the ID of the current user
+            startActivity(intent);
+        });
+        adminButton.setOnClickListener(v -> {
+            Intent intent = new Intent(ProfileActivity.this, AdminActivity.class);
+            startActivity(intent);
+        });
+        scanQRCodeButton.setOnClickListener(v -> {
+            // Switch to the QR code scanner
+            Intent intent = new Intent(getApplicationContext(), QRScanner.class);
+            qrCodeActivityResultLauncher.launch(intent);
         });
 
-        // Qr code activity launcher
-        // ChatGPT, How do I pass a variable back to the calling activity?, Can you give me the code for registerForActivityResult()
-        // Register the activity result
-        qrCodeActivityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
-            @Override
-            public void onActivityResult(ActivityResult o) {
-                if (o.getResultCode() == Activity.RESULT_OK) {
-                    // Get the data
-                    Intent data = o.getData();
 
-                    // If the data is not null, load the QR code
-                    if (data != null) {
-                        String qrCodeString = data.getStringExtra("result");
-
-                        // Check the user into the event
-                        user.checkIn(qrCodeString);
-
-                        // Show the scanned data
-                        Toast.makeText(getApplicationContext(), "Checked into event: " + qrCodeString, Toast.LENGTH_LONG).show();
-                        Log.d("QR Code", "Checked into event: " + qrCodeString);
-
-                    } else {
-                        Toast.makeText(getApplicationContext(), "Data Error", Toast.LENGTH_LONG).show();
-                        Log.d("QR Code", "QR Code Not Scanned");
-                    }
-                }
-            }
-        });
+        // Set up click listener for the profile image
+        profileImageView.setOnClickListener(v -> handleProfileImageClick());
     }
 
     /**
@@ -260,68 +260,196 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
      */
     private void updateUIElements() {
 
-        // Get the data from user
-        // I do not like this code, but it works
+        // Update the name
         user.getName().thenAccept(name -> {
-            user.getNickname().thenAccept(nickname -> {
-                user.getHomepage().thenAccept(homepage -> {
-                    user.getAddress().thenAccept(address -> {
-                        user.getPhone().thenAccept(phone -> {
-                            user.getEmail().thenAccept(email -> {
-                                user.getBirthday().thenAccept(birthday -> {
-                                    runOnUiThread(() -> {
-                                        // Update the fields
-                                        if (name != null) {
-                                            nameValue.setText(name);
-                                        }
-
-                                        if (nickname != null) {
-                                            nicknameValue.setText(nickname);
-                                        }
-
-                                        if (birthday != null) {
-                                            // Format the date
-                                            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-                                            birthdayValue.setText(formatter.format(birthday));
-                                        }
-
-                                        if (homepage != null) {
-                                            homepageValue.setText(homepage);
-                                        }
-
-                                        if (address != null) {
-                                            addressValue.setText(address);
-                                        }
-
-                                        if (phone != null) {
-                                            phoneNumberValue.setText(phone);
-                                        }
-
-                                        if (email != null) {
-                                            emailValue.setText(email);
-                                        }
-                                    });
-                                });
-                            });
-                        });
-                    });
-                });
+            runOnUiThread(() -> {
+                // Update the fields
+                if (name != null) {
+                    nameValue.setText(name);
+                }
             });
         });
 
+        // Update the nickname
+        user.getNickname().thenAccept(nickname -> {
+            runOnUiThread(() -> {
+                // Update the fields
+                if (nickname != null) {
+                    nicknameValue.setText(nickname);
+                }
+            });
+        });
 
+        // Update the birthday
+        user.getBirthday().thenAccept(birthday -> {
+            runOnUiThread(() -> {
+                // Update the fields
+                if (birthday != null) {
+                    // Format the date
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                    birthdayValue.setText(formatter.format(birthday));
+                }
+            });
+        });
+
+        // Update the homepage
+        user.getHomepage().thenAccept(homepage -> {
+            runOnUiThread(() -> {
+                // Update the fields
+                if (homepage != null) {
+                    homepageValue.setText(homepage);
+                }
+            });
+        });
+
+        // Update the address
+        user.getNickname().thenAccept(address -> {
+            runOnUiThread(() -> {
+                // Update the fields
+                if (address != null) {
+                    addressValue.setText(address);
+                }
+            });
+        });
+
+        // Update the phone
+        user.getNickname().thenAccept(phone -> {
+            runOnUiThread(() -> {
+                // Update the fields
+                if (phone != null) {
+                    phoneNumberValue.setText(phone);
+                }
+            });
+        });
+
+        // Update the email
+        user.getNickname().thenAccept(email -> {
+            runOnUiThread(() -> {
+                // Update the fields
+                if (email != null) {
+                    emailValue.setText(email);
+                }
+            });
+        });
     }
+
+
+    public void handleProfileImageClick() {
+        // Get the current profile image
+        Drawable currentImage = ((ImageView) profileImageView).getDrawable();
+
+        // Build a new alert dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
+        builder.setTitle("Update Profile Image");
+
+        // If the current image is the default image, don't show the delete option
+        if (currentImage.equals(defaultImage)) {
+            // Set the items in the dialog
+            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery"},
+                    // Set the listener for the selection on the dialog
+                    (dialog, which) -> {
+                        switch (which) {
+                            // Take a photo using the camera
+                            case 0: // Take Photo
+                                // Check for camera permissions
+                                if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                                    // Permission is not granted, request permissions
+                                    ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
+                                } else {
+                                    // Camera permissions are granted
+                                    cameraEnabled = true;
+                                }
+
+                                // Perform the proper action
+                                if (cameraEnabled){
+                                    // Open the camera
+                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                    cameraResultLauncher.launch(cameraIntent);
+                                    Log.d("Camera", "Picture taken!");
+                                    break;
+                                } else {
+                                    // Show a message saying camera permission is required
+                                    Log.d("Camera", "No permissions!");
+                                    Toast.makeText(ProfileActivity.this, "Camera Permissions Required!!", Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+
+
+                            case 1: // Choose from Gallery
+                                galleryResultLauncher.launch("image/*");
+                                Log.d("Gallery", "Image selected from the gallery");
+                                break;
+                        }
+                    });
+            builder.show();
+        } else {
+            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            switch (which) {
+                                case 0: // Take Photo
+                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                    cameraResultLauncher.launch(cameraIntent);
+                                    break;
+                                case 1: // Choose from Gallery
+                                    galleryResultLauncher.launch("image/*");
+                                    break;
+                                case 2: // Delete Photo
+                                    if (user != null) {
+                                        user.deleteProfileImage();
+                                        ((ImageView) profileImageView).setImageDrawable(defaultImage);
+                                    }
+                                    break;
+                            }
+                        }
+                    });
+            builder.show();
+        }
+    }
+
+    /**
+     * Handles when permissions are requested
+     *
+     * @param requestCode  The request code passed in {@link #requestPermissions(
+     *android.app.Activity, String[], int)}
+     * @param permissions  The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions
+     *                     which is either {@link android.content.pm.PackageManager#PERMISSION_GRANTED}
+     *                     or {@link android.content.pm.PackageManager#PERMISSION_DENIED}. Never null.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_CAMERA: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permission was granted, you can use the camera
+                    cameraEnabled = true;
+                } else {
+                    // Permission denied, disable camera
+                    cameraEnabled = false;
+                    // Show a message saying camera permission is required
+                    Toast.makeText(ProfileActivity.this, "Camera Permissions Required!!", Toast.LENGTH_LONG).show();
+                }
+                return;
+            }
+        }
+    }
+
 
     /**
      * Handles the positive click action from the edit field dialog.
      * Updates the corresponding profile field with the new value entered by the user.
      *
-     * @param dialog The dialog that was clicked on
-     * @param fieldName The field name that was clicked on
+     * @param dialog     The dialog that was clicked on
+     * @param fieldName  The field name that was clicked on
      * @param fieldValue The value of the dialog
      */
     @Override
-    public void onDialogPositiveClick(DialogFragment dialog, String fieldName, String fieldValue) {
+    public void onDialogPositiveClick(DialogFragment dialog, String fieldName, String
+            fieldValue) {
 
         // Update the corresponding field in your UI based on fieldName
         Map<String, Object> update = new HashMap<>();
@@ -389,101 +517,5 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         dialog.setArguments(args);
         dialog.show(getSupportFragmentManager(), "EditFieldDialogFragment");
     }
-
-    /**
-     * Initialize views to connect to layout file
-     */
-    private void initializeViews() {
-
-        // Initialize values (TextViews for field values)
-        nameValue = findViewById(R.id.nameTextView);
-        nicknameValue = findViewById(R.id.nicknameTextView);
-        birthdayValue = findViewById(R.id.birthdayValueTextView);
-        homepageValue = findViewById(R.id.homepageValueTextView);
-        addressValue = findViewById(R.id.addressValueTextView);
-        phoneNumberValue = findViewById(R.id.phoneNumberValueTextView);
-        emailValue = findViewById(R.id.emailValueTextView);
-
-        // Initialize buttons
-        eventsButton = findViewById(R.id.eventsButton);
-        scanQRCodeButton = findViewById(R.id.scanQRCodeButton);
-        adminButton = findViewById(R.id.adminButton);
-
-        // Initialize switch
-        toggleGeolocationSwitch = findViewById(R.id.toggleGeolocationSwitch);
-
-        // Load user data into views
-        updateUIElements();
-    }
-
-    /**
-     * Set listeners for clickable fields on the page
-     */
-    private void setupListeners() {
-        // Set click listeners for each editable field
-        nameValue.setOnClickListener(v -> showEditFieldDialog("Name", nameValue.getText().toString()));
-        nicknameValue.setOnClickListener(v -> showEditFieldDialog("Nickname", nicknameValue.getText().toString()));
-        birthdayValue.setOnClickListener(v -> showEditFieldDialog("Birthday", birthdayValue.getText().toString()));
-        homepageValue.setOnClickListener(v -> showEditFieldDialog("Homepage", homepageValue.getText().toString()));
-        addressValue.setOnClickListener(v -> showEditFieldDialog("Address", addressValue.getText().toString()));
-        phoneNumberValue.setOnClickListener(v -> showEditFieldDialog("Phone Number", phoneNumberValue.getText().toString()));
-        emailValue.setOnClickListener(v -> showEditFieldDialog("Email", emailValue.getText().toString()));
-        eventsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(ProfileActivity.this, EventListActivity.class);
-                intent.putExtra("userId", userId); // Assuming userId is the ID of the current user
-                startActivity(intent);
-            }
-        });
-        adminButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(ProfileActivity.this, AdminActivity.class);
-                startActivity(intent);
-            }
-        });
-        scanQRCodeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Add a new document to the database
-                database.storeDataInFirestore("matteotest", new HashMap<>());
-
-                HashMap<String, Object> inData = new HashMap<>();
-                inData.put("test", "this is a test");
-                database.storeDataInFirestore("matteotest", FirebaseInnerCollection.announcements, "TEST", inData);
-
-                // Get the document
-                database.getDataFromFirestore("matteotest").thenAccept(data -> {
-                    Log.d("Testing", "Data: " + data.get("UID"));
-                });
-
-                // Get the inner document
-                database.getDataFromFirestore("matteotest", FirebaseInnerCollection.announcements, "TEST").thenAccept(data -> {
-                    Log.d("Testing", "Data: " + data.get("test"));
-                });
-
-                // Delete the documents
-                database.deleteDataFromFirestore("matteotest").thenAccept(vdd -> {
-                    Log.d("Testing", "Delete Complete");
-                });
-
-
-
-                // Switch to the scanning activity and scan
-//                Intent intent = new Intent(getApplicationContext(), QRScanner.class);
-
-                // Start the activity
-//                qrCodeActivityResultLauncher.launch(intent);
-
-                // This is asynchronous. DO NOT PUT CODE HERE
-
-            }
-
-        });
-    }
-
-    // Database test
-    FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
 }
