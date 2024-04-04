@@ -12,6 +12,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -409,7 +410,7 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
         scanQRCodeButton = findViewById(R.id.scanQRCodeButton);
         adminButton = findViewById(R.id.adminButton);
 
-        // Initialize switch
+        // Initialize geolocation switch
         toggleGeolocationSwitch = findViewById(R.id.toggleGeolocationSwitch);
 
         // Load user data into views
@@ -480,6 +481,12 @@ public class ProfileActivity extends AppCompatActivity implements EditFieldDialo
 
             }
 
+        });
+        toggleGeolocationSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                user.setGeolocation(isChecked);
+            }
         });
     }
 

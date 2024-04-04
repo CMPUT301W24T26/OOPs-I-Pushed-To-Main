@@ -42,12 +42,12 @@ public class MapActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
 
         // Handle permissions first, before map is created
-        requestPermissionsIfNecessary(new String[]{
-                // if you need to show the current location, uncomment the line below
-                // Manifest.permission.ACCESS_FINE_LOCATION,
-                // WRITE_EXTERNAL_STORAGE is required in order to show the map
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-        });
+//        requestPermissionsIfNecessary(new String[]{
+//                // if you need to show the current location, uncomment the line below
+//                // Manifest.permission.ACCESS_FINE_LOCATION,
+//                // WRITE_EXTERNAL_STORAGE is required in order to show the map
+//                Manifest.permission.WRITE_EXTERNAL_STORAGE
+//        });
 
         // load/initialize the osmdroid configuration, this can be done
         Context ctx = getApplicationContext();
@@ -130,28 +130,23 @@ public class MapActivity extends AppCompatActivity{
         }
     }
 
-    private void setMarkers() throws ExecutionException, InterruptedException {
-        //ArrayList<Map<String, Object>> markers =
+    private void setMarkers() {
         db.getAllDocuments(eventId, FirebaseInnerCollection.checkInCoords).thenAccept(datalist -> {
             if (datalist == null) {
                 Log.d(TAG, "No markers found");
             } else {
                 Log.d(TAG, "Obtained markers");
-                for (Map<String, Object> coord : datalist) {
-//                    marker.forEach((key, value) -> Log.d(TAG, key + " : " + value));
+                for (Map<String, Object> coordinate : datalist) {
                     com.google.firebase.firestore.GeoPoint fbGeoPoint =
-                            (com.google.firebase.firestore.GeoPoint) coord.get("marker");
+                            (com.google.firebase.firestore.GeoPoint) coordinate.get("marker");
                     double lat = fbGeoPoint.getLatitude();
                     double lon = fbGeoPoint.getLongitude();
-                    Log.d(TAG, "lat/lon " + lat + " " + lon);
                     GeoPoint point = new GeoPoint(lat, lon);
                     Marker marker = new Marker(map);
                     marker.setPosition(point);
                     marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
                     map.getOverlays().add(marker);
                 }
-//                runOnUiThread(() -> {
-//                });
             }
         });
     }

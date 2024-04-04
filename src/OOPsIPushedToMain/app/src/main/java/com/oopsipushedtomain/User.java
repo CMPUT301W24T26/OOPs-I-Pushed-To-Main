@@ -10,9 +10,18 @@
 
 package com.oopsipushedtomain;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.util.Log;
 
+import androidx.core.app.ActivityCompat;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Database.FirebaseAccess;
@@ -25,6 +34,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * This class defines and represents a user
@@ -90,6 +100,11 @@ public class User {
      * The Firebase Installation ID (fid)
      */
     private String fid = null;
+    /**
+     * Whether the user has geolocation enabled or not
+     * Default to false for privacy reasons
+     */
+    private Boolean geolocation = false;
 
     /**
      * Whether the data in the class is current
@@ -139,6 +154,7 @@ public class User {
             data.put("nickname", null);
             data.put("phone", null);
             data.put("fid", null);
+            data.put("geolocation", false);  // default to false for privacy reasons
 
             // Upload the data to the database
             Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);
@@ -192,6 +208,7 @@ public class User {
         this.nickname = (String) data.get("nickname");
         this.phone = (String) data.get("phone");
         this.fid = (String) data.get("fid");
+        this.geolocation = (Boolean) data.get("geolocation");
 
     }
 
@@ -612,6 +629,27 @@ public class User {
 
     }
 
+    /**
+     * Gets the user's geolocation preference
+     * @return geolocation Whether the user has geolocation enabled or disabled
+     */
+    public Boolean getGeolocation() {
+        return geolocation;
+    }
+
+    /**
+     * Sets the user's geolocation preference
+     * @param geolocation The user's geolocation preference
+     */
+    public void setGeolocation(Boolean geolocation) {
+        this.geolocation = geolocation;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("geolocation", this.geolocation);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
 
     /*
         Deleters
@@ -671,6 +709,34 @@ public class User {
 
             // Sign the user up for notifications for the event
             FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+
+            // Save the check-in location IF the user has enabled geolocation tracking
+            if (this.geolocation) {
+                FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
+                FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            // Got last known location. In some rare situations this can be null.
+                            if (location != null) {
+                                GeoPoint point = new GeoPoint(location.getLatitude(), location.getLongitude());
+                                Log.d("UserCheckIn", String.valueOf(point));
+                                    eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, data);
+                            }
+                        }
+                    });
+            }
         });
     }
 

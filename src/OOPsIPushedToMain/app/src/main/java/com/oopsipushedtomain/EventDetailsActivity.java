@@ -1,8 +1,12 @@
 package com.oopsipushedtomain;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -12,15 +16,23 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Geolocation.MapActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
@@ -32,6 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
 /**
  * EventDetailsActivity allows organizers to view and edit details of an event.
@@ -134,12 +147,11 @@ public class EventDetailsActivity extends AppCompatActivity {
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
         event = new Event();
         try {
-            Log.e("EventDetailsActivity", "trying to get event");
             firebaseAccess.getDataFromFirestore(eventID).thenAccept(datalist -> {
                 if (datalist == null) {
                     Log.e("EventDetailsActivity", "event is null");
                 } else {
-                    datalist.forEach((key, value) -> Log.d("map", key + ":" + value));
+//                    datalist.forEach((key, value) -> Log.d("map", key + ":" + value));
 //                    event = new Event(
 //                            datalist.get("UID").toString(),
 //                            datalist.get("title").toString(),
@@ -161,7 +173,7 @@ public class EventDetailsActivity extends AppCompatActivity {
                     event.setCreatorId(datalist.get("creatorId").toString());
 
                     // Set the text for the TextViews with event details
-                    Log.e("EventDetailsActivity", event.getTitle());
+                    Log.d("EventDetailsActivity", event.getTitle());
                     runOnUiThread(() -> {
                         eventTitleEdit.setText(event.getTitle());
                         eventStartTimeEdit.setText(event.getStartTime());
@@ -173,7 +185,6 @@ public class EventDetailsActivity extends AppCompatActivity {
                     });
                 }
             });
-            Log.e("EventDetailsActivity", "event loaded?");
         } catch (Exception e) {
             Log.e("EventDetailsActivity", String.valueOf(e));
         }
@@ -336,6 +347,35 @@ public class EventDetailsActivity extends AppCompatActivity {
      * @param eventId The id of the event
      */
     private void signUpForEvent(String eventId) {
+        // test geolocation
+        FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            Log.e("Geolocation", "User has location disabled");
+        }
+        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.getToken())
+                .addOnSuccessListener(new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            GeoPoint point = new GeoPoint(location.getLatitude(), location.getLongitude());
+                            Log.d("Geolocation", String.valueOf(point));
+                            HashMap<String, Object> data = new HashMap<String, Object>();
+                            data.put("marker", point);
+                            eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, data);
+                        }
+                    }
+                });
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference eventRef = db.collection("events").document(eventId);
 

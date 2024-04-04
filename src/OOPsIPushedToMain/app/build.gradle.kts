@@ -47,6 +47,7 @@ dependencies {
 //    implementation(files("C:/Users/matte/AppData/Local/Android/Sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
     implementation(libs.androidx.preference)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
