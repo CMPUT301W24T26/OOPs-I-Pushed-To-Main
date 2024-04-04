@@ -122,7 +122,6 @@ public class QRCode {
         return createQRCode;
     }
 
-
     /**
      * Sets image UID
      * @param imageUID
