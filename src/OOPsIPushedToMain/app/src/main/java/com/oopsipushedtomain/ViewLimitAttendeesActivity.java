@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Activity for viewing and limiting the number of attendees for an event.
@@ -73,15 +74,42 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
     private void fetchSignedUpAttendees() {
         firebaseAccess.getDataFromFirestore(eventId).thenAccept(eventData -> {
             if (eventData != null && eventData.containsKey("signedUpAttendees")) {
+                List<String> userIds = (List<String>) eventData.get("signedUpAttendees");
                 signedUpAttendees.clear();
-                signedUpAttendees.addAll((List<String>) eventData.get("signedUpAttendees"));
-                runOnUiThread(() -> signedUpAttendeesAdapter.notifyDataSetChanged());
+
+                // Counter to keep track of completed async tasks
+                AtomicInteger counter = new AtomicInteger(userIds.size());
+
+                for (String userId : userIds) {
+                    // Fetch each user's name using their userId
+                    FirebaseAccess userAccess = new FirebaseAccess(FirestoreAccessType.USERS);
+                    userAccess.getDataFromFirestore(userId).thenAccept(userData -> {
+                        if (userData != null && userData.containsKey("name")) {
+                            String userName = (String) userData.get("name");
+                            signedUpAttendees.add(userName);
+                        } else {
+                            signedUpAttendees.add("Unknown User"); // in case user data is missing
+                        }
+
+                        // Check if all async tasks are completed
+                        if (counter.decrementAndGet() == 0) {
+                            runOnUiThread(() -> signedUpAttendeesAdapter.notifyDataSetChanged());
+                        }
+                    }).exceptionally(e -> {
+                        Log.e("ViewLimitAttendeesActivity", "Error fetching user details", e);
+                        if (counter.decrementAndGet() == 0) {
+                            runOnUiThread(() -> signedUpAttendeesAdapter.notifyDataSetChanged());
+                        }
+                        return null;
+                    });
+                }
             }
         }).exceptionally(e -> {
             Log.e("ViewLimitAttendeesActivity", "Error fetching signed up attendees", e);
             return null;
         });
     }
+
 
     /**
      * Sets the attendee limit for the event in Firestore.
@@ -94,6 +122,7 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
             Map<String, Object> update = new HashMap<>();
             update.put("attendeeLimit", limit);
             firebaseAccess.storeDataInFirestore(eventId, update);
+            finish();
         }
     }
 }

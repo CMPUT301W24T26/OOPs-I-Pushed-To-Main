@@ -9,14 +9,16 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="signedUpAttendees"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"/>
+        android:text="Signed Up Attendees"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textColor="#009688"
+        android:textStyle="bold" />
 
     <ListView
         android:id="@+id/signedUpAttendeesListView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_height="547dp"
+        android:layout_weight="1" />
 
     <EditText
         android:id="@+id/limitEditText"
@@ -29,7 +31,10 @@
         android:id="@+id/setLimitButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:backgroundTint="#009688"
         android:text="Set Limit"
-        android:layout_gravity="center_horizontal"/>
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
 </LinearLayout>
