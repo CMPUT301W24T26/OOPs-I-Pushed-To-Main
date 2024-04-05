@@ -233,7 +233,14 @@ public class ProfileActivity extends AppCompatActivity {
                         toggleGeolocationSwitch.setChecked(value);
 
                         // Request location permissions
-                        handleGeolocationToggled();
+                        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                                ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                            // At least one of the permissions are not granted, request them
+                            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+
+                        }
                         initialRun = false;
                     });
                 });
