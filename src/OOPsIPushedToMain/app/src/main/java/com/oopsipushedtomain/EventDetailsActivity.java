@@ -2,6 +2,7 @@ package com.oopsipushedtomain;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentActivity;
 
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -21,6 +23,7 @@ import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
+import com.oopsipushedtomain.Database.ImageType;
 import com.oopsipushedtomain.Geolocation.MapActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
@@ -230,8 +233,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         viewEventQRCodeButton.setOnClickListener(v -> {
-            //Intent intent = new Intent(this, ViewEventQRCodeActivity.class);
-            //startActivity(intent);
+            // TODO
         });
 
         viewMapButton.setOnClickListener(v -> {
