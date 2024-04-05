@@ -22,6 +22,7 @@ import androidx.core.app.ActivityCompat;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Database.FirebaseAccess;
@@ -30,9 +31,11 @@ import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
 import java.io.Serializable;
+import java.sql.Time;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -100,16 +103,16 @@ public class User {
      * The Firebase Installation ID (fid)
      */
     private String fid = null;
-    /**
-     * Whether the user has geolocation enabled or not
-     * Default to true
-     */
-    private Boolean geolocation = true;
 
     /**
      * Whether the data in the class is current
      */
     private boolean dataIsCurrent = false;
+
+    /**
+     * Whether the user has geolocation enabled
+     */
+    private boolean geolocation = false;
 
     /**
      * Generates a new user
@@ -154,7 +157,7 @@ public class User {
             data.put("nickname", null);
             data.put("phone", null);
             data.put("fid", null);
-            data.put("geolocation", true);  // default to true
+            data.put("geolocation", false);
 
             // Upload the data to the database
             Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);
@@ -201,14 +204,18 @@ public class User {
     private void parseFirestoreData(Map<String, Object> data) {
         // Store the data in the class
         this.address = (String) data.get("address");
-        this.birthday = (Date) data.get("birthday");
+        if (data.get("birthday") != null) {
+            this.birthday = ((Timestamp) Objects.requireNonNull(data.get("birthday"))).toDate();
+        }
         this.email = (String) data.get("email");
         this.homepage = (String) data.get("homepage");
         this.name = (String) data.get("name");
         this.nickname = (String) data.get("nickname");
         this.phone = (String) data.get("phone");
         this.fid = (String) data.get("fid");
-        this.geolocation = (Boolean) data.get("geolocation");
+        if (data.get("geolocation") != null) {
+            this.geolocation = (Boolean) data.get("geolocation");
+        }
 
     }
 
@@ -230,28 +237,29 @@ public class User {
                 parseFirestoreData(data);
 
                 // Get the profile picture
-                if (this.profileImageUID == null) {
-                    // No image was ever uploaded, just set it to null
-                    this.profileImage = null;
-
-                    // Complete the future
-                    future.complete(null);
-
-                    // Data is current
-                    dataIsCurrent = true;
-                } else {
-                    // Get the image from firebase
-                    database.getImageFromFirestore(this.uid, ImageType.profilePictures).thenAccept(imageData -> {
-                        // Store in the class
-                        this.profileImage = (Bitmap) imageData.get("image");
+                database.getAllRelatedImagesFromFirestore(this.uid, ImageType.profilePictures).thenAccept(dataList -> {
+                    if (dataList == null) {
+                        // If the datalist is empty, there is no profile picture
+                        this.profileImage = null;
 
                         // Complete the future
                         future.complete(null);
 
                         // Data is current
                         dataIsCurrent = true;
-                    });
-                }
+                    } else {
+                        // Set the UID and profile image
+                        this.profileImage = (Bitmap) dataList.get(0).get("image");
+                        this.profileImageUID = (String) dataList.get(0).get("UID");
+
+                        // Complete the future
+                        future.complete(null);
+
+                        // Data is current
+                        dataIsCurrent = true;
+                    }
+                });
+
             });
         } else {
             // Data is current, just complete the future
@@ -456,6 +464,40 @@ public class User {
         database.storeDataInFirestore(this.uid, data);
     }
 
+    /**
+     * Gets the user's geolocation preference
+     *
+     * @return The location preference of the user
+     */
+    public CompletableFuture<Boolean> getGeolocation() {
+        // Create a future to return
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.geolocation);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Sets the user's geolocation preference
+     */
+    public void setGeolocation(Boolean geolocation) {
+        // Update in the class
+        this.geolocation = geolocation;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("geolocation", this.geolocation);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
 
     /*
         Setters
@@ -621,45 +663,13 @@ public class User {
         this.profileImage = profileImage;
 
         // Update in database
+        String imageUID = null;
         if (this.profileImageUID == null) {
             this.profileImageUID = database.storeImageInFirestore(this.uid, null, ImageType.profilePictures, profileImage);
         } else {
-            database.storeImageInFirestore(this.uid, this.profileImageUID, ImageType.profilePictures, profileImage);
+            this.profileImageUID = database.storeImageInFirestore(this.uid, this.profileImageUID, ImageType.profilePictures, profileImage);
         }
 
-    }
-
-    /**
-     * Gets the user's geolocation preference
-     * @return geolocation Whether the user has geolocation enabled or disabled
-     */
-    public CompletableFuture<Boolean> getGeolocation() {
-        // Create a future to return
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-        // Update data if needed
-        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
-
-        // Complete the future
-        updateFuture.thenAccept(result -> {
-            future.complete(this.geolocation);
-        });
-
-        // Return the future
-        return future;
-    }
-
-    /**
-     * Sets the user's geolocation preference
-     * @param geolocation The user's geolocation preference
-     */
-    public void setGeolocation(Boolean geolocation) {
-        this.geolocation = geolocation;
-
-        // Update in database
-        HashMap<String, Object> data = new HashMap<>();
-        data.put("geolocation", this.geolocation);
-        database.storeDataInFirestore(this.uid, data);
     }
 
 

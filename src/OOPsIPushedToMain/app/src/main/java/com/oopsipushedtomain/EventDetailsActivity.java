@@ -1,7 +1,5 @@
 package com.oopsipushedtomain;
 
-import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
-
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
@@ -28,14 +26,13 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
-import com.oopsipushedtomain.Database.FirebaseInnerCollection;
-import com.oopsipushedtomain.Geolocation.MapActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Geolocation.MapActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -43,8 +40,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 
 /**
  * EventDetailsActivity allows organizers to view and edit details of an event.
@@ -241,8 +236,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         viewEventQRCodeButton.setOnClickListener(v -> {
-            //Intent intent = new Intent(this, ViewEventQRCodeActivity.class);
-            //startActivity(intent);
+            // TODO
         });
 
         viewMapButton.setOnClickListener(v -> {

@@ -13,6 +13,7 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Database.ImageType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -188,7 +189,8 @@ public class Event implements Serializable {
      */
     public void addEventToDatabase() {
         InitDatabase();
-        generateQRcodeData();
+        // TODO: Change to correct handling for event vs promo QR Code
+        generateQRcodeData(ImageType.eventQRCodes);
 
         // Get the UID for an image
         imageUID = eventRef.document().getId().toUpperCase();
@@ -223,8 +225,8 @@ public class Event implements Serializable {
     /**
      * Generates a QR Code for this event
      */
-    private void generateQRcodeData() {
-        QRCode qrCode = new QRCode(eventId);
+    private void generateQRcodeData(ImageType imageType) {
+        QRCode qrCode = QRCode.createNewQRCodeObject(eventId, imageType);
     }
 
     /**
