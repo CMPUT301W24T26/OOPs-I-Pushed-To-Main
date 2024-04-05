@@ -9,6 +9,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -98,8 +101,11 @@ public class ProfileActivity extends AppCompatActivity {
     /**
      * The reference to the view of the profile image
      */
-    private View profileImageView;
-
+    private ImageView profileImageView;
+    /**
+     * Username held as global so that image can be generated in the case it is deleted
+     */
+    private String profileUserName;
     /**
      * Get the image from the camera
      */
@@ -112,7 +118,7 @@ public class ProfileActivity extends AppCompatActivity {
                     // Get the bitmap
                     Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
                     // Set the image in the view
-                    ((ImageView) profileImageView).setImageBitmap(photo);
+                    profileImageView.setImageBitmap(photo);
                     // Update the user profile
                     if (user != null) {
                         // Set the new profile image
@@ -143,7 +149,7 @@ public class ProfileActivity extends AppCompatActivity {
                     Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
 
                     // Set in the view
-                    ((ImageView) profileImageView).setImageURI(result);
+                    profileImageView.setImageURI(result);
 
                     // Update the user
                     if (user != null) {
@@ -273,9 +279,7 @@ public class ProfileActivity extends AppCompatActivity {
         // Profile pictures
         profileImageView = findViewById(R.id.profileImageView);
         // Get the default profile picture
-        defaultImage = ((ImageView) profileImageView).getDrawable();
-
-
+        defaultImage = profileImageView.getDrawable();
         /*
             Set click listeners
          */
@@ -287,6 +291,7 @@ public class ProfileActivity extends AppCompatActivity {
                 if (input != null) {
                     nameValue.setText((String) input);
                     user.setName((String) input);
+                    profileUserName = (String) input;
                 }
             });
 
@@ -295,6 +300,8 @@ public class ProfileActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     // Show the dialog
                     textDialog.show("Edit Name", data);
+                    profileUserName = data;
+                    setAvatarInitial(data);
                 });
             });
 
@@ -483,6 +490,7 @@ public class ProfileActivity extends AppCompatActivity {
                 // Update the fields
                 if (name != null) {
                     nameValue.setText(name);
+                    setAvatarInitial(name);
                 }
             });
         });
@@ -561,7 +569,7 @@ public class ProfileActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 // Update the fields
                 if (image != null) {
-                    ((ImageView) profileImageView).setImageBitmap(image);
+                    profileImageView.setImageBitmap(image);
                 }
             });
         });
@@ -576,21 +584,79 @@ public class ProfileActivity extends AppCompatActivity {
             });
         });
     }
+    private static final int[] COLORS = {
+            Color.parseColor("#f44336"), // Red
+            Color.parseColor("#E91E63"), // Pink
+            Color.parseColor("#9C27B0"), // Purple
+            Color.parseColor("#673AB7"), // Deep Purple
+            Color.parseColor("#3F51B5"), // Indigo
+            Color.parseColor("#2196F3"), // Blue
+            Color.parseColor("#03A9F4"), // Light Blue
+            Color.parseColor("#00BCD4"), // Cyan
+            Color.parseColor("#009688"), // Teal
+            Color.parseColor("#4CAF50"), // Green
+            Color.parseColor("#8BC34A"), // Light Green
+            Color.parseColor("#CDDC39"), // Lime
+            Color.parseColor("#FFEB3B"), // Yellow
+            Color.parseColor("#FFC107"), // Amber
+            Color.parseColor("#FF9800"), // Orange
+            Color.parseColor("#FF5722"), // Deep Orange
+            Color.parseColor("#795548"), // Brown
+            Color.parseColor("#9E9E9E"), // Grey
+            Color.parseColor("#607D8B")  // Blue Grey
+    };
 
+    private void setAvatarInitial(String name) {
+        if (name != null && !name.isEmpty()) {
+            String initial = String.valueOf(name.charAt(0)).toUpperCase();
+            Bitmap initialBitmap = createInitialBitmap(initial);
+            profileImageView.setImageBitmap(initialBitmap);
+        }
+    }
+
+    private Bitmap createInitialBitmap(String initial) {
+        int size = 100; // Diameter of the circle
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        // Select a random index for the color array
+        int index = (int) (Math.random() * COLORS.length);
+        int backgroundColor = COLORS[index];
+
+        // Draw circle
+        Paint backgroundPaint = new Paint();
+        backgroundPaint.setColor(backgroundColor);
+        backgroundPaint.setAntiAlias(true);
+        canvas.drawCircle(size / 2, size / 2, size / 2, backgroundPaint);
+
+        // Draw text
+        Paint textPaint = new Paint();
+        textPaint.setColor(Color.WHITE); // Set the text color
+        textPaint.setTextSize(50); // Set the text size
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setAntiAlias(true);
+
+        // Calculate vertical center
+        float centerY = (canvas.getHeight() / 2) - ((textPaint.descent() + textPaint.ascent()) / 2);
+        canvas.drawText(initial, size / 2, centerY, textPaint);
+
+        return bitmap;
+    }
 
     /**
      * Handles updating the profile picture when the profile image is clicked
      */
     public void handleProfileImageClick() {
         // Get the current profile image
-        Drawable currentImage = ((ImageView) profileImageView).getDrawable();
+        Drawable currentImage = profileImageView.getDrawable();
+        boolean isDefaultImage = currentImage.equals(defaultImage);
 
         // Build a new alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
         builder.setTitle("Update Profile Image");
 
         // If the current image is the default image, don't show the delete option
-        if (currentImage.equals(defaultImage)) {
+        if (isDefaultImage) {
             // Set the items in the dialog
             builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery"},
                     // Set the listener for the selection on the dialog
@@ -645,7 +711,9 @@ public class ProfileActivity extends AppCompatActivity {
                                 case 2: // Delete Photo
                                     if (user != null) {
                                         user.deleteProfileImage();
-                                        ((ImageView) profileImageView).setImageDrawable(defaultImage);
+                                        // TODO: Set default image back to generator picture
+//                                        profileImageView.setImageDrawable(defaultImage);
+                                        setAvatarInitial(profileUserName);
                                     }
                                     break;
                             }
