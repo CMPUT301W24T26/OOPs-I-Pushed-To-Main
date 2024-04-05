@@ -62,7 +62,7 @@ public class AdminDashboardFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 // Start ProfileListActivity to browse profiles
-                Intent intent = new Intent(getActivity(), ProfileListActivity.class);
+                Intent intent = new Intent(getActivity(), UserListActivity.class);
                 intent.putExtra("isAdmin", true);
                 startActivity(intent);
             }

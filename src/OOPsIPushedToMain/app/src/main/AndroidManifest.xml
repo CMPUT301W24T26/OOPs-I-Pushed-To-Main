@@ -29,7 +29,7 @@
             android:name=".ImageListActivity"
             android:exported="false" />
         <activity
-            android:name=".ProfileListActivity"
+            android:name=".UserListActivity"
             android:exported="false" />
         <activity
             android:name=".ProfileActivity"
