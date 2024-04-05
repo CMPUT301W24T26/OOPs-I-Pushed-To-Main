@@ -368,16 +368,13 @@ public class FirebaseAccess {
         }
 
         // If the inner document name is not specified, create a new one
-//        boolean newInnerDoc;
-//        if (innerDocName == null && innerCollName != null) {
-//            innerDocName = generateNewUID(this.databaseType, innerCollName);
-//            newInnerDoc = true;
-//        } else {
-//            newInnerDoc = false;
-//            if (innerCollName == null && innerDocName != null) {
-//                throw new IllegalArgumentException("Inner collection must be specified!");
-//            }
-//        }
+        if (innerDocName == null && innerCollName != null) {
+            innerDocName = generateNewUID(this.databaseType, innerCollName);
+        } else {
+            if (innerCollName == null && innerDocName != null) {
+                throw new IllegalArgumentException("Inner collection must be specified!");
+            }
+        }
 
 
         String finalOuterDocName = outerDocName;
