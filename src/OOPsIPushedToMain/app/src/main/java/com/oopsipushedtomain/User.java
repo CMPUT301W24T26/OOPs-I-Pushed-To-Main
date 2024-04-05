@@ -204,6 +204,9 @@ public class User {
         this.nickname = (String) data.get("nickname");
         this.phone = (String) data.get("phone");
         this.fid = (String) data.get("fid");
+        if (data.get("geolocation") != null) {
+            this.geolocation = (Boolean) data.get("geolocation");
+        }
 
     }
 
@@ -225,28 +228,29 @@ public class User {
                 parseFirestoreData(data);
 
                 // Get the profile picture
-                if (this.profileImageUID == null) {
-                    // No image was ever uploaded, just set it to null
-                    this.profileImage = null;
-
-                    // Complete the future
-                    future.complete(null);
-
-                    // Data is current
-                    dataIsCurrent = true;
-                } else {
-                    // Get the image from firebase
-                    database.getImageFromFirestore(this.uid, ImageType.profilePictures).thenAccept(imageData -> {
-                        // Store in the class
-                        this.profileImage = (Bitmap) imageData.get("image");
+                database.getAllRelatedImagesFromFirestore(this.uid, ImageType.profilePictures).thenAccept(dataList -> {
+                    if (dataList == null) {
+                        // If the datalist is empty, there is no profile picture
+                        this.profileImage = null;
 
                         // Complete the future
                         future.complete(null);
 
                         // Data is current
                         dataIsCurrent = true;
-                    });
-                }
+                    } else {
+                        // Set the UID and profile image
+                        this.profileImage = (Bitmap) dataList.get(0).get("image");
+                        this.profileImageUID = (String) dataList.get(0).get("UID");
+
+                        // Complete the future
+                        future.complete(null);
+
+                        // Data is current
+                        dataIsCurrent = true;
+                    }
+                });
+
             });
         } else {
             // Data is current, just complete the future
@@ -453,6 +457,7 @@ public class User {
 
     /**
      * Gets the user's geolocation preference
+     *
      * @return The location preference of the user
      */
     public CompletableFuture<Boolean> getGeolocation() {
@@ -649,10 +654,11 @@ public class User {
         this.profileImage = profileImage;
 
         // Update in database
+        String imageUID = null;
         if (this.profileImageUID == null) {
             this.profileImageUID = database.storeImageInFirestore(this.uid, null, ImageType.profilePictures, profileImage);
         } else {
-            database.storeImageInFirestore(this.uid, this.profileImageUID, ImageType.profilePictures, profileImage);
+            this.profileImageUID = database.storeImageInFirestore(this.uid, this.profileImageUID, ImageType.profilePictures, profileImage);
         }
 
     }

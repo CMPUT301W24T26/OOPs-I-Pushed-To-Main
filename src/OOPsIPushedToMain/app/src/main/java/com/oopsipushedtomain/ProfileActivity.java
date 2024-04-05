@@ -54,36 +54,52 @@ public class ProfileActivity extends AppCompatActivity {
      * A unique request code for getting camera permissions
      */
     private static final int MY_PERMISSIONS_REQUEST_CAMERA = 100; // A unique request code
-    private static final int MY_PERMISSIONS_REQUEST_LOCATION = 110; // A unique request code
-    // Database test
-    FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.EVENTS);
-    boolean cameraEnabled;
-    boolean locationEnabled;
-    boolean initialRun = true;
+
     /**
-     * Declare the user
+     * A unique request code for getting geolocation permissions
+     */
+    private static final int MY_PERMISSIONS_REQUEST_LOCATION = 110; // A unique request code
+
+    /**
+     * Toggle for camera permissions
+     */
+    boolean cameraEnabled;
+
+    /**
+     * Toggle for location permissions
+     */
+    boolean locationEnabled;
+
+    /**
+     * Whether this is the first time the geolocation permission is checked
+     */
+    boolean initialRun = true;
+
+    /**
+     * The signed in user
      */
     private User user;
-    /**
-     * Declare a QRCode for scanning
-     */
-    private QRCode qrCode;
+
     /**
      * Declare UI elements for labels and values
      */
     private TextView nameValue, nicknameValue, birthdayValue, homepageValue, addressValue, phoneNumberValue, emailValue;
+
     /**
      * Declare UI elements for buttons
      */
     private Button eventsButton, scanQRCodeButton, adminButton;
+
     /**
      * Reference to the geo-location toggle
      */
     private SwitchCompat toggleGeolocationSwitch;
+
     /**
      * The reference to the view of the profile image
      */
     private View profileImageView;
+
     /**
      * Get the image from the camera
      */
@@ -91,20 +107,23 @@ public class ProfileActivity extends AppCompatActivity {
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 Log.d("ProfileActivity", "ActivityResult received");
+                // If the returned result is good
                 if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    // Get the bitmap
                     Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
-                    runOnUiThread(() -> {
-                        ((ImageView) profileImageView).setImageBitmap(photo);
-                        if (user != null) {
-                            FirebaseAccess innerDatabase = new FirebaseAccess(FirestoreAccessType.USERS);
-                            innerDatabase.storeImageInFirestore(user.getUID(), null, ImageType.profilePictures, photo);
-                        } else {
-                            Log.d("ProfileActivity", "User object is null");
-                        }
-                    });
+                    // Set the image in the view
+                    ((ImageView) profileImageView).setImageBitmap(photo);
+                    // Update the user profile
+                    if (user != null) {
+                        // Set the new profile image
+                        user.setProfileImage(photo);
+                    } else {
+                        Log.d("ProfileActivity", "User object is null");
+                    }
                 }
             }
     );
+
     /**
      * Getting the result from the photo gallery for image upload
      */
@@ -119,29 +138,35 @@ public class ProfileActivity extends AppCompatActivity {
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     }
+                    // Get the bitmap image
                     InputStream finalInputStream = inputStream;
-                    runOnUiThread(() -> {
-                        Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
-                        ((ImageView) profileImageView).setImageURI(result);
-                        if (user != null) {
-                            FirebaseAccess innerDatabase = new FirebaseAccess(FirestoreAccessType.USERS);
-                            innerDatabase.storeImageInFirestore(user.getUID(), null, ImageType.profilePictures, picture);
-                        } else {
-                            Log.d("ProfileActivity", "User object is null");
-                        }
-                    });
+                    Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
+
+                    // Set in the view
+                    ((ImageView) profileImageView).setImageURI(result);
+
+                    // Update the user
+                    if (user != null) {
+                        // Set the new profile image
+                        user.setProfileImage(picture);
+                    } else {
+                        Log.d("ProfileActivity", "User object is null");
+                    }
 
                 }
             }
     );
+
     /**
      * The reference to the image drawable
      */
     private Drawable defaultImage;
+
     /**
      * The UID of the user
      */
     private String userId; // Get from bundle
+
     /**
      * Activity result launcher for getting the result of the QRCodeScan
      * Performs the correct action depending on the type of QR code scanned.
@@ -202,9 +227,16 @@ public class ProfileActivity extends AppCompatActivity {
                 // TODO: Implement a proper sign in feature
                 CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
 
-                // Request location permissions
-                handleGeolocationToggled();
-                initialRun = false;
+                // Set the toggle switch based of the loaded value
+                user.getGeolocation().thenAccept(value -> {
+                    runOnUiThread(() -> {
+                        toggleGeolocationSwitch.setChecked(value);
+
+                        // Request location permissions
+                        handleGeolocationToggled();
+                        initialRun = false;
+                    });
+                });
 
 
             });
@@ -516,9 +548,32 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             });
         });
+
+        // Update the profile picture
+        user.getProfileImage().thenAccept(image -> {
+            runOnUiThread(() -> {
+                // Update the fields
+                if (image != null) {
+                    ((ImageView) profileImageView).setImageBitmap(image);
+                }
+            });
+        });
+
+        // Update the geolocation
+        user.getGeolocation().thenAccept(value -> {
+            runOnUiThread(() -> {
+                // Update the fields
+                if (value != null) {
+                    toggleGeolocationSwitch.setChecked(value);
+                }
+            });
+        });
     }
 
 
+    /**
+     * Handles updating the profile picture when the profile image is clicked
+     */
     public void handleProfileImageClick() {
         // Get the current profile image
         Drawable currentImage = ((ImageView) profileImageView).getDrawable();
@@ -594,14 +649,18 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     // ChatGPT: How do I request location permission in android?
+
+    /**
+     * Handles the geolocation switch being toggled
+     */
     private void handleGeolocationToggled() {
         // Check for geolocation permissions
         if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             // At least one of the permissions are not granted, request them
-            ActivityCompat.requestPermissions(ProfileActivity.this,  new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
 
         } else {
             locationEnabled = true;
@@ -620,7 +679,6 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }
     }
-
 
 
     /**
