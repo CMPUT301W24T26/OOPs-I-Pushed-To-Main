@@ -22,13 +22,14 @@
         tools:srcCompat="@tools:sample/avatars"/>
 
     <Button
-        android:id="@+id/close_button"
+        android:id="@+id/share_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Close"
+        android:text="Share"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginBottom="30sp"/>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
