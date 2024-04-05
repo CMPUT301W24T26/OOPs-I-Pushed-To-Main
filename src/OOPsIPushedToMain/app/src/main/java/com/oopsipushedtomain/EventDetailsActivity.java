@@ -2,6 +2,7 @@ package com.oopsipushedtomain;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,20 +13,28 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentActivity;
 
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
-import com.google.firebase.firestore.auth.User;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
+import com.oopsipushedtomain.Database.ImageType;
+import com.oopsipushedtomain.Geolocation.MapActivity;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * EventDetailsActivity allows organizers to view and edit details of an event.
@@ -70,17 +79,22 @@ public class EventDetailsActivity extends AppCompatActivity {
     /**
      * The references to the buttons
      */
-    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton;
+    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton;
 
     /**
      * The UID of the user
      */
-    private String currentUserUID;
+    private String userId;
 
     /**
      * The UID of the event
      */
     private String eventID;
+
+    /**
+     * Event
+     */
+    private Event event;
 
     /**
      * Initializes the class with all parameters
@@ -93,6 +107,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
+        CompletableFuture<Event> future = new CompletableFuture<>();
 
         eventTitleEdit = findViewById(R.id.event_details_organizer_title_e);
         eventStartTimeEdit = findViewById(R.id.event_details_organizer_start_time_e);
@@ -106,27 +121,65 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewLimitAttendeeButton = findViewById(R.id.btnViewLimitAttendees);
         deleteButton = findViewById(R.id.btnDeleteEvent);
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
-        currentUserUID = CustomFirebaseAuth.getInstance().getCurrentUserID();
+//        currentUserUID = CustomFirebaseAuth.getInstance().getCurrentUserID();
+        viewMapButton = findViewById(R.id.btnViewMap);
 
         eventStartTimeEdit.setOnClickListener(v -> showDateTimePicker(eventStartTimeEdit));
         eventEndTimeEdit.setOnClickListener(v -> showDateTimePicker(eventEndTimeEdit));
 
-
-
-        Event event = (Event) getIntent().getSerializableExtra("selectedEvent");
-        if (event != null) {
-            // Set the text for the TextViews with event details
-            eventTitleEdit.setText(event.getTitle());
-            eventStartTimeEdit.setText(event.getStartTime());
-            eventEndTimeEdit.setText(event.getEndTime());
-            eventDescriptionEdit.setText(event.getDescription());
-
-//            determineUserRole(currentUserUID, event.getEventId(), this::updateUIForRole);
-
-            eventID = event.getEventId();
+        // Retrieve the userId passed from EventListActivity
+        Intent intent_a = getIntent();
+        if (intent_a != null) {
+            userId = intent_a.getStringExtra("userId");
         }
 
+        eventID = getIntent().getStringExtra("selectedEventId");
+        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        event = new Event();
+        try {
+            Log.e("EventDetailsActivity", "trying to get event");
+            firebaseAccess.getDataFromFirestore(eventID).thenAccept(datalist -> {
+                if (datalist == null) {
+                    Log.e("EventDetailsActivity", "event is null");
+                } else {
+                    datalist.forEach((key, value) -> Log.d("map", key + ":" + value));
+//                    event = new Event(
+//                            datalist.get("UID").toString(),
+//                            datalist.get("title").toString(),
+//                            datalist.get("startTime").toString(),
+//                            datalist.get("description").toString(),
+//                            datalist.get("location").toString(),
+//                            datalist.get("posterUrl").toString(),
+//                            (int) datalist.get("attendeeLimit"),
+//                            datalist.get("creatorId").toString()
+//                    );
+//                    event = new Event();
+                    event.setEventId(datalist.get("UID").toString());
+                    event.setTitle(datalist.get("title").toString());
+                    event.setStartTime(datalist.get("startTime").toString());
+                    event.setDescription(datalist.get("description").toString());
+                    event.setLocation(datalist.get("location").toString());
+                    event.setPosterUrl(datalist.get("posterUrl").toString());
+                    event.setAttendeeLimit(Integer.valueOf(datalist.get("attendeeLimit").toString()));
+                    event.setCreatorId(datalist.get("creatorId").toString());
 
+                    // Set the text for the TextViews with event details
+                    Log.e("EventDetailsActivity", event.getTitle());
+                    runOnUiThread(() -> {
+                        eventTitleEdit.setText(event.getTitle());
+                        eventStartTimeEdit.setText(event.getStartTime());
+                        eventEndTimeEdit.setText(event.getEndTime());
+                        eventDescriptionEdit.setText(event.getDescription());
+
+                        // TODO: not currently working
+                        determineUserRole(userId, eventID, this::updateUIForRole);
+                    });
+                }
+            });
+            Log.e("EventDetailsActivity", "event loaded?");
+        } catch (Exception e) {
+            Log.e("EventDetailsActivity", String.valueOf(e));
+        }
 
         eventPosterEdit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -180,8 +233,13 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         viewEventQRCodeButton.setOnClickListener(v -> {
-            //Intent intent = new Intent(this, ViewEventQRCodeActivity.class);
-            //startActivity(intent);
+            // TODO
+        });
+
+        viewMapButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, MapActivity.class);
+            intent.putExtra("eventId", eventID);
+            startActivity(intent);
         });
 
         deleteButton.setOnClickListener(v -> {
@@ -210,6 +268,16 @@ public class EventDetailsActivity extends AppCompatActivity {
         eventStartTimeEdit.setText(startTime);
         eventEndTimeEdit.setText(endTime);
         eventDescriptionEdit.setText(description);
+
+        Map<String, Object> updatedEventData = new HashMap<>();
+        updatedEventData.put("title", title);
+        updatedEventData.put("startTime", startTime);
+        updatedEventData.put("endTime", endTime);
+        updatedEventData.put("description", description);
+        // Add any other event details you want to update
+
+        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        firebaseAccess.storeDataInFirestore(eventID, updatedEventData);
 
     }
 
@@ -254,12 +322,15 @@ public class EventDetailsActivity extends AppCompatActivity {
      * @param eventId The id of the event to delete
      */
     private void deleteEvent(String eventId) { // eventId passed as a parameter
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        firebaseAccess.deleteDataFromFirestore(eventId);
+        finish();
+        /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").document(eventId).delete().addOnSuccessListener(aVoid -> {
             Toast.makeText(EventDetailsActivity.this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
             // Intent to navigate back or simply finish this activity
             finish();
-        }).addOnFailureListener(e -> Toast.makeText(EventDetailsActivity.this, "Error deleting event", Toast.LENGTH_SHORT).show());
+        }).addOnFailureListener(e -> Toast.makeText(EventDetailsActivity.this, "Error deleting event", Toast.LENGTH_SHORT).show());*/
     }
 
     /**
@@ -277,7 +348,7 @@ public class EventDetailsActivity extends AppCompatActivity {
                     Event event = document.toObject(Event.class);
                     if (event != null && event.getSignedUpAttendees().size() < event.getAttendeeLimit()) {
                         // Proceed with signing up the user
-                        eventRef.update("signedUpAttendees", FieldValue.arrayUnion(currentUserUID))
+                        eventRef.update("signedUpAttendees", FieldValue.arrayUnion(userId))
                                 .addOnSuccessListener(aVoid -> Toast.makeText(EventDetailsActivity.this, "Signed up successfully", Toast.LENGTH_SHORT).show())
                                 .addOnFailureListener(e -> Toast.makeText(EventDetailsActivity.this, "Sign up failed, limit exceeded", Toast.LENGTH_SHORT).show());
                     } else {

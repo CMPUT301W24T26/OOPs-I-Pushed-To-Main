@@ -189,6 +189,17 @@
     </LinearLayout>
 
     <Button
+        android:id="@+id/btnViewMap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#673AB7"
+        android:text="Check-In Map"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/eventButtons1" />
+
+    <Button
         android:id="@+id/btnDeleteEvent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -197,7 +208,7 @@
         android:text="Delete Event"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/eventButtons1" />
+        app:layout_constraintTop_toBottomOf="@id/btnViewMap" />
 
     <Button
         android:id="@+id/btnSignUpEvent"
