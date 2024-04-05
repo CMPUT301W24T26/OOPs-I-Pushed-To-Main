@@ -192,7 +192,7 @@ public class FirebaseAccess {
      * @param innerCollName The inner collection
      * @return The generated UID
      */
-    private static String generateNewUID(FirestoreAccessType outerColl, FirebaseInnerCollection innerCollName) {
+    public static String generateNewUID(FirestoreAccessType outerColl, FirebaseInnerCollection innerCollName) {
         // Get a database reference
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
