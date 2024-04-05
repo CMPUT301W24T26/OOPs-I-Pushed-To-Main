@@ -101,7 +101,6 @@ public class User {
 
     /**
      * Whether the user has geolocation enabled
-     * Defaults to true
      */
     private boolean geolocation = false;
 
