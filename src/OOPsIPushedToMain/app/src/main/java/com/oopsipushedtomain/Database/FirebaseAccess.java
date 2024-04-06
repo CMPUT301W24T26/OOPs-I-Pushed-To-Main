@@ -1,5 +1,6 @@
 package com.oopsipushedtomain.Database;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -16,6 +17,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Event;
+import com.oopsipushedtomain.ProfileActivity;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Array;
@@ -1159,7 +1161,7 @@ public class FirebaseAccess {
      * This function is callable from any access
      * DELETES ALL DOCUMENTS ACROSS ALL COLLECTIONS
      */
-    public CompletableFuture<Void> deleteAllDataInFirestore() {
+    public CompletableFuture<Void> deleteAllDataInFirestore(Context context) {
         // Create an array list of all collections
         ArrayList<FirebaseAccess> databases = new ArrayList<>();
 
@@ -1188,6 +1190,20 @@ public class FirebaseAccess {
                 database.storeDataInFirestore("XXXX", newData);
             }
 
+            // Re add the admin QR code
+            int drawableId = context.getResources().getIdentifier("admin_code", "drawable", context.getPackageName());
+
+            // Decode the drawable into a Bitmap
+            Bitmap adminImage =  BitmapFactory.decodeResource(context.getResources(), drawableId);
+            adminImage = Bitmap.createScaledBitmap(adminImage, 400, 400, false);;
+
+            // Store the image into the qr code database
+            Blob imageBlob = FirebaseAccess.bitmapToBlob(adminImage);
+            Map<String, Object> imageData = new HashMap<>();
+            imageData.put("image", imageBlob);
+            imageData.put("origin", null);
+            imageData.put("type", "adminQRCode");
+            FirebaseFirestore.getInstance().collection("qrcodes").document("ADMIN-CODE").set(imageData);
 
             return null;
         };

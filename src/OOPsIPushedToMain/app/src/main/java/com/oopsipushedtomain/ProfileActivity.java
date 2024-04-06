@@ -4,12 +4,15 @@ import android.Manifest;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -32,6 +35,9 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.google.firebase.Firebase;
+import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
@@ -44,6 +50,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -246,7 +253,11 @@ public class ProfileActivity extends AppCompatActivity {
                                     startActivity(intent);
                                 });
                                 break;
-                            case "admin":
+                            case "adminQRCode":
+                                runOnUiThread(() -> {
+                                    Log.d("QRScanner","The User is now an admin!!");
+                                });
+
                                 // Make the user an admin
                                 // TODO: Update user to support account types
                                 break;
@@ -517,15 +528,8 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(intent);
         });
         adminButton.setOnClickListener(v -> {
-            // FOR TESTING
-            // Load a specific QR code
-            FirebaseAccess imageAccess = new FirebaseAccess(FirestoreAccessType.QRCODES);
-            imageAccess.getImageFromFirestore("QRCD-1BS9WTNYYWXMVK9V7WGB", ImageType.eventQRCodes).thenAccept(imageData -> {
-                Bitmap bitmap = (Bitmap) imageData.get("image");
-            });
-
-//            Intent intent = new Intent(ProfileActivity.this, AdminActivity.class);
-//            startActivity(intent);
+            Intent intent = new Intent(ProfileActivity.this, AdminActivity.class);
+            startActivity(intent);
         });
         scanQRCodeButton.setOnClickListener(v -> {
             // Switch to the QR code scanner
