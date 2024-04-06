@@ -218,6 +218,7 @@ public class Event implements Serializable {
         InitDatabase();
         // TODO: Change to correct handling for event vs promo QR Code
         generateQRcodeData(ImageType.eventQRCodes);
+        generateQRcodeData(ImageType.promoQRCodes);
 
         // Get the UID for an image
         imageUID = eventRef.document().getId().toUpperCase();
