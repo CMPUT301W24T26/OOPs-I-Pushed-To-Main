@@ -18,6 +18,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Event;
 import com.oopsipushedtomain.ProfileActivity;
+import com.oopsipushedtomain.QRCode;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Array;
@@ -1161,7 +1162,7 @@ public class FirebaseAccess {
      * This function is callable from any access
      * DELETES ALL DOCUMENTS ACROSS ALL COLLECTIONS
      */
-    public CompletableFuture<Void> deleteAllDataInFirestore(Context context) {
+    public CompletableFuture<Void> deleteAllDataInFirestore() {
         // Create an array list of all collections
         ArrayList<FirebaseAccess> databases = new ArrayList<>();
 
@@ -1190,12 +1191,8 @@ public class FirebaseAccess {
                 database.storeDataInFirestore("XXXX", newData);
             }
 
-            // Re add the admin QR code
-            int drawableId = context.getResources().getIdentifier("admin_code", "drawable", context.getPackageName());
-
-            // Decode the drawable into a Bitmap
-            Bitmap adminImage =  BitmapFactory.decodeResource(context.getResources(), drawableId);
-            adminImage = Bitmap.createScaledBitmap(adminImage, 400, 400, false);;
+            // Add the admin qr code
+            Bitmap adminImage = QRCode.generateAdminQRCode();
 
             // Store the image into the qr code database
             Blob imageBlob = FirebaseAccess.bitmapToBlob(adminImage);
