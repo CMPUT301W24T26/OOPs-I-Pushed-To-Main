@@ -232,8 +232,9 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         viewLimitAttendeeButton.setOnClickListener(v -> {
-            //Intent intent = new Intent(this, ViewLimitAttendeesActivity.class);
-            //startActivity(intent);
+            Intent intent = new Intent(EventDetailsActivity.this, ViewLimitAttendeesActivity.class);
+            intent.putExtra("eventId", event.getEventId()); // Pass the event ID to the new activity
+            startActivity(intent);
         });
 
         viewEventQRCodeButton.setOnClickListener(v -> {
