@@ -129,8 +129,11 @@ public class AnnouncementListActivity extends AppCompatActivity {
                                 if (getAnnouncementTask.isSuccessful()) {
                                     DocumentSnapshot announcementDoc = getAnnouncementTask.getResult();
                                     if (announcementDoc.exists()) {  // The announcement was successfully found
-                                        announcementDataList.add(announcementDoc.toObject(Announcement.class));
+                                        Announcement newAnnouncement = announcementDoc.toObject(Announcement.class);
+                                        newAnnouncement.setAnmtId(announcementDoc.getId());
+                                        announcementDataList.add(newAnnouncement);
                                         announcementListAdapter.notifyDataSetChanged();
+                                        Log.d("test", getFirstAnnouncement());
                                     } else {
                                         Log.e(TAG, String.format("Could not find announcement %s for event %s", announcementDoc, eventId));
                                     }
@@ -147,5 +150,13 @@ public class AnnouncementListActivity extends AppCompatActivity {
                 Log.e(TAG, "Get event announcements task failed, ", getEventTask.getException());
             }
         });
+    }
+
+    /**
+     * Get the first announcement in the list. Used for intent testing.
+     * @return UID of first announcement in list.
+     */
+    public String getFirstAnnouncement() {
+        return announcementDataList.get(0).getAnmtId();
     }
 }

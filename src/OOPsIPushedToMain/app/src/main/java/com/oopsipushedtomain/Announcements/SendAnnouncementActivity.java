@@ -108,7 +108,7 @@ public class SendAnnouncementActivity extends AppCompatActivity {
                 DocumentSnapshot eventDoc = getEventTask.getResult();
                 if (eventDoc.exists()) {  // The event was successfully found
                     eventTitle = eventDoc.getString("title");
-                    Log.e(TAG, String.format("Found event %s", eventTitle));
+                    Log.d(TAG, String.format("Found event %s", eventTitle));
                     eventTitleE.setText(eventTitle);
 
                     // TODO: used for testing, this should actually be called when attendees

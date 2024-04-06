@@ -65,11 +65,11 @@ public class MapActivityIntentTest {
 
     /**
      * US 03.02.01 - Enable or disable geolocation tracking
-     * Create a new user and initialize the database. Enables geolocation tracking.
+     * Create a new user and initialize the database. Enable geolocation tracking for the new user.
      */
     @Before
     public void setup() {
-        // Create a new user
+        // Create a new user and initialize the database
         try {
             user = User.createNewObject().get();
             user.setName("MapActivity tester");
@@ -93,8 +93,7 @@ public class MapActivityIntentTest {
         // Launch EventListActivity with TEST-USER passed as the userId
         Intent i = new Intent(getInstrumentation().getTargetContext(), EventListActivity.class);
         i.putExtra("userId", user.getUID());
-        ActivityScenario.launch(i).onActivity(activity -> {
-        });
+        ActivityScenario.launch(i);//.onActivity(activity -> {});
 
         // Create a test event
         String titleToType = "MapActivity test event " + (Math.random() * 10 + 1);

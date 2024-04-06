@@ -20,14 +20,14 @@ public class AnnouncementsUnitTest {
         return announcementList;
     }
     private Announcement mockAnnouncement() {
-        return new Announcement("Mock title", "Mock body", "Mock imageId", "Mock eventId");
+        return new Announcement("title", "body", "imageId", "eventId", "anmtId");
     }
 
     @Test
     public void testAdd() {
         ArrayList<Announcement> announcementList = mockAnnouncementList();
         assertEquals(1, announcementList.size());
-        Announcement announcement = new Announcement("Title2", "Body2", "imageId2", "eventId2");
+        Announcement announcement = new Announcement("Title2", "Body2", "imageId2", "eventId2", "anmtId2");
         announcementList.add(announcement);
         assertEquals(2, announcementList.size());
         assertTrue(announcementList.contains(announcement));
@@ -36,7 +36,7 @@ public class AnnouncementsUnitTest {
     @Test
     public void testGetAnnouncements() {
         ArrayList<Announcement> announcementList = mockAnnouncementList();
-        Announcement announcement = new Announcement("Title2", "Body2", "imageId2", "eventId2");
+        Announcement announcement = new Announcement("Title2", "Body2", "imageId2", "eventId2", "anmtId2");
         announcementList.add(announcement);
         assertSame(announcement, announcementList.get(1));
         assertNotEquals(mockAnnouncement(), announcementList.get(1));
@@ -45,17 +45,17 @@ public class AnnouncementsUnitTest {
     @Test
     public void testHasAnnouncement() {
         ArrayList<Announcement> announcementList = mockAnnouncementList();
-        Announcement announcementShouldExist = new Announcement("Title2", "Body2", "imageId2", "eventId2") ;
+        Announcement announcementShouldExist = new Announcement("Title2", "Body2", "imageId2", "eventId2", "anmtId2") ;
         announcementList.add(announcementShouldExist);
         assertTrue(announcementList.contains(announcementShouldExist));
-        Announcement announcementShouldNotExist = new Announcement("Title2", "Body2", "imageId2", "eventId2");
+        Announcement announcementShouldNotExist = new Announcement("Title2", "Body2", "imageId2", "eventId2", "anmtId2");
         assertFalse(announcementList.contains(announcementShouldNotExist));
     }
 
     @Test
     public void testRemoveAnnouncement() {
         ArrayList<Announcement> announcementList = mockAnnouncementList();
-        Announcement announcement = new Announcement("Title2", "Body2", "imageId2", "eventId2");
+        Announcement announcement = new Announcement("Title2", "Body2", "imageId2", "eventId2", "anmtId2");
         announcementList.add(announcement);
         assertTrue(announcementList.contains(announcement));
         announcementList.remove(announcement);
@@ -66,7 +66,7 @@ public class AnnouncementsUnitTest {
     public void testCountAnnouncements() {
         ArrayList<Announcement> announcementList = mockAnnouncementList();
         assertEquals(1, announcementList.size());
-        Announcement announcement = new Announcement("Title2", "Body2", "imageId2", "eventId2");
+        Announcement announcement = new Announcement("Title2", "Body2", "imageId2", "eventId2", "anmtId2");
         announcementList.add(announcement);
         assertEquals(2, announcementList.size());
     }

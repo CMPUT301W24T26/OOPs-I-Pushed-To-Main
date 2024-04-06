@@ -6,6 +6,11 @@ package com.oopsipushedtomain.Database;
 public enum FirestoreAccessType {
 
     /**
+     * The announcements collection.
+     * Contains information about announcements
+     */
+    ANNOUNCEMENTS,
+    /**
      * The events collection
      * Contains information about events
      */

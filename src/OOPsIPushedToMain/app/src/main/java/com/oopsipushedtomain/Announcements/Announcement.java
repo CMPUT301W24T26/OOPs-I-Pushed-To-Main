@@ -33,6 +33,8 @@ public class Announcement implements Serializable {
      */
     private String eventId;
 
+    private String anmtId;
+
     /**
      * Create an announcement
      *
@@ -41,11 +43,12 @@ public class Announcement implements Serializable {
      * @param imageId The image UID for the announcement
      * @param eventId The event UID for the announcement
      */
-    public Announcement(String title, String body, String imageId, String eventId) {
+    public Announcement(String title, String body, String imageId, String eventId, String anmtId) {
         this.title = title;
         this.body = body;
         this.imageId = imageId;
         this.eventId = eventId;
+        this.anmtId = anmtId;
     }
 
     /**
@@ -124,6 +127,22 @@ public class Announcement implements Serializable {
      */
     public void setEventId(String eventId) {
         this.eventId = eventId;
+    }
+
+    /**
+     * Gets the UID of this announcement
+     * @return Unique announcement ID
+     */
+    public String getAnmtId() {
+        return anmtId;
+    }
+
+    /**
+     * Sets the UID of this announcement
+     * @param anmtId Unique announcement ID to set
+     */
+    public void setAnmtId(String anmtId) {
+        this.anmtId = anmtId;
     }
 
     /**
