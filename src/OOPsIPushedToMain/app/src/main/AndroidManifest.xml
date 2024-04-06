@@ -79,6 +79,10 @@
         <activity android:name=".Geolocation.MapActivity"
             android:exported="false"
             android:hardwareAccelerated="false"/>
+        <activity android:name=".ShowImageActivity">
+            android:exported="false"
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.oopsipushedtomain.fileprovider"
