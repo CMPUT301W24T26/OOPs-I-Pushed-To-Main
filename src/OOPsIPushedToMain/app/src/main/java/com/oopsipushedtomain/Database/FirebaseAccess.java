@@ -14,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Event;
 
 import java.io.ByteArrayOutputStream;
@@ -186,7 +187,8 @@ public class FirebaseAccess {
 
     /**
      * Generates a new UID for the specified database type and inner collection
-     * @param outerColl The outer collection
+     *
+     * @param outerColl     The outer collection
      * @param innerCollName The inner collection
      * @return The generated UID
      */
@@ -366,12 +368,9 @@ public class FirebaseAccess {
         }
 
         // If the inner document name is not specified, create a new one
-        boolean newInnerDoc;
         if (innerDocName == null && innerCollName != null) {
             innerDocName = generateNewUID(this.databaseType, innerCollName);
-            newInnerDoc = true;
         } else {
-            newInnerDoc = false;
             if (innerCollName == null && innerDocName != null) {
                 throw new IllegalArgumentException("Inner collection must be specified!");
             }
@@ -387,19 +386,10 @@ public class FirebaseAccess {
             // Store the data
             Task<Void> task = null;
             if (innerCollName != null) {
-                if (newInnerDoc) {
-                    task = docRef.collection(innerCollName.name()).document(finalInnerDocName).set(data);
-                } else {
-                    task = docRef.collection(innerCollName.name()).document(finalInnerDocName).update(data);
-                }
+                task = docRef.collection(innerCollName.name()).document(finalInnerDocName).set(data, SetOptions.merge());
 
             } else {
-                if (newOuterDoc) {
-                    task = docRef.set(data);
-                } else {
-                    task = docRef.update(data);
-                }
-
+                task = docRef.set(data, SetOptions.merge());
             }
 
             // Convert the task to a CompletableFuture
@@ -480,7 +470,7 @@ public class FirebaseAccess {
                         break;
                 }
             case EVENTS:
-                switch (imageType){
+                switch (imageType) {
                     case profilePictures:
                         break;
                     case eventQRCodes:
@@ -507,9 +497,17 @@ public class FirebaseAccess {
         // If no image UID is given, create a new one
         boolean newImage = false;
         if (imageUID == null) {
-            // Convert the imageType to an inner collection
-            FirebaseInnerCollection innerColl = FirebaseInnerCollection.valueOf(imageType.name());
-            imageUID = generateNewUID(this.databaseType, null);
+            // Generate the correct UID for the image
+            switch (imageType){
+                case profilePictures:
+                case eventPosters:
+                    imageUID = generateNewUID(FirestoreAccessType.IMAGES, null);
+                    break;
+                case promoQRCodes:
+                case eventQRCodes:
+                    imageUID = generateNewUID(FirestoreAccessType.QRCODES, null);
+                    break;
+            }
         }
 
         // Convert the image to a Blob
@@ -993,7 +991,8 @@ public class FirebaseAccess {
                     outData.put("UID", filePointer.get("UID"));
 
                     // Get the image
-                    outData.put("image", this.getImageFromFirestore((String) filePointer.get("UID"), imageType).get());
+                    Map<String, Object> imageData = this.getImageFromFirestore((String) filePointer.get("UID"), imageType).get();
+                    outData.put("image", imageData.get("image"));
 
                     // Put the map in the list
                     outList.add(outData);
@@ -1067,6 +1066,7 @@ public class FirebaseAccess {
 
     /**
      * Gets any documents matching the given field from an outer collection
+     *
      * @param fieldName The name of the field
      * @param fieldData The data inside the field
      * @return A completable future containing the data
@@ -1075,15 +1075,16 @@ public class FirebaseAccess {
         return this.getDataWithFieldEqualTo(null, null, null, fieldName, fieldData);
     }
 
-        /**
-         * Gets any documents matching the given field
-         * @param outerDocName The name of the outer document
-         * @param innerCollName The name of the inner collection
-         * @param innerDocName The name of the inner document
-         * @param fieldName The name of the field
-         * @param fieldData The data inside the field
-         * @return A completable future containing the data
-         */
+    /**
+     * Gets any documents matching the given field
+     *
+     * @param outerDocName  The name of the outer document
+     * @param innerCollName The name of the inner collection
+     * @param innerDocName  The name of the inner document
+     * @param fieldName     The name of the field
+     * @param fieldData     The data inside the field
+     * @return A completable future containing the data
+     */
     public CompletableFuture<ArrayList<Map<String, Object>>> getDataWithFieldEqualTo(String outerDocName, FirebaseInnerCollection innerCollName, String innerDocName, String fieldName, String fieldData) {
         // Create the callable to get the data
         Callable<ArrayList<Map<String, Object>>> firestoreTask = () -> {
@@ -1141,7 +1142,7 @@ public class FirebaseAccess {
                 Log.e("GetFromFirestore", "The document does not exist");
             }
 
-            if (outList.isEmpty()){
+            if (outList.isEmpty()) {
                 return null;
             } else {
                 return outList;
@@ -1152,7 +1153,6 @@ public class FirebaseAccess {
         // Return the future
         return callableToCompletableFuture(firestoreTask);
     }
-
 
 
     /**
