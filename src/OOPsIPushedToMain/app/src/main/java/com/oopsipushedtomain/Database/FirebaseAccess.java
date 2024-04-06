@@ -219,7 +219,7 @@ public class FirebaseAccess {
                         case announcements:
                             return "ANMT-" + UIDBase;
                         case checkInCoords:
-                            return "COOR-" + UIDBase;
+                            return "MRKR-" + UIDBase;
                         case eventPosters:
                             return "IMGE-" + UIDBase;
                         case eventQRCodes:

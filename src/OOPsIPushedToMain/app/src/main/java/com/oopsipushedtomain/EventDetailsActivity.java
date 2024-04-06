@@ -34,6 +34,7 @@ import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Geolocation.MapActivity;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -176,7 +177,7 @@ public class EventDetailsActivity extends AppCompatActivity {
                         eventDescriptionEdit.setText(event.getDescription());
 
                         // TODO: not currently working
-                        determineUserRole(userId, eventID, this::updateUIForRole);
+//                        determineUserRole(userId, eventID, this::updateUIForRole);
                     });
                 }
             });
@@ -246,7 +247,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         deleteButton.setOnClickListener(v -> {
-            final String eventId = getIntent().getStringExtra("eventId");
+            final String eventId = getIntent().getStringExtra("selectedEventId");
             // Call deleteEvent with the eventId
             if (eventId != null) {
                 deleteEvent(eventId);
@@ -364,7 +365,9 @@ public class EventDetailsActivity extends AppCompatActivity {
                             GeoPoint point = new GeoPoint(location.getLatitude(), location.getLongitude());
                             Log.d("Geolocation", String.valueOf(point));
                             HashMap<String, Object> data = new HashMap<String, Object>();
-                            data.put("marker", point);
+                            data.put("coordinates", point);
+                            data.put("userId", userId);
+                            data.put("timestamp", new Timestamp(System.currentTimeMillis()));
                             eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, data);
                         }
                     }

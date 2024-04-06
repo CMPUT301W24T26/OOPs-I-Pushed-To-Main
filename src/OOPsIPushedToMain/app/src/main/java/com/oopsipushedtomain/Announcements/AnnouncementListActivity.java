@@ -30,10 +30,12 @@ public class AnnouncementListActivity extends AppCompatActivity {
      * The view that shows the list of announcements
      */
     private ListView announcementList;
+
     /**
      * The list of announcement
      */
     private ArrayList<Announcement> announcementDataList;
+
     /**
      * The adapter to show the announcement in the ListView
      */
@@ -65,12 +67,13 @@ public class AnnouncementListActivity extends AppCompatActivity {
     private final String TAG = "EventAnnouncements";
 
     /**
-     * Creates and instantiates the activity
+     * Creates and instantiates the activity.
      * Finds the views and sets the adapter for the ListView
      *
      * @param savedInstanceState If the activity is being re-initialized after
-     *                           previously being shut down then this Bundle contains the data it most
-     *                           recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *                           previously being shut down then this Bundle contains the data it
+     *                           most recently supplied in {@link #onSaveInstanceState}.
+     *                           <b><i>Note: Otherwise it is null.</i></b>
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
