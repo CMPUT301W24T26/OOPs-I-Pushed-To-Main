@@ -1,34 +1,32 @@
 package com.oopsipushedtomain;
 
-import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-import static org.hamcrest.CoreMatchers.anything;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.Espresso;
-import androidx.test.espresso.action.ViewActions;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.LargeTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.rule.GrantPermissionRule;
-import androidx.test.uiautomator.UiDevice;
-import androidx.test.uiautomator.UiObject;
-import androidx.test.uiautomator.UiSelector;
+import static org.junit.Assert.assertEquals;
 
 import android.Manifest;
 import android.content.Intent;
 
+import androidx.test.core.app.ActivityScenario;
+import androidx.test.espresso.Espresso;
+import androidx.test.espresso.action.ViewActions;
+import androidx.test.espresso.intent.Intents;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
+import androidx.test.rule.ActivityTestRule;
+import androidx.test.rule.GrantPermissionRule;
+
+import com.oopsipushedtomain.Geolocation.MapActivity;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.osmdroid.views.overlay.Marker;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
@@ -40,10 +38,13 @@ public class MapActivityIntentTest {
     public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(Manifest.permission.ACCESS_FINE_LOCATION);
 
     /**
-     * Manually request coarselocation permissions
+     * Manually request coarse location permissions
      */
     @Rule
     public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(Manifest.permission.ACCESS_COARSE_LOCATION);
+
+    @Rule
+    public ActivityTestRule<MapActivity> mapActivityRule = new ActivityTestRule<>(MapActivity.class);
 
     @Test
     public void testMapActivty() throws InterruptedException {
@@ -73,10 +74,9 @@ public class MapActivityIntentTest {
         onView(withId(R.id.btnViewMap)).perform(click());
 
         // Check that there are no markers
-        UiDevice device = UiDevice.getInstance(getInstrumentation());
         Thread.sleep(2000); // Give the map some time to load markers
-        UiObject marker = device.findObject(new UiSelector().className(Marker.class));
-        assertFalse(marker.exists());
+        MapActivity mapActivity = mapActivityRule.getActivity();
+        assertEquals(0, mapActivity.getMarkerCount());
 
         // Close map
         Espresso.pressBack();
@@ -90,8 +90,8 @@ public class MapActivityIntentTest {
 
         // Check that there now is a marker
         Thread.sleep(2000); // Give the map some time to load markers
-        marker = device.findObject(new UiSelector().className(Marker.class));
-        assertTrue(marker.exists());
+        mapActivity = mapActivityRule.getActivity();
+        assertEquals(1, mapActivity.getMarkerCount());
 
         // Close map and delete event
         Espresso.pressBack();

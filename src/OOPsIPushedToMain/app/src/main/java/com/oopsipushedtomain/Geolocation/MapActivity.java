@@ -53,6 +53,11 @@ public class MapActivity extends AppCompatActivity {
     private FirebaseAccess db;
 
     /**
+     * Stores the number of markers on the map
+     */
+    private int markerCount;
+
+    /**
      * Tag used for log messages
      */
     private final String TAG = "Geolocation";
@@ -104,6 +109,7 @@ public class MapActivity extends AppCompatActivity {
      */
     private void setMarkers() {
         // Uses the database class to obtain the markers in an ArrayList<Map<String, Object>>
+        this.markerCount = 0;
         db.getAllDocuments(eventId, FirebaseInnerCollection.checkInCoords).thenAccept(markers -> {
             if (markers == null) {
                 Log.d(TAG, "No markers found");
@@ -133,9 +139,18 @@ public class MapActivity extends AppCompatActivity {
                     Date timestamp = ((com.google.firebase.Timestamp) Objects.requireNonNull(marker.get("timestamp"))).toDate();
                     String title = String.format("User ID: %s\nTimestamp: %s", userId, timestamp);
                     mapMarker.setTitle(title);
+                    this.markerCount++;
                 }
             }
         });
+    }
+
+    /**
+     * Returns the number of markers on the map. Used for intent testing.
+     * @return Number of markers currently on the map.
+     */
+    public int getMarkerCount() {
+        return this.markerCount;
     }
 
     /**
