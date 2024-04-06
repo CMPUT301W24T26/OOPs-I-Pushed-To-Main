@@ -1,5 +1,6 @@
 package com.oopsipushedtomain.Database;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -16,6 +17,8 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Event;
+import com.oopsipushedtomain.ProfileActivity;
+import com.oopsipushedtomain.QRCode;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Array;
@@ -1188,6 +1191,16 @@ public class FirebaseAccess {
                 database.storeDataInFirestore("XXXX", newData);
             }
 
+            // Add the admin qr code
+            Bitmap adminImage = QRCode.generateAdminQRCode();
+
+            // Store the image into the qr code database
+            Blob imageBlob = FirebaseAccess.bitmapToBlob(adminImage);
+            Map<String, Object> imageData = new HashMap<>();
+            imageData.put("image", imageBlob);
+            imageData.put("origin", null);
+            imageData.put("type", "adminQRCode");
+            FirebaseFirestore.getInstance().collection("qrcodes").document("ADMIN-CODE").set(imageData);
 
             return null;
         };

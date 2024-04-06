@@ -4,13 +4,18 @@ import android.Manifest;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +34,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
+import com.google.firebase.Firebase;
+import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
@@ -36,8 +45,12 @@ import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.DialogInputListeners.PhonePickerDialog;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -180,17 +193,77 @@ public class ProfileActivity extends AppCompatActivity {
                 // Get the data
                 Intent data = o.getData();
 
-                // If the data is not null, load the QR code
+                // If the data is not null, load the scanned QR code
                 if (data != null) {
-                    String qrCodeString = data.getStringExtra("result");
+                    String qrCodeData = data.getStringExtra("result");
 
-                    // Check the user into the event
-                    user.checkIn(qrCodeString);
+                    // Get the QR code data from the database
+                    FirebaseAccess eventsDatabase = new FirebaseAccess(FirestoreAccessType.EVENTS);
+                    // As long as the image type is an QR code it will access the correct database
+                    eventsDatabase.getImageFromFirestore(qrCodeData, ImageType.eventQRCodes).thenAccept(imageData -> {
+                        // If no data is found cancel
+                        if (imageData == null) {
+                            runOnUiThread(() -> Log.d("QRScanner", "No QR image found"));
 
-                    // Show the scanned data
-                    Toast.makeText(getApplicationContext(), "Checked into event: " + qrCodeString, Toast.LENGTH_LONG).show();
-                    Log.d("QR Code", "Checked into event: " + qrCodeString);
+                            return;
+                        }
 
+                        // Perform the correct action depending on the type of QR code
+                        String qrType = (String) imageData.get("type");
+                        if (qrType == null) {
+                            // There was a problem
+                            runOnUiThread(() -> Log.d("QR Scanner", "Error getting type"));
+                            return;
+                        }
+
+                        // Get the eventID, for admin will be null
+                        String eventID = (String) imageData.get("origin");
+
+                        switch (qrType) {
+                            case "eventQRCodes":
+                                // Get the event name
+                                eventsDatabase.getDataFromFirestore(eventID).thenAccept(event -> {
+                                    runOnUiThread(() -> {
+                                        // Check the event exists
+                                        if (event == null) {
+                                            runOnUiThread(() -> Log.d("QRScanner", "Event does not exist!"));
+                                            return;
+                                        }
+                                        // Get the title of the event
+                                        String eventTitle = (String) event.get("title");
+
+                                        // Check the user into the event
+                                        runOnUiThread(() -> {
+                                            user.checkIn(eventID, ProfileActivity.this);
+                                        });
+
+
+                                        // Show a confirmation message
+                                        Toast.makeText(getApplicationContext(), "Checked into event: " + eventTitle, Toast.LENGTH_LONG).show();
+                                    });
+                                });
+                                break;
+                            case "promoQRCodes":
+                                // Open the event details page
+                                runOnUiThread(() -> {
+                                    // Get the id of the loaded user
+                                    Intent intent = new Intent(ProfileActivity.this, EventDetailsActivity.class);
+                                    intent.putExtra("userId", user.getUID());
+                                    intent.putExtra("selectedEventId", eventID);
+                                    startActivity(intent);
+                                });
+                                break;
+                            case "adminQRCode":
+                                runOnUiThread(() -> {
+                                    Log.d("QRScanner","The User is now an admin!!");
+                                });
+
+                                // Make the user an admin
+                                // TODO: Update user to support account types
+                                break;
+
+                        }
+                    });
                 } else {
                     Toast.makeText(getApplicationContext(), "Data Error", Toast.LENGTH_LONG).show();
                     Log.d("QR Code", "QR Code Not Scanned");
