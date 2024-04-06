@@ -139,7 +139,7 @@
             android:id="@+id/btnSendNotification"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="8sp"
+            android:layout_margin="4sp"
             android:backgroundTint="#3F51B5"
             android:text="Send Announcement"
             app:layout_constraintTop_toBottomOf="@id/event_details_organizer_event_stats" />
@@ -148,7 +148,7 @@
             android:id="@+id/btnViewAnnouncements"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="8sp"
+            android:layout_margin="4sp"
             android:backgroundTint="#3F51B5"
             android:text="View Announcements"
             app:layout_constraintTop_toBottomOf="@id/btnSendNotification"/>
@@ -165,12 +165,12 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btnViewLimitAttendees"
+            android:id="@+id/btnViewPromoQRCode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#3F51B5"
-            android:layout_marginEnd="4sp"
-            android:text="View/Limit Attendees"
+            android:layout_marginStart="4sp"
+            android:text="Event Promo Code"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/btnViewAnnouncements" />
@@ -181,44 +181,66 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="4sp"
             android:backgroundTint="#3F51B5"
-            android:text="View Event QR Code"
+            android:text="Event Check-In Code"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/btnViewLimitAttendees" />
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/btnViewMap"
+    <LinearLayout
+        android:id="@+id/eventButtons2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="#673AB7"
-        android:text="Check-In Map"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/eventButtons1" />
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/eventButtons1"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/btnViewMap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="#673AB7"
+            android:text="Check-In Map"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/eventButtons1" />
 
-    <Button
-        android:id="@+id/btnDeleteEvent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="#673AB7"
-        android:text="Delete Event"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnViewMap" />
+        <Button
+            android:id="@+id/btnDeleteEvent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4sp"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="#673AB7"
+            android:text="Delete Event"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnViewMap" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/btnSignUpEvent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="#3F51B5"
         android:text="Sign Up"
-        android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnDeleteEvent" />
+        app:layout_constraintTop_toBottomOf="@id/btnViewLimitAttendees" />
+
+    <Button
+        android:id="@+id/btnViewLimitAttendees"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#3F51B5"
+        android:layout_marginStart="4sp"
+        android:text="View/Limit Attendees"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/eventButtons2" />
+
 
 
 
