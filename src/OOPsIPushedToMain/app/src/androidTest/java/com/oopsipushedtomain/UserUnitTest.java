@@ -27,6 +27,7 @@ public class UserUnitTest {
 
     User user;
     Bitmap testImage;
+    Context testContext;
 
     @Before
     public void setUp(){
@@ -40,7 +41,7 @@ public class UserUnitTest {
         }
 
         // Set the test image
-        Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
+        testContext = InstrumentationRegistry.getInstrumentation().getContext();
         testImage = BitmapFactory.decodeResource(testContext.getResources(), com.oopsipushedtomain.test.R.drawable.test_image);
     }
 
@@ -258,7 +259,7 @@ public class UserUnitTest {
     @Test
     public void testCheckIn() {
         // Check into a fake event
-        user.checkIn("FAKEEVENT");
+        user.checkIn("FAKEEVENT", testContext);
 
         // Check if they were checked in
         FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.USERS);
@@ -281,7 +282,7 @@ public class UserUnitTest {
         assertEquals(1, count);
 
         // Check in again
-        user.checkIn("FAKEEVENT");
+        user.checkIn("FAKEEVENT", testContext);
 
         // Check if they were checked in
         data = null;
