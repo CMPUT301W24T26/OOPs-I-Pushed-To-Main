@@ -82,7 +82,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     /**
      * The references to the buttons
      */
-    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton;
+    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton;
 
     /**
      * The UID of the user
@@ -124,6 +124,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewLimitAttendeeButton = findViewById(R.id.btnViewLimitAttendees);
         deleteButton = findViewById(R.id.btnDeleteEvent);
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
+        viewEventPromoQRCodeButton = findViewById(R.id.btnViewPromoQRCode);
 //        currentUserUID = CustomFirebaseAuth.getInstance().getCurrentUserID();
         viewMapButton = findViewById(R.id.btnViewMap);
 
@@ -237,6 +238,37 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         viewEventQRCodeButton.setOnClickListener(v -> {
             ImageType imageType = ImageType.eventQRCodes;
+
+            // Call the asynchronous method to get the QRCode object
+            QRCode.loadQRCodeObject(eventID, imageType).thenAccept(qrCode -> {
+                // This code block is executed asynchronously when the QRCode object is available
+                Bitmap qrCodeBitmap = qrCode.getQRCodeImage();
+
+                // Check if the QR code bitmap is not null
+                if (qrCodeBitmap != null) {
+                    // Since this is an asynchronous callback, ensure you run UI operations on the UI thread
+                    runOnUiThread(() -> {
+                        // Create and show the ShowImageFragment with the QRCode image
+                        ShowImageFragment showImageFragment = ShowImageFragment.newInstance(qrCodeBitmap);
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.image_view, showImageFragment) // Make sure this is the ID of your actual container
+                                .addToBackStack(null) // Optional: Add this transaction to the back stack
+                                .commit();
+                    });
+                } else {
+                    // Handle the case where the QR code bitmap is null, also on the UI thread
+                    runOnUiThread(() ->
+                            Toast.makeText(EventDetailsActivity.this, "QR Code image not available.", Toast.LENGTH_SHORT).show());
+                }
+            }).exceptionally(exception -> {
+                // Handle any exceptions here
+                Log.e("QRCodeLoading", "Error loading QR Code", exception);
+                return null;
+            });
+        });
+
+        viewEventPromoQRCodeButton.setOnClickListener(v -> {
+            ImageType imageType = ImageType.promoQRCodes;
 
             // Call the asynchronous method to get the QRCode object
             QRCode.loadQRCodeObject(eventID, imageType).thenAccept(qrCode -> {
