@@ -22,13 +22,20 @@ public class NewEventActivityTest {
 
     @Test
     public void testCreateNewEvent() {
+        // Set event title
         onView(withId(R.id.new_event_title_e)).perform(clearText(), typeText("Test Event"));
+        // Set start time
         onView(withId(R.id.new_event_start_time_e)).perform(clearText(), typeText("01/01/2025 12:00"));
+        // Set end time
         onView(withId(R.id.new_event_end_time_e)).perform(clearText(), typeText("01/01/2025 14:00"));
+        // Set description
         onView(withId(R.id.new_event_description_e)).perform(clearText(), typeText("This is a test event."));
+        // Set attendee limit
+        onView(withId(R.id.new_event_attendee_limit_e)).perform(clearText(), typeText("50"));
         Espresso.closeSoftKeyboard();
+        // Click the create button
         onView(withId(R.id.btnCreateNewEvent)).perform(click());
-
 
     }
 }
+
