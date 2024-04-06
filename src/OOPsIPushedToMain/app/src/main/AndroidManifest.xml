@@ -81,6 +81,9 @@
             android:hardwareAccelerated="false"/>
         <activity android:name=".ViewLimitAttendeesActivity"
             android:exported="false" />
+        <activity android:name=".ShowImageActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.oopsipushedtomain.fileprovider"
