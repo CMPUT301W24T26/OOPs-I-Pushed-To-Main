@@ -75,6 +75,11 @@ public class ProfileActivity extends AppCompatActivity {
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 110; // A unique request code
 
     /**
+     * A unique request code for getting notification permissions
+     */
+    private static final int MY_PERMISSIONS_REQUEST_NOTIFICATION = 120; // A unique request code
+
+    /**
      * Toggle for camera permissions
      */
     boolean cameraEnabled;
@@ -314,6 +319,8 @@ public class ProfileActivity extends AppCompatActivity {
                             ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                                     Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
 
+                        } else {
+                            requestNotificationPermission();
                         }
                         initialRun = false;
                     });
@@ -796,10 +803,11 @@ public class ProfileActivity extends AppCompatActivity {
                     // At least one was granted
                     locationEnabled = true;
                 } else {
-                    // Location denyed
+                    // Location denied
                     locationEnabled = false;
                 }
-                return;
+                // Sequentially request notification permissions after handling location request
+                requestNotificationPermission();
             }
         }
     }
@@ -817,5 +825,20 @@ public class ProfileActivity extends AppCompatActivity {
         args.putString("fieldValue", fieldValue);
         dialog.setArguments(args);
         dialog.show(getSupportFragmentManager(), "EditFieldDialogFragment");
+    }
+
+    /**
+     * Gets the current user. Used for intent testing (Announcements)
+     * @return The current user object
+     */
+    public User getUser() {
+        return this.user;
+    }
+
+    private void requestNotificationPermission() {
+        // Check if they're already enabled, if not, request them
+        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, MY_PERMISSIONS_REQUEST_NOTIFICATION);
+        }
     }
 }

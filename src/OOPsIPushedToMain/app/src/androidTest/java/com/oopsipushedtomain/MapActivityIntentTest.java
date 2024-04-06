@@ -90,7 +90,7 @@ public class MapActivityIntentTest {
      */
     @Test
     public void testMapActivity() throws InterruptedException {
-        // Launch EventListActivity with TEST-USER passed as the userId
+        // Launch EventListActivity
         Intent i = new Intent(getInstrumentation().getTargetContext(), EventListActivity.class);
         i.putExtra("userId", user.getUID());
         ActivityScenario.launch(i);//.onActivity(activity -> {});

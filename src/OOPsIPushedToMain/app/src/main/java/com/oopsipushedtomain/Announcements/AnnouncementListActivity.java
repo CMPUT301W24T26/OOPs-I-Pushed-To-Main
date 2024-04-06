@@ -90,11 +90,13 @@ public class AnnouncementListActivity extends AppCompatActivity {
         // Get intent data
         Intent intent = getIntent();
         eventId = intent.getStringExtra("eventId");
-        Log.d(TAG, eventId);
+        if (eventId != null)
+            Log.d(TAG, eventId);
 
         // Initialize Firestore instance and get the event's announcements
         db = FirebaseFirestore.getInstance();
-        getEventAnnouncements();
+        if (eventId != null)
+            getEventAnnouncements();
     }
 
     /**

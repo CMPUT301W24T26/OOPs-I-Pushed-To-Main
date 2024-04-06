@@ -408,37 +408,6 @@ public class EventDetailsActivity extends AppCompatActivity {
      * @param eventId The id of the event
      */
     private void signUpForEvent(String eventId) {
-        // test geolocation
-        FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
-        if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            Log.e("Geolocation", "User has location disabled");
-        }
-        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.getToken())
-                .addOnSuccessListener(new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        // Got last known location. In some rare situations this can be null.
-                        if (location != null) {
-                            GeoPoint point = new GeoPoint(location.getLatitude(), location.getLongitude());
-                            Log.d("Geolocation", String.valueOf(point));
-                            HashMap<String, Object> data = new HashMap<String, Object>();
-                            data.put("coordinates", point);
-                            data.put("userId", userId);
-                            data.put("timestamp", new Timestamp(System.currentTimeMillis()));
-                            eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, data);
-                        }
-                    }
-                });
-
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference eventRef = db.collection("events").document(eventId);
 
