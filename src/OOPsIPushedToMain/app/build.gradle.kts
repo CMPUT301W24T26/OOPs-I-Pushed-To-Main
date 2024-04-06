@@ -46,6 +46,7 @@ dependencies {
 //    implementation(files("C:/Users/matte/AppData/Local/Android/Sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
     implementation(libs.androidx.preference)
+    implementation("com.google.android.gms:play-services-location:21.2.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

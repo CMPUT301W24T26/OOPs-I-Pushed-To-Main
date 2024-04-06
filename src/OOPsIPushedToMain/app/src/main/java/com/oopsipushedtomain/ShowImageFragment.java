@@ -1,8 +1,11 @@
 package com.oopsipushedtomain;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
 import android.view.LayoutInflater;
@@ -11,6 +14,9 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileOutputStream;
 
 /**
  * A fragment for showing a given Bitmap image
@@ -77,24 +83,49 @@ public class ShowImageFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_show_image, container, false);
 
-        // Get the image view
         ImageView imageView = view.findViewById(R.id.image_view);
 
-        // Put the bitmap in the image view
+        // Retrieve the bitmap from arguments
         if (getArguments() != null) {
             image = getArguments().getParcelable("image");
             imageView.setImageBitmap(image);
         }
 
-        // Set the click listener for the close button
-        Button closeButton = view.findViewById(R.id.close_button);
-        closeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(getContext(), "Use the back button", Toast.LENGTH_LONG).show();
+        Button shareButton = view.findViewById(R.id.share_button);
+        shareButton.setOnClickListener(v -> {
+            if (image != null) {
+                try {
+                    // Save the bitmap to cache and get its URI
+                    File cachePath = new File(getContext().getCacheDir(), "images");
+                    cachePath.mkdirs(); // Don't forget to make the directory
+                    FileOutputStream stream = new FileOutputStream(cachePath + "/image.png"); // Overwrites this image every time
+                    image.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                    stream.close();
+
+                    File imagePath = new File(getContext().getCacheDir(), "images");
+                    File newFile = new File(imagePath, "image.png");
+                    Uri contentUri = FileProvider.getUriForFile(getContext(), "com.oopsipushedtomain.fileprovider", newFile);
+
+                    if (contentUri != null) {
+                        // Create an intent to share the image
+                        Intent shareIntent = new Intent();
+                        shareIntent.setAction(Intent.ACTION_SEND);
+                        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // Temporarily grant read permission
+                        // shareIntent.setDataAndType(contentUri, getContext().getContentResolver().getType(contentUri)); // This line might not be necessary and could be removed or modified.
+                        shareIntent.setType(getContext().getContentResolver().getType(contentUri));
+                        shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                        startActivity(Intent.createChooser(shareIntent, "Choose an app"));
+
+
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(getContext(), "Failed to share image.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
         return view;
     }
+
 }
