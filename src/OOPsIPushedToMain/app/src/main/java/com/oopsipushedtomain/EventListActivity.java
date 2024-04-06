@@ -22,6 +22,7 @@ import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * EventListActivity is responsible for displaying a list of events to the user.
@@ -192,7 +193,7 @@ public class EventListActivity extends AppCompatActivity {
     }
 
     private void fetchEvents() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 eventDataList.clear();
@@ -204,6 +205,14 @@ public class EventListActivity extends AppCompatActivity {
             } else {
                 Log.e("EventListActivity", "Error getting events", task.getException());
             }
+        });*/
+        firebaseAccess.getAllDocuments().thenAccept(events -> {
+            eventDataList.clear();
+            eventDataList.addAll(events.stream().map(Event::new).collect(Collectors.toList()));
+            runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
+        }).exceptionally(e -> {
+            Log.e("EventListActivity", "Error fetching events", e);
+            return null;
         });
 
     }
