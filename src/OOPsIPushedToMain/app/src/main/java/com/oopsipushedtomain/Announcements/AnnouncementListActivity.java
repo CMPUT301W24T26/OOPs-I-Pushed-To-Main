@@ -106,12 +106,4 @@ public class AnnouncementListActivity extends AppCompatActivity {
             return null;
         });
     }
-
-    /**
-     * Get the first announcement in the list. Used for intent testing.
-     * @return UID of first announcement in list.
-     */
-    public String getFirstAnnouncement() {
-        return announcementDataList.get(0).getAnmtId();
-    }
 }
