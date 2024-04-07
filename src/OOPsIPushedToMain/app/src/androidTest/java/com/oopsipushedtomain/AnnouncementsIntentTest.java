@@ -91,7 +91,7 @@ public class AnnouncementsIntentTest {
     public ActivityTestRule<ProfileActivity> profileActivityRule = new ActivityTestRule<>(ProfileActivity.class);
 
     /**
-     * Create a new user and initialize the databases.
+     * Initialize the databases.
      */
     @Before
     public void setup() {
@@ -118,7 +118,7 @@ public class AnnouncementsIntentTest {
     public void testAnnouncements() throws InterruptedException {
         // Launch MainActivity
         Intent i = new Intent(getInstrumentation().getTargetContext(), MainActivity.class);
-        ActivityScenario.launch(i);//.onActivity(activity -> {});
+        ActivityScenario.launch(i);
 
         // Open Events list and create a test event
         Thread.sleep(2000);  // Wait for automatic profile generation to finish
@@ -139,7 +139,7 @@ public class AnnouncementsIntentTest {
         onView(withId(R.id.btnCreateNewEvent)).perform(click());
 
         // Open an event and sign up for it, thus signing up to receive push notifications
-        Thread.sleep(2000);  // Wait for EventList to populate
+        Thread.sleep(3000);  // Wait for EventList to populate
         onView(withText(containsString(titleToType))).perform(click());
         EventDetailsActivity eventDetailsActivity = eventDetailsActivityRule.getActivity();
         eventId = eventDetailsActivity.getEventID();
@@ -164,14 +164,13 @@ public class AnnouncementsIntentTest {
         // Wait for the push notification to arrive
         UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         device.openNotification();
-        device.wait(Until.hasObject(By.text(titleToType)), 2000);
+        device.wait(Until.hasObject(By.text(titleToType)), 60000);
         UiObject2 title = device.findObject(By.text(titleToType));
         UiObject2 text = device.findObject(By.text(bodyToType));
         assertEquals(titleToType, title.getText());
         assertEquals(bodyToType, text.getText());
         device.pressBack();
     }
-
 
     /**
      * Clean up the database by deleting the test user, test event, and test announcement.

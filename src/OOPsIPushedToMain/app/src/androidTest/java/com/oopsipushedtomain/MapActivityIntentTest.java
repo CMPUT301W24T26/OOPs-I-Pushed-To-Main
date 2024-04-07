@@ -93,7 +93,7 @@ public class MapActivityIntentTest {
         // Launch EventListActivity
         Intent i = new Intent(getInstrumentation().getTargetContext(), EventListActivity.class);
         i.putExtra("userId", user.getUID());
-        ActivityScenario.launch(i);//.onActivity(activity -> {});
+        ActivityScenario.launch(i);
 
         // Create a test event
         String titleToType = "MapActivity test event " + (Math.random() * 10 + 1);

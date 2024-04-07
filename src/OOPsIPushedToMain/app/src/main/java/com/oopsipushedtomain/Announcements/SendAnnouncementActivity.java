@@ -110,11 +110,6 @@ public class SendAnnouncementActivity extends AppCompatActivity {
                     eventTitle = eventDoc.getString("title");
                     Log.d(TAG, String.format("Found event %s", eventTitle));
                     eventTitleE.setText(eventTitle);
-
-                    // TODO: used for testing, this should actually be called when attendees
-                    //  sign up for events but that doesn't exist yet so this is a stopgap
-//                    FirebaseMessaging.getInstance().subscribeToTopic(eventDoc.getId());
-//                    Log.e(TAG, "Subscribed to topic " + eventDoc.getId());
                 } else {
                     Log.e(TAG,
                             String.format("Could not find event %s", eventId));
