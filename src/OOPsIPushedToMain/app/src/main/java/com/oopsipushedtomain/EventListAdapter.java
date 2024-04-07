@@ -62,18 +62,19 @@ public class EventListAdapter extends ArrayAdapter<Event> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        View view = convertView;
+        // Inflate the view
+        convertView = LayoutInflater.from(context).inflate(R.layout.item_event, parent, false);
 
-        if (view == null) {
-            view = LayoutInflater.from(context).inflate(R.layout.item_event, parent, false);
-        }
-
+        // Get the position in the list
         Event event = events.get(position);
 
-        TextView titleName = view.findViewById(R.id.event_list_title);
+        // Get the title for each event
+        TextView titleName = convertView.findViewById(R.id.event_list_title);
 
+        // Set the title of each event
         titleName.setText(event.getTitle());
 
-        return view;
+        // Return the view
+        return convertView;
     }
 }

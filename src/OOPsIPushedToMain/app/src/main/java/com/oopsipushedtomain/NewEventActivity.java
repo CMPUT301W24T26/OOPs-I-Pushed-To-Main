@@ -120,6 +120,7 @@ public class NewEventActivity extends AppCompatActivity {
             }
         });
 
+        // TODO: Fix event creation to support times
         newEventCreateButton.setOnClickListener(v -> {
             // Capture input from user
             String title = newEventTitleEdit.getText().toString();
@@ -129,7 +130,7 @@ public class NewEventActivity extends AppCompatActivity {
             String attendeeLimitStr = newEventAttendeeLimitEdit.getText().toString();
             int attendeeLimit = attendeeLimitStr.isEmpty() ? 0 : Integer.parseInt(attendeeLimitStr);
             // TODO: Add functionality for location, posterURL
-            Event newEvent = new Event(title, startTime, endTime, description, "testlocation", "testURL", attendeeLimit, creatorId);
+            Event newEvent = new Event(title, startTime, null, null, "testlocation", "testURL", attendeeLimit, creatorId);
             newEvent.addEventToDatabase();
             finish();
             //Intent intent = new Intent(NewEventActivity.this, EventDetailsActivity.class);

@@ -11,11 +11,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -28,16 +30,22 @@ import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.CustomDateTimePickerDialog;
+import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.Geolocation.MapActivity;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.sql.Time;
+import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -60,21 +68,15 @@ import java.util.concurrent.CompletableFuture;
  */
 public class EventDetailsActivity extends AppCompatActivity {
     /**
-     * The view of the event title
+     * Text views for event details
      */
-    private EditText eventTitleEdit;
+    private TextView eventTitle, eventStartTime, eventEndTime, eventDescription;
+
     /**
-     * The view of the event start time
+     * Buttons for editing the event details
      */
-    private EditText eventStartTimeEdit;
-    /**
-     * The view of the event end time
-     */
-    private EditText eventEndTimeEdit;
-    /**
-     * The view of the event description
-     */
-    private EditText eventDescriptionEdit;
+    private Button eventTitleButton, eventStartTimeButton, eventEndTimeButton, eventDescriptionButton;
+
     /**
      * The view for the event image poster
      */
@@ -82,7 +84,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     /**
      * The references to the buttons
      */
-    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton;
+    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton, viewSignedUpButton;
 
     /**
      * The UID of the user
@@ -101,6 +103,10 @@ public class EventDetailsActivity extends AppCompatActivity {
 
     private FirebaseAccess database;
 
+    private SimpleDateFormat formatter =  new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+    private User user;
+    private boolean userIsOrganizer = false;
+
     /**
      * Initializes the class with all parameters
      *
@@ -113,6 +119,10 @@ public class EventDetailsActivity extends AppCompatActivity {
         // Default for creating a new view
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
+
+        // Create a new future for getting the event and user
+        CompletableFuture<Void> eventFuture = new CompletableFuture<>();
+        CompletableFuture<Void> userFuture = new CompletableFuture<>();
 
         // Get the database reference
         database = new FirebaseAccess(FirestoreAccessType.EVENTS);
@@ -135,20 +145,67 @@ public class EventDetailsActivity extends AppCompatActivity {
             // Assign all the parameters to the event
             event.setEventId(eventData.get("UID").toString());
             event.setTitle(eventData.get("title").toString());
-            event.setStartTime(eventData.get("startTime").toString());
+            event.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
+            event.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
             event.setDescription(eventData.get("description").toString());
             event.setLocation(eventData.get("location").toString());
-            event.setPosterUrl(eventData.get("posterUrl").toString());
             event.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
             event.setCreatorId(eventData.get("creatorId").toString());
+
+            // Set the details on the screen
+            runOnUiThread(() -> {
+                eventTitle.setText(eventData.get("title").toString());
+                if (eventData.get("startTime") != null) {
+                    eventStartTime.setText(formatter.format(((Timestamp) eventData.get("startTime")).toDate()));
+                }
+                if (eventData.get("endTime") != null) {
+                    eventEndTime.setText(formatter.format(((Timestamp) eventData.get("endTime")).toDate()));
+                }
+                eventDescription.setText(eventData.get("description").toString());
+            });
+
+            // Finished getting the event details
+            eventFuture.complete(null);
+        });
+
+        // Create a new user from the UserID
+        User.createNewObject(userId).thenAccept(newUser -> {
+            user = newUser;
+
+            // Finished getting the user
+            userFuture.complete(null);
+        });
+
+        // If we have both the event and the user, check to see if the user is the organizer of this event
+        userFuture.thenAccept(userVal -> {
+            eventFuture.thenAccept(eventVal -> {
+                // Compare event organizer and the current user
+                if (Objects.equals(user.getUID(), event.getCreatorId())){
+                    // They are the organizer, show relevant buttons
+                    userIsOrganizer = true;
+
+                    // Event details
+                    eventTitleButton.setVisibility(View.VISIBLE);
+                    eventStartTime.setVisibility(View.VISIBLE);
+                    eventEndTime.setVisibility(View.VISIBLE);
+                    eventDescription.setVisibility(View.VISIBLE);
+
+                    // Event options
+                    sendNotificationButton.setVisibility(View.VISIBLE);
+                    viewLimitAttendeeButton.setVisibility(View.VISIBLE);
+                    viewSignedUpButton.setVisibility(View.VISIBLE);
+                    viewEventQRCodeButton.setVisibility(View.VISIBLE);
+                    viewMapButton.setVisibility(View.VISIBLE);
+                }
+            });
         });
 
 
-        // Find the Edit texts for the layout
-        eventTitleEdit = findViewById(R.id.event_details_organizer_title_e);
-        eventStartTimeEdit = findViewById(R.id.event_details_organizer_start_time_e);
-        eventEndTimeEdit = findViewById(R.id.event_details_organizer_end_time_e);
-        eventDescriptionEdit = findViewById(R.id.event_details_organizer_description_e);
+        // Find the texts for the event details
+        eventTitle = findViewById(R.id.event_details_organizer_title_e);
+        eventStartTime = findViewById(R.id.event_details_organizer_start_time_e);
+        eventEndTime = findViewById(R.id.event_details_organizer_end_time_e);
+        eventDescription = findViewById(R.id.event_details_organizer_description_e);
 
         // Event poster
         eventPosterEdit = findViewById(R.id.eventPosterImageViewEdit);
@@ -159,90 +216,154 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewAnnouncementsButton = findViewById(R.id.btnViewAnnouncements);
         signUpButton = findViewById(R.id.btnSignUpEvent);
         viewLimitAttendeeButton = findViewById(R.id.btnViewLimitAttendees);
+        viewSignedUpButton = findViewById(R.id.btnViewSignedUp);
         deleteButton = findViewById(R.id.btnDeleteEvent);
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
         viewEventPromoQRCodeButton = findViewById(R.id.btnViewPromoQRCode);
         viewMapButton = findViewById(R.id.btnViewMap);
 
-//        // Set click listeners for the buttons
-//        eventStartTimeEdit.setOnClickListener(v -> showDateTimePicker(eventStartTimeEdit));
-//        eventEndTimeEdit.setOnClickListener(v -> showDateTimePicker(eventEndTimeEdit));
-
-//        // Retrieve the userId passed from EventListActivity
-//        Intent intent_a = getIntent();
-//        if (intent_a != null) {
-//            userId = intent_a.getStringExtra("userId");
-//        }
-//
-//        eventID = getIntent().getStringExtra("selectedEventId");
-//        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-//        event = new Event();
-//        try {
-//            firebaseAccess.getDataFromFirestore(eventID).thenAccept(datalist -> {
-//                if (datalist == null) {
-//                    Log.e("EventDetailsActivity", "event is null");
-//                } else {
-//                    event.setEventId(datalist.get("UID").toString());
-//                    event.setTitle(datalist.get("title").toString());
-//                    event.setStartTime(datalist.get("startTime").toString());
-//                    event.setDescription(datalist.get("description").toString());
-//                    event.setLocation(datalist.get("location").toString());
-//                    event.setPosterUrl(datalist.get("posterUrl").toString());
-//                    event.setAttendeeLimit(Integer.parseInt(datalist.get("attendeeLimit").toString()));
-//                    event.setCreatorId(datalist.get("creatorId").toString());
-//
-//                    // Set the text for the TextViews with event details
-//                    Log.d("EventDetailsActivity", event.getTitle());
-//                    runOnUiThread(() -> {
-//                        eventTitleEdit.setText(event.getTitle());
-//                        eventStartTimeEdit.setText(event.getStartTime());
-//                        eventEndTimeEdit.setText(event.getEndTime());
-//                        eventDescriptionEdit.setText(event.getDescription());
-//
-//                        // TODO: not currently working
-////                        determineUserRole(userId, eventID, this::updateUIForRole);
-//                    });
-//                }
-//            });
-//        } catch (Exception e) {
-//            Log.e("EventDetailsActivity", String.valueOf(e));
-//        }
-
-        /*
+        // Edit event buttons
+        eventTitleButton = findViewById(R.id.edit_event_title_button);
+        eventStartTimeButton = findViewById(R.id.edit_event_start_button);
+        eventEndTimeButton = findViewById(R.id.edit_event_end_button);
+        eventDescriptionButton = findViewById(R.id.edit_event_description_button);
+                /*
             Click Listeners
          */
 
         // Start Date
-        eventStartTimeEdit.setOnClickListener(v -> {
+        eventStartTimeButton.setOnClickListener(v -> {
             // This should be a date picker
             CustomDateTimePickerDialog datePickerDialog = new CustomDateTimePickerDialog(this, input -> {
                 // Convert the input to a date
                 Date inputDate = (Date) input;
 
                 // Format the given date, ChatGPT: How do i format a string into date
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss a");
                 String startDateString = formatter.format(inputDate);
 
                 // Print the date to the screen
-                eventStartTimeEdit.setText(startDateString);
+                eventStartTime.setText(startDateString);
+
+                // Show the save button
+                eventSaveButton.setVisibility(View.VISIBLE);
 
             });
             datePickerDialog.show("Edit Start Date/Time", new Date());
 
-            // Get the nickname of the user
-//            user.getBirthday().thenAccept(data -> {
-//                runOnUiThread(() -> {
-//                    Date defaultDate;
-//                    if (data == null) {
-//                        defaultDate = new Date();
-//                    } else defaultDate = data;
-//
-//                    // Show the dialog
-//                    datePickerDialog.show("Edit Birthday", defaultDate);
-//                });
-//            });
 
         });
+
+        // End Date
+        eventEndTimeButton.setOnClickListener(v -> {
+            // This should be a date picker
+            CustomDateTimePickerDialog datePickerDialog = new CustomDateTimePickerDialog(this, input -> {
+                // Convert the input to a date
+                Date inputDate = (Date) input;
+
+                // Format the given date, ChatGPT: How do i format a string into date
+                String startDateString = formatter.format(inputDate);
+
+                // Print the date to the screen
+                eventEndTime.setText(startDateString);
+
+                // Show the save button
+                eventSaveButton.setVisibility(View.VISIBLE);
+
+            });
+            datePickerDialog.show("Edit Start Date/Time", new Date());
+
+
+        });
+
+        // Event Title
+        eventTitleButton.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    eventTitle.setText((String) input);
+                }
+
+                // Show the save button
+                eventSaveButton.setVisibility(View.VISIBLE);
+            });
+
+            // Show the dialog with the old value
+            textDialog.show("Edit Nickname", eventTitle.getText().toString());
+
+        });
+
+        // Event Description
+        eventDescriptionButton.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    eventDescription.setText((String) input);
+                }
+
+                // Show the save button
+                eventSaveButton.setVisibility(View.VISIBLE);
+            });
+
+            // Show the dialog with the old value
+            textDialog.show("Edit Nickname", eventDescription.getText().toString());
+        });
+
+        // Save button
+        eventSaveButton.setOnClickListener(v -> {
+            // Create a map to update the event in the database
+            Map<String, Object> eventMap = new HashMap<>();
+
+            // Set the event title
+            if (eventTitle.getText() != null){
+                event.setTitle(eventTitle.getText().toString());
+                eventMap.put("title", eventTitle.getText().toString());
+            }
+
+
+            // Set the start time
+            Date date = null;
+            if (eventStartTime.getText() != null) {
+                try {
+                    date = formatter.parse(eventStartTime.getText().toString());
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
+                event.setStartTime(date);
+                eventMap.put("startTime", date);
+            }
+
+            // Set the end time
+            date = null;
+            if (eventEndTime.getText() != null) {
+                try {
+                    date = formatter.parse(eventEndTime.getText().toString());
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
+                event.setEndTime(date);
+                eventMap.put("endTime", date);
+            }
+
+            // Set the description
+            if (eventDescription.getText() != null) {
+                event.setDescription(eventDescription.getText().toString());
+                eventMap.put("description", eventDescription.getText().toString());
+            }
+
+            // Update the event in the database
+            database.storeDataInFirestore(eventID, eventMap);
+
+            // Hide the save button
+            eventSaveButton.setVisibility(View.GONE);
+
+            // Show confirmation
+            Toast.makeText(EventDetailsActivity.this, "Event Details have been saved", Toast.LENGTH_SHORT).show();
+
+        });
+
+
 
         // Event poster
         eventPosterEdit.setOnClickListener(new View.OnClickListener() {
@@ -254,30 +375,16 @@ public class EventDetailsActivity extends AppCompatActivity {
             }
         });
 
-        // Save button
-        eventSaveButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (validateInput()) {
-                    saveEventDetails();
-                    event.setTitle(eventTitleEdit.getText().toString());
-                    event.setStartTime(eventStartTimeEdit.getText().toString());
-                    event.setEndTime(eventEndTimeEdit.getText().toString());
-                    event.setDescription(eventDescriptionEdit.getText().toString());
-                    Intent intent = new Intent(EventDetailsActivity.this, EventListActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); // Clears the back stack
-                    startActivity(intent);
-                }
-            }
-        });
-
         // Sign up button
-        signUpButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                signUpForEvent(event.getEventId());
-                FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
-            }
+        signUpButton.setOnClickListener(v -> {
+            // Sign the user up for notifications
+            FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
+
+            // Sign in the user to the event
+            user.signUp(eventID);
+
+            // Show confirmation
+            Toast.makeText(EventDetailsActivity.this, "Signed up to attend this event!", Toast.LENGTH_SHORT).show();
         });
 
         // Send notification button
@@ -402,200 +509,16 @@ public class EventDetailsActivity extends AppCompatActivity {
         }
     }
 
-
-    /**
-     * Saves the event details to the class parameters
-     */
-    private void saveEventDetails() {
-
-        String title = eventTitleEdit.getText().toString();
-        String startTime = eventStartTimeEdit.getText().toString();
-        String endTime = eventEndTimeEdit.getText().toString();
-        String description = eventDescriptionEdit.getText().toString();
-
-        eventTitleEdit.setText(title);
-        eventStartTimeEdit.setText(startTime);
-        eventEndTimeEdit.setText(endTime);
-        eventDescriptionEdit.setText(description);
-
-        Map<String, Object> updatedEventData = new HashMap<>();
-        updatedEventData.put("title", title);
-        updatedEventData.put("startTime", startTime);
-        updatedEventData.put("endTime", endTime);
-        updatedEventData.put("description", description);
-        // Add any other event details you want to update
-
-        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        firebaseAccess.storeDataInFirestore(eventID, updatedEventData);
-
-    }
-
-    /**
-     * Shows a date and time picker
-     *
-     * @param editText The edit text being edited
-     */
-    private void showDateTimePicker(final EditText editText) {
-        Calendar currentDate = Calendar.getInstance();
-        new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-            Calendar time = Calendar.getInstance();
-            new TimePickerDialog(this, (view1, hourOfDay, minute) -> {
-                time.set(Calendar.YEAR, year);
-                time.set(Calendar.MONTH, month);
-                time.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                time.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                time.set(Calendar.MINUTE, minute);
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                editText.setText(dateFormat.format(time.getTime()));
-            }, currentDate.get(Calendar.HOUR_OF_DAY), currentDate.get(Calendar.MINUTE), false).show();
-        }, currentDate.get(Calendar.YEAR), currentDate.get(Calendar.MONTH), currentDate.get(Calendar.DATE)).show();
-    }
-
-    /**
-     * Validates the event parameters
-     *
-     * @return Whether the check passes
-     */
-    private boolean validateInput() {
-        if (eventTitleEdit.getText().toString().trim().isEmpty() || eventStartTimeEdit.getText().toString().trim().isEmpty() || eventEndTimeEdit.getText().toString().trim().isEmpty() || eventDescriptionEdit.getText().toString().trim().isEmpty()) {
-            Toast.makeText(this, "Please fill in all fields.", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        // Additional validation logic can go here
-        return true;
-    }
-
     /**
      * Deletes an event from firestore
      *
      * @param eventId The id of the event to delete
      */
     private void deleteEvent(String eventId) { // eventId passed as a parameter
-        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        firebaseAccess.deleteDataFromFirestore(eventId);
-        finish();
-        /*FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events").document(eventId).delete().addOnSuccessListener(aVoid -> {
-            Toast.makeText(EventDetailsActivity.this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
-            // Intent to navigate back or simply finish this activity
-            finish();
-        }).addOnFailureListener(e -> Toast.makeText(EventDetailsActivity.this, "Error deleting event", Toast.LENGTH_SHORT).show());*/
+        // Deletes the event
+        database.deleteDataFromFirestore(eventId);
     }
 
-    /**
-     * Signs a user up for an event
-     * @param eventId The id of the event
-     */
-    private void signUpForEvent(String eventId) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference eventRef = db.collection("events").document(eventId);
-
-        eventRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                DocumentSnapshot document = task.getResult();
-                if (document.exists()) {
-                    Event event = document.toObject(Event.class);
-                    if (event != null && event.getSignedUpAttendees().size() < event.getAttendeeLimit()) {
-                        // Proceed with signing up the user
-                        eventRef.update("signedUpAttendees", FieldValue.arrayUnion(userId))
-                                .addOnSuccessListener(aVoid -> Toast.makeText(EventDetailsActivity.this, "Signed up successfully", Toast.LENGTH_SHORT).show())
-                                .addOnFailureListener(e -> Toast.makeText(EventDetailsActivity.this, "Sign up failed, limit exceeded", Toast.LENGTH_SHORT).show());
-                    } else {
-                        Toast.makeText(EventDetailsActivity.this, "Event is full", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-
-        });
-    }
-
-    /**
-     * An enum for the user roles
-     * TODO: Need to change to proper parameters
-     */
-    public enum UserRole {
-        ORGANIZER, ATTENDEE_NOT_SIGNED_UP, ATTENDEE_SIGNED_UP
-    }
-
-    /**
-     * Determines the role of the user for the given event
-     * @param userId The UID of the user
-     * @param eventId The UID of the event
-     * @param callback The listener to deal with the result
-     *
-     *  TODO: Move this to the User class
-     */
-    public void determineUserRole(String userId, String eventId, final UserRoleCallback callback) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        DocumentReference createdRef = db.collection("users").document(userId).collection("created").document(eventId);
-        DocumentReference signedUpRef = db.collection("users").document(userId).collection("signedup").document(eventId);
-
-        createdRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
-                callback.onRoleDetermined(UserRole.ORGANIZER);
-            } else {
-                // Not an organizer, check if attendee
-                signedUpRef.get().addOnCompleteListener(task2 -> {
-                    if (task2.isSuccessful() && task2.getResult() != null && task2.getResult().exists()) {
-                        callback.onRoleDetermined(UserRole.ATTENDEE_SIGNED_UP);
-                    } else {
-                        callback.onRoleDetermined(UserRole.ATTENDEE_NOT_SIGNED_UP);
-                    }
-                });
-            }
-        });
-    }
-
-    /**
-     * The interface for determining when data is received
-     */
-    public interface UserRoleCallback {
-        /**
-         * Callback for returning the role of the user once it has been found
-         * @param role The role of the user
-         */
-        void onRoleDetermined(UserRole role);
-    }
-
-    /**
-     * Hides specific buttons depending on the role of the user
-     * @param role The role of the user (user/admin)
-     */
-    private void updateUIForRole(UserRole role) {
-        switch (role) {
-            case ORGANIZER:
-                // Organizer should see all buttons except sign up button
-                eventSaveButton.setVisibility(View.VISIBLE);
-                sendNotificationButton.setVisibility(View.VISIBLE);
-                viewAnnouncementsButton.setVisibility(View.VISIBLE);
-                signUpButton.setVisibility(View.GONE);
-                deleteButton.setVisibility(View.VISIBLE);
-                viewLimitAttendeeButton.setVisibility(View.VISIBLE);
-                viewEventQRCodeButton.setVisibility(View.VISIBLE);
-                break;
-            case ATTENDEE_SIGNED_UP:
-                // Signed-up attendee should not see any button
-                eventSaveButton.setVisibility(View.GONE);
-                sendNotificationButton.setVisibility(View.GONE);
-                viewAnnouncementsButton.setVisibility(View.GONE);
-                signUpButton.setVisibility(View.GONE);
-                deleteButton.setVisibility(View.GONE);
-                viewLimitAttendeeButton.setVisibility(View.GONE);
-                viewEventQRCodeButton.setVisibility(View.GONE);
-                break;
-            case ATTENDEE_NOT_SIGNED_UP:
-                // Unsigned-up attendee should see the sign up button
-                eventSaveButton.setVisibility(View.GONE);
-                sendNotificationButton.setVisibility(View.GONE);
-                viewAnnouncementsButton.setVisibility(View.GONE);
-                signUpButton.setVisibility(View.VISIBLE);
-                deleteButton.setVisibility(View.GONE);
-                viewLimitAttendeeButton.setVisibility(View.GONE);
-                viewEventQRCodeButton.setVisibility(View.GONE);
-                break;
-        }
-    }
 
     /**
      * Returns the current event ID. Used for Intent testing (MapActivity)
