@@ -140,10 +140,8 @@ public class ProfileActivity extends AppCompatActivity {
             // Get the bitmap image
             InputStream finalInputStream = inputStream;
             Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
-
-                    // Set in the view
-                    profileImageView.setImageURI(result);
-
+            // Set in the view
+            profileImageView.setImageURI(result);
             // Update the user
             if (user != null) {
                 // Set the new profile image
@@ -714,10 +712,13 @@ public class ProfileActivity extends AppCompatActivity {
                                // Delete the image from the user
                                 user.deleteProfileImage();
 
-                                // Generate a new one based off the name
-                                if (profileUserName != null){
+                                // Generate a new one based off the name, or clear the ImageView
+                                if (profileUserName != null && !profileUserName.isEmpty()){
                                     CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(profileUserName);
                                     profileImageView.setImageBitmap(generator.createInitialBitmap());
+                                }
+                                else {
+                                    profileImageView.setImageBitmap(null);
                                 }
                             }
                             break;
