@@ -64,7 +64,6 @@ public class MapActivityIntentTest {
     public ActivityTestRule<EventDetailsActivity> eventDetailsActivityRule = new ActivityTestRule<>(EventDetailsActivity.class);
 
     /**
-     * US 03.02.01 - Enable or disable geolocation tracking
      * Create a new user and initialize the database. Enable geolocation tracking for the new user.
      */
     @Before
@@ -73,7 +72,6 @@ public class MapActivityIntentTest {
         try {
             user = User.createNewObject().get();
             user.setName("MapActivity tester");
-            user.setGeolocation(true);
             db = new FirebaseAccess(FirestoreAccessType.EVENTS);
         } catch (Exception e) {
             // There was an error, the test failed
@@ -84,6 +82,7 @@ public class MapActivityIntentTest {
 
     /**
      * US 01.08.01 - View check-ins on a map
+     * US 03.02.01 - Enable or disable geolocation tracking
      * Creates a new test event, opens it, verifies that there are no markers on the map.
      * Then close the map, manually check-in to the event, and verify that there is now a marker.
      * @throws InterruptedException For Thread.sleep()
@@ -115,10 +114,20 @@ public class MapActivityIntentTest {
         MapActivity mapActivity = mapActivityRule.getActivity();
         assertEquals(0, mapActivity.getMarkerCount());
 
-        // Close map, check in to event, wait for DB to update
+        // Close map, check-in to event WITHOUT enabling geolocation, check map is still empty
         Espresso.pressBack();
         EventDetailsActivity eventDetailsActivity = eventDetailsActivityRule.getActivity();
         eventId = eventDetailsActivity.getEventID();
+        user.checkIn(eventId, eventDetailsActivity.getApplicationContext());
+        Thread.sleep(5000);  // Wait for DB to update
+        onView(withId(R.id.btnViewMap)).perform(click());
+        Thread.sleep(2000); // Give the map some time to load markers
+        mapActivity = mapActivityRule.getActivity();
+        assertEquals(0, mapActivity.getMarkerCount());
+
+        // Close map, enable geolocation, check in to event, wait for DB to update
+        Espresso.pressBack();
+        user.setGeolocation(true);
         user.checkIn(eventId, eventDetailsActivity.getApplicationContext());
         Thread.sleep(5000);  // Wait for DB to update
 
