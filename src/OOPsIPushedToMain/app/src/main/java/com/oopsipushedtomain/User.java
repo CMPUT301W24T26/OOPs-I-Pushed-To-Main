@@ -82,6 +82,10 @@ public class User {
 
     // User parameters
     /**
+     * The permission level of the user
+     */
+    boolean isAdmin = false;
+    /**
      * The UID of the user
      */
     private String uid;
@@ -114,7 +118,6 @@ public class User {
      * The phone number of the user
      */
     private String phone = null;
-
     /**
      * The UID of the user's profile picture
      */
@@ -127,12 +130,10 @@ public class User {
      * The Firebase Installation ID (fid)
      */
     private String fid = null;
-
     /**
      * Whether the data in the class is current
      */
     private boolean dataIsCurrent = false;
-
     /**
      * Whether the user has geolocation enabled
      */
@@ -182,6 +183,7 @@ public class User {
             data.put("phone", null);
             data.put("fid", null);
             data.put("geolocation", false);
+            data.put("isAdmin", false);
 
             // Upload the data to the database
             Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);
@@ -239,6 +241,9 @@ public class User {
         this.fid = (String) data.get("fid");
         if (data.get("geolocation") != null) {
             this.geolocation = (Boolean) data.get("geolocation");
+        }
+        if (data.get("isAdmin") != null) {
+            this.isAdmin = (Boolean) data.get("isAdmin");
         }
 
     }
@@ -621,9 +626,43 @@ public class User {
     }
 
     /**
+     * Returns whether the current user in an admin
+     *
+     * @return Whether the user is an admin
+     */
+    public CompletableFuture<Boolean> isAdmin() {
+        // Create a future to return
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.isAdmin);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Makes a user an admin
+     */
+    public void makeAdmin() {
+        // Update in the class
+        this.isAdmin = true;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("isAdmin", this.isAdmin);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
      * Gets the phone number of the user
      *
-     * @return The phone number of the user
+     * @return The user's phone number
      */
     public CompletableFuture<String> getPhone() {
         // Create a future to return
@@ -826,6 +865,13 @@ public class User {
     }
 
     // Chat GPT: How do I get a user's location in latitude and longitude in Android using Java. I already have the permissions
+
+    /**
+     * Gets the user's current geolocation
+     *
+     * @param context The context this function is called from
+     * @return A Geopoint containing the last known location of the user
+     */
     private CompletableFuture<GeoPoint> getUserGeolocation(Context context) {
         // Create a future
         CompletableFuture<GeoPoint> locationFuture = new CompletableFuture<>();
@@ -856,7 +902,7 @@ public class User {
                     public void onSuccess(Location location) {
                         // Got last known location. In some rare situations this can be null.
                         // Create a geopoint from the location
-                        GeoPoint geoPoint  = new GeoPoint(location.getLatitude(), location.getLongitude());
+                        GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
 
                         // Complete the future with the Geopoint
                         locationFuture.complete(geoPoint);
@@ -867,6 +913,4 @@ public class User {
         return locationFuture;
 
     }
-
-    ;
 }
