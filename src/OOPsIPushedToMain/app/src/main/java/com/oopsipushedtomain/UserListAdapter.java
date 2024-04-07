@@ -97,20 +97,16 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserVi
     @Override
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
         User user = userList.get(position);
+        Log.d("UserListAdapter", "Binding user at position: " + position + " with UID: " + user.getUID());
 
-        // Initially set to loading or empty text
-        holder.nameTextView.setText("Loading...");
-
-        // Asynchronously get the name
+        holder.nameTextView.setText("Loading..."); // Set initial loading text
         user.getName().thenAccept(name -> {
-            // Ensure the ViewHolder hasn't been recycled to display a different item
             if (position == holder.getAdapterPosition()) {
-                // Update the UI on the UI thread
+                Log.d("UserListAdapter", "Setting name for user at position " + position + ": " + name); // Log the name being set
                 holder.nameTextView.post(() -> holder.nameTextView.setText(name));
             }
         }).exceptionally(e -> {
-            // Handle any errors here
-            Log.e("UserAdapter", "Error fetching user name", e);
+            Log.e("UserListAdapter", "Error fetching user name for UID: " + user.getUID(), e);
             return null;
         });
     }
@@ -123,6 +119,8 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserVi
      */
     @Override
     public int getItemCount() {
-        return userList.size(); // Return the size of the userList
+        int size = userList.size();
+        Log.d("UserListAdapter", "getItemCount: " + size); // Log the item count
+        return size;
     }
 }

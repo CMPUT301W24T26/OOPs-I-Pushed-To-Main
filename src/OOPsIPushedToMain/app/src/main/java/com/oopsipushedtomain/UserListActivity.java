@@ -2,6 +2,8 @@ package com.oopsipushedtomain;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -16,6 +18,10 @@ import com.oopsipushedtomain.Database.FirestoreAccessType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * ProfileListActivity is responsible for displaying a list of user profiles retrieved from a database.
@@ -103,32 +109,91 @@ public class UserListActivity extends AppCompatActivity {
                 });
     }
 
+//    private void fetchProfiles() {
+//        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.USERS);
+//        firebaseAccess.getAllDocuments()
+//                .thenAccept(usersData -> {
+//                    if (usersData != null) {
+//                        // Create a list of futures using the stream
+//                        List<CompletableFuture<User>> futures = usersData.stream()
+//                                .map(userData -> User.createNewObject((String) userData.get("UID")))
+//                                .collect(Collectors.toList());
+//
+//                        // Combine all futures into a single CompletableFuture
+//                        CompletableFuture<List<User>> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+//                                .thenApply(v -> futures.stream()
+//                                        .map(CompletableFuture::join)
+//                                        .collect(Collectors.toList())
+//                                );
+//
+//                        // Handle the final result once all futures are completed
+//                        allFutures.thenAccept(tempUserList -> {
+//                            runOnUiThread(() -> {
+//                                userList.clear();
+//                                userList.addAll(tempUserList);
+//                                userAdapter.notifyDataSetChanged();
+//                                Log.d("UserListActivity", "Adapter notified with user list size: " + userList.size());
+//                            });
+//                        }).exceptionally(exception -> {
+//                            Log.e("UserListActivity", "Error processing user futures", exception);
+//                            return null;
+//                        });
+//                    } else {
+//                        Log.d("UserListActivity", "No users data received.");
+//                    }
+//                })
+//                .exceptionally(exception -> {
+//                    Log.e("UserListActivity", "Error fetching users from Firestore: ", exception);
+//                    return null;
+//                });
+//    }
 
-    /**
-     * Method to fetch profiles from the database.
-     * Uses Firebase-Firestore to query the "users" collection.
-     */
     private void fetchProfiles() {
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.USERS);
-        firebaseAccess.getAllDocuments() // This should be adjusted to match the actual method signature
-                .thenAccept(usersData -> {
-                    if (usersData != null) {
-                        List<User> tempUserList = new ArrayList<>();
+        firebaseAccess.getAllDocuments()
+                .thenAcceptAsync(usersData -> { // Run on a background thread
+                    if (usersData != null && !usersData.isEmpty()) {
+                        showLoadingIndicator(true); // Might need to ensure this runs on UI thread if necessary
+
+                        List<User> users = new ArrayList<>();
                         for (Map<String, Object> userData : usersData) {
-                            tempUserList.add(User.createFromMap(userData));
+                            try {
+                                String uid = (String) userData.get("UID");
+                                User user = User.createNewObject(uid).join(); // Block and wait
+                                if (user != null) {
+                                    users.add(user);
+                                }
+                            } catch (Exception ex) {
+                                Log.e("UserListActivity", "Failed to create user object", ex);
+                            }
                         }
+
+                        // Update UI on the main thread
                         runOnUiThread(() -> {
-                            userList.clear(); // Assuming profileList is now of type List<User>
-                            userList.addAll(tempUserList);
-                            userAdapter.notifyDataSetChanged(); // Make sure your adapter is compatible with User objects
+                            userList.clear();
+                            userList.addAll(users);
+                            userAdapter.notifyDataSetChanged();
+                            showLoadingIndicator(false);
                         });
                     } else {
-                        Log.d("UserListActivity", "Error getting documents or no documents found.");
+                        showLoadingIndicator(false);
                     }
-                }).exceptionally(exception -> {
-                    Log.e("UserListActivity", "Error fetching users", exception);
+                })
+                .exceptionally(exception -> {
+                    Log.e("UserListActivity", "Error fetching users from Firestore", exception);
+                    showLoadingIndicator(false);
                     return null;
                 });
     }
+
+    // Also, update the showLoadingIndicator method to make sure it's accessing the progressBar on the UI thread.
+    private void showLoadingIndicator(final boolean show) {
+        ProgressBar progressBar = findViewById(R.id.progressBar);
+        if (progressBar != null) {
+            progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
+    }
+
+
 
 }

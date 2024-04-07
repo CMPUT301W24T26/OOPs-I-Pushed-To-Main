@@ -45,6 +45,8 @@ public class ImageListActivity extends AppCompatActivity {
      */
     private List<ImageInfo> imageInfos = new ArrayList<>();
 
+    private ImageType imageType; // Add this field to store the ImageType
+
     /**
      * Initializes the activity, sets up the RecyclerView and its adapter,
      * and decides whether to fetch event or profile images based on intent extras.
@@ -57,8 +59,6 @@ public class ImageListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_list);
-
-
 
         recyclerView = findViewById(R.id.imagesRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -73,27 +73,33 @@ public class ImageListActivity extends AppCompatActivity {
         // Check the intent for what to display
         String IMAGES_TYPE = getIntent().getStringExtra("IMAGES_TYPE");
         if ("events".equals(IMAGES_TYPE)) {
+            imageType = ImageType.eventPosters;
             fetchAllEventsAndDisplayImages();
         } else if ("profiles".equals(IMAGES_TYPE)) {
+            imageType = ImageType.profilePictures;
             fetchAllUsersAndDisplayImages();
         }
 
     }
     private void fetchAllEventsAndDisplayImages() {
-        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+        // Adjust the FirebaseAccess initialization as needed to match the revised logic.
+        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.IMAGES);
 
-        firebaseAccess.getAllRelatedImagesFromFirestore(null, ImageType.eventPosters)
+        firebaseAccess.getAllImagesFromFirestore(ImageType.eventPosters)
                 .thenAccept(imageMaps -> {
                     if (imageMaps != null) {
                         for (Map<String, Object> imageMap : imageMaps) {
-                            Bitmap imageBitmap = FirebaseAccess.blobToBitmap((Blob) imageMap.get("image"));
+                            // The conversion to bitmap is now handled within getAllImagesFromFirestore,
+                            // so you can directly retrieve the Bitmap object here.
+                            Bitmap imageBitmap = (Bitmap) imageMap.get("image");
                             String imageUID = (String) imageMap.get("UID");
 
-                            // Create ImageInfo objects and add them to adapter
-                            ImageInfo imageInfo = new ImageInfo(imageBitmap, /* imagePath or storagePath */, imageUID);
+                            // Create ImageInfo objects and add them to the adapter.
+                            ImageInfo imageInfo = new ImageInfo(imageBitmap, imageUID);
                             imageInfos.add(imageInfo);
                         }
 
+                        // This ensures the UI is updated on the main thread.
                         runOnUiThread(() -> adapter.notifyDataSetChanged());
                     }
                 }).exceptionally(exception -> {
@@ -103,17 +109,19 @@ public class ImageListActivity extends AppCompatActivity {
     }
 
     private void fetchAllUsersAndDisplayImages() {
-        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.USERS);
+        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.IMAGES);
 
-        firebaseAccess.getAllRelatedImagesFromFirestore(null, ImageType.profilePictures)
+        firebaseAccess.getAllImagesFromFirestore(ImageType.profilePictures)
                 .thenAccept(imageMaps -> {
                     if (imageMaps != null) {
                         for (Map<String, Object> imageMap : imageMaps) {
-                            Bitmap imageBitmap = FirebaseAccess.blobToBitmap((Blob) imageMap.get("image"));
+                            // Since the conversion to bitmap is now handled within getAllImagesFromFirestore,
+                            // you can directly retrieve the bitmap.
+                            Bitmap imageBitmap = (Bitmap) imageMap.get("image");
                             String imageUID = (String) imageMap.get("UID");
 
                             // Create ImageInfo objects and add to adapter
-                            ImageInfo imageInfo = new ImageInfo(imageBitmap, /* imagePath or storagePath */, imageUID);
+                            ImageInfo imageInfo = new ImageInfo(imageBitmap, imageUID);
                             imageInfos.add(imageInfo);
                         }
 
@@ -129,9 +137,9 @@ public class ImageListActivity extends AppCompatActivity {
         ImageInfo imageInfo = imageInfos.get(position);
         String imageUID = imageInfo.getFirestoreDocumentId();
 
-        FirebaseAccess firebaseAccess = new FirebaseAccess(/* FirestoreAccessType for image type */);
+        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.IMAGES);
 
-        firebaseAccess.deleteImageFromFirestore(/* outerDocName */, imageUID, /* ImageType */)
+        firebaseAccess.deleteImageFromFirestore("images", imageUID, imageType)
                 .thenRun(() -> {
                     runOnUiThread(() -> {
                         imageInfos.remove(position);

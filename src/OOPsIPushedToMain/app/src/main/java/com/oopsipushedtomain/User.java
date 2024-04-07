@@ -186,28 +186,6 @@ public class User {
 
     }
 
-    ///FIND OUT HOW TO PASS IN UIDS TO THE MAP OBJECT.
-    public static User createFromMap(Map<String, Object> userData) {
-        User user = new User(); // Assuming User has a default constructor
-        user.uid = (String) userData.get("uid");
-        user.address = (String) userData.get("address");
-        Object birthdayObj = userData.get("birthday");
-        if (birthdayObj instanceof Timestamp) {
-            user.birthday = ((Timestamp) birthdayObj).toDate();
-        } else {
-            user.birthday = null; // Set to null if the birthday data is not in Timestamp format
-        }
-        user.email = (String) userData.get("email");
-        user.homepage = (String) userData.get("homepage");
-        user.name = (String) userData.get("name");
-        user.nickname = (String) userData.get("nickname");
-        user.phone = (String) userData.get("phone");
-        user.profileImageUID = (String) userData.get("profileImageUID");
-        // Add more fields as necessary based on your User class structure
-
-        return user;
-    }
-
 
     /**
      * Stores the received Firestore data in the class
