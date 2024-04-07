@@ -165,8 +165,8 @@ public class ProfileActivity extends AppCompatActivity {
             InputStream finalInputStream = inputStream;
             Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
 
-                    // Set in the view
-                    profileImageView.setImageURI(result);
+            // Set in the view
+            profileImageView.setImageURI(result);
 
             // Update the user
             if (user != null) {
