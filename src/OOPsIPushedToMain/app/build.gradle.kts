@@ -78,7 +78,7 @@ dependencies {
 
     // Mockito for testing
     androidTestImplementation("org.mockito:mockito-core:4.0.0")
-    androidTestImplementation("androidx.test.espresso:espresso-contrib:3.4.0")
+    androidTestImplementation("androidx.test.espresso:espresso-contrib:3.5.1.0")
 
 
     // OpenStreetMaps
