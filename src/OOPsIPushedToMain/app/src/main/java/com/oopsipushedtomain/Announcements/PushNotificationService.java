@@ -106,13 +106,6 @@ public class PushNotificationService extends FirebaseMessagingService {
 
         // Check if the user has enabled notifications for the app
         if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             Log.e("Notifications", "User has notifications disabled");
         }
         NotificationManagerCompat.from(this).notify(new Random().nextInt(), notification.build());
