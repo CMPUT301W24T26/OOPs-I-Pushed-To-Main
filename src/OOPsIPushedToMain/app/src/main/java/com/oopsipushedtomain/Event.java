@@ -126,7 +126,6 @@ public class Event implements Serializable {
         this.description = description;
         this.location = location; // Optional
         this.attendeeLimit = attendeeLimit; // Optional
-        this.signedUpAttendees = new ArrayList<>(); // Initialize attendees list
         this.creatorId = creatorId;
     }
 
@@ -150,7 +149,6 @@ public class Event implements Serializable {
         this.description = description;
         this.location = location; // Optional
         this.attendeeLimit = attendeeLimit; // Optional
-        this.signedUpAttendees = new ArrayList<>(); // Initialize attendees list
         this.creatorId = creatorId;
     }
 
@@ -258,7 +256,6 @@ public class Event implements Serializable {
         event.put("location", location);
         event.put("posterUrl", posterUrl);
         event.put("attendeeLimit", attendeeLimit);
-        event.put("signedUpAttendees", signedUpAttendees);
         event.put("creatorId", creatorId);
         return event;
     }

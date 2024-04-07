@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +20,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 
 /**
  * NewEventActivity facilitates the creation of new events by organizers. It provides a form
@@ -36,33 +38,26 @@ import java.util.Map;
 public class NewEventActivity extends AppCompatActivity {
 
     /**
-     * The view of the event title
+     * The edit texts for the title, description and attendee limit
      */
-    private EditText newEventTitleEdit;
+    private EditText newEventTitleEdit, newEventDescriptionEdit, newEventAttendeeLimitEdit;
+
     /**
-     * The view of the event start time
+     * The Text view for the start and end times
      */
-    private EditText newEventStartTimeEdit;
+    private TextView newEventStartTimeEdit, newEventEndTimeEdit;
+
     /**
-     * The view of the event end time
+     * The buttons for editing the start and end time
      */
-    private EditText newEventEndTimeEdit;
-    /**
-     * The view of the event end time
-     */
-    private EditText newEventDescriptionEdit;
-    /**
-     * The view of the event poster
-     */
-    private ImageView newEventPosterEdit;
-    /**
-     * The view of the attendee limit for the event
-     */
-    private EditText newEventAttendeeLimitEdit;
+    private Button startTimeButton, endTimeButton;
+
+
     /**
      * The UID of the creator
      */
     private String creatorId;
+
     /**
      * The reference to the create event button
      */
@@ -80,7 +75,27 @@ public class NewEventActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_event);
 
-        initializeViews();
+        // The event details
+        newEventTitleEdit = findViewById(R.id.new_event_title_e);
+        newEventStartTimeEdit = findViewById(R.id.new_event_start_time_e);
+        newEventEndTimeEdit = findViewById(R.id.new_event_end_time_e);
+        newEventDescriptionEdit = findViewById(R.id.new_event_description_e);
+        newEventAttendeeLimitEdit = findViewById(R.id.new_event_attendee_limit_e);
+
+        // The time edit buttons
+        startTimeButton = findViewById(R.id.edit_event_start_button);
+        endTimeButton = findViewById(R.id.edit_event_end_button);
+
+        // The create new event button
+        newEventCreateButton = findViewById(R.id.btnCreateNewEvent);
+
+        /*
+            Click listeners
+         */
+
+
+
+
 
         setupListeners();
         // Retrieve the userId passed from EventListActivity
@@ -91,21 +106,6 @@ public class NewEventActivity extends AppCompatActivity {
 
     }
 
-    /**
-     * Sets all of the references to views in the class
-     */
-    private void initializeViews() {
-        newEventTitleEdit = findViewById(R.id.new_event_title_e);
-        newEventStartTimeEdit = findViewById(R.id.new_event_start_time_e);
-        newEventEndTimeEdit = findViewById(R.id.new_event_end_time_e);
-        newEventDescriptionEdit = findViewById(R.id.new_event_description_e);
-        newEventPosterEdit = findViewById(R.id.newEventPosterImageViewEdit);
-        newEventAttendeeLimitEdit = findViewById(R.id.new_event_attendee_limit_e);
-        newEventCreateButton = findViewById(R.id.btnCreateNewEvent);
-
-        newEventStartTimeEdit.setOnClickListener(v -> showDateTimePicker(newEventStartTimeEdit));
-        newEventEndTimeEdit.setOnClickListener(v -> showDateTimePicker(newEventEndTimeEdit));
-    }
 
     /**
      * Sets all of the on click listeners for the class
