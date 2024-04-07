@@ -148,7 +148,6 @@ public class EventDetailsActivity extends AppCompatActivity {
             event.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
             event.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
             event.setDescription(eventData.get("description").toString());
-            event.setLocation(eventData.get("location").toString());
             event.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
             event.setCreatorId(eventData.get("creatorId").toString());
 

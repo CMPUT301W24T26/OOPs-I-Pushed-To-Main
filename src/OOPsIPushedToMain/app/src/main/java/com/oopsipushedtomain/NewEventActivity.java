@@ -116,12 +116,6 @@ public class NewEventActivity extends AppCompatActivity {
                 // Print the date to the screen
                 newEventStartTimeEdit.setText(startDateString);
 
-                // Show the create button
-                if (checkForValidEvent()) {
-                    newEventCreateButton.setVisibility(View.VISIBLE);
-                }
-
-
             });
             datePickerDialog.show("Edit Start Date/Time", new Date());
 
@@ -140,11 +134,6 @@ public class NewEventActivity extends AppCompatActivity {
                 // Print the date to the screen
                 newEventEndTimeEdit.setText(startDateString);
 
-                // Show the create button
-                if (checkForValidEvent()) {
-                    newEventCreateButton.setVisibility(View.VISIBLE);
-                }
-
 
             });
             datePickerDialog.show("Edit Start Date/Time", new Date());
@@ -156,6 +145,7 @@ public class NewEventActivity extends AppCompatActivity {
             // Check for valid event details
             if (!checkForValidEvent()) {
                 // Do not create a new event yet
+                Toast.makeText(NewEventActivity.this, "Some event details are missing", Toast.LENGTH_LONG).show();
                 return;
             }
 
@@ -229,7 +219,51 @@ public class NewEventActivity extends AppCompatActivity {
     }
 
     public Boolean checkForValidEvent() {
-        return true;
+        // Make sure none of the fields are null
+        boolean isReady = true;
+
+
+        // Title
+        if (newEventTitleEdit.getText() == null){
+            isReady = false;
+        };
+
+        // Start time
+        if (newEventStartTimeEdit.getText() == null){
+            isReady = false;
+        } else {
+            try {
+                formatter.parse(newEventStartTimeEdit.getText().toString());
+            } catch (ParseException e) {
+                isReady = false;
+            }
+        }
+
+        // End time
+        if (newEventEndTimeEdit.getText() == null){
+            isReady = false;
+        } else {
+            try {
+                formatter.parse(newEventEndTimeEdit.getText().toString());
+            } catch (ParseException e) {
+                isReady = false;
+            }
+        }
+
+        // Set the description
+       if (newEventDescriptionEdit.getText() == null){
+           isReady = false;
+       };
+
+
+        // Return the correct result
+        if (isReady){
+            // Event is ready
+            return true;
+        } else {
+            // Event is not ready
+            return false;
+        }
     }
 
 }

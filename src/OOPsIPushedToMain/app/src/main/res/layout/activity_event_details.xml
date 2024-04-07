@@ -48,7 +48,7 @@
         android:padding="0sp"
         android:text="Edit"
         android:textSize="12sp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@id/event_details_organizer_title"
         app:layout_constraintStart_toEndOf="@id/event_details_organizer_title"
         app:layout_constraintTop_toTopOf="@id/event_details_organizer_title" />
@@ -81,7 +81,7 @@
         android:padding="0sp"
         android:text="Edit"
         android:textSize="12sp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@id/event_details_organizer_start_time"
         app:layout_constraintStart_toEndOf="@id/event_details_organizer_start_time"
         app:layout_constraintTop_toTopOf="@id/event_details_organizer_start_time" />
@@ -115,7 +115,7 @@
         android:padding="0sp"
         android:text="Edit"
         android:textSize="12sp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@id/event_details_organizer_end_time"
         app:layout_constraintStart_toEndOf="@id/event_details_organizer_end_time"
         app:layout_constraintTop_toTopOf="@id/event_details_organizer_end_time" />
@@ -150,7 +150,7 @@
         android:padding="0sp"
         android:text="Edit"
         android:textSize="12sp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@id/event_details_organizer_description"
         app:layout_constraintStart_toEndOf="@id/event_details_organizer_description"
         app:layout_constraintTop_toTopOf="@id/event_details_organizer_description" />
@@ -183,7 +183,7 @@
             android:text="Save"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:visibility="visible" />
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/btnDeleteEvent"
@@ -192,7 +192,7 @@
             android:backgroundTint="@color/red"
             android:text="Delete Event"
             android:textSize="18sp"
-            android:visibility="visible" />
+            android:visibility="gone" />
 
     </LinearLayout>
 
@@ -223,7 +223,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="20sp"
             android:text="Send Announcement"
-            android:visibility="visible"
+            android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/event_details_organizer_event_stats" />
 
         <Button
@@ -259,7 +259,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="20sp"
             android:text="Event Check-In Code"
-            android:visibility="visible"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/btnViewLimitAttendees" />
@@ -272,7 +272,7 @@
         android:layout_margin="8sp"
         android:backgroundTint="?attr/colorAccent"
         android:text="Check-In Map"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/eventButtons1" />
@@ -283,7 +283,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="8sp"
         android:orientation="horizontal"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnViewMap">

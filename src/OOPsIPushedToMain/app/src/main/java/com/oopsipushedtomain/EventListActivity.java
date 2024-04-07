@@ -131,7 +131,9 @@ public class EventListActivity extends AppCompatActivity {
                 }
 
                 newEvent.setDescription(eventData.get("description").toString());
-                newEvent.setLocation(eventData.get("location").toString());
+
+//                newEvent.setLocation(eventData.get("location").toString());
+
                 newEvent.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
                 newEvent.setCreatorId(eventData.get("creatorId").toString());
 

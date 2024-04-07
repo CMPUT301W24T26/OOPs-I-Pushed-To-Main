@@ -243,7 +243,6 @@ public class Event implements Serializable {
         event.put("endTime", endTime);
         event.put("description", description);
         event.put("location", location);
-        event.put("posterUrl", posterUrl);
         event.put("attendeeLimit", attendeeLimit);
         event.put("creatorId", creatorId);
         return event;
