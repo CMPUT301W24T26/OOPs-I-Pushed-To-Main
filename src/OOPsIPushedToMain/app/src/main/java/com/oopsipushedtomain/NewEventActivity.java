@@ -56,6 +56,14 @@ public class NewEventActivity extends AppCompatActivity {
      */
     private ImageView newEventPosterEdit;
     /**
+     * The view of the attendee limit for the event
+     */
+    private EditText newEventAttendeeLimitEdit;
+    /**
+     * The UID of the creator
+     */
+    private String creatorId;
+    /**
      * The reference to the create event button
      */
     private Button newEventCreateButton;
@@ -75,6 +83,11 @@ public class NewEventActivity extends AppCompatActivity {
         initializeViews();
 
         setupListeners();
+        // Retrieve the userId passed from EventListActivity
+        Intent intent = getIntent();
+        if (intent != null) {
+            creatorId = intent.getStringExtra("userId");
+        }
 
     }
 
@@ -87,6 +100,7 @@ public class NewEventActivity extends AppCompatActivity {
         newEventEndTimeEdit = findViewById(R.id.new_event_end_time_e);
         newEventDescriptionEdit = findViewById(R.id.new_event_description_e);
         newEventPosterEdit = findViewById(R.id.newEventPosterImageViewEdit);
+        newEventAttendeeLimitEdit = findViewById(R.id.new_event_attendee_limit_e);
         newEventCreateButton = findViewById(R.id.btnCreateNewEvent);
 
         newEventStartTimeEdit.setOnClickListener(v -> showDateTimePicker(newEventStartTimeEdit));
@@ -112,8 +126,10 @@ public class NewEventActivity extends AppCompatActivity {
             String startTime = newEventStartTimeEdit.getText().toString();
             String endTime = newEventEndTimeEdit.getText().toString();
             String description = newEventDescriptionEdit.getText().toString();
-            // TODO: Add functionality for location, posterURL, attendeeLimit
-            Event newEvent = new Event(title, startTime, endTime, description, "testlocation", "testURL", 15);
+            String attendeeLimitStr = newEventAttendeeLimitEdit.getText().toString();
+            int attendeeLimit = attendeeLimitStr.isEmpty() ? 0 : Integer.parseInt(attendeeLimitStr);
+            // TODO: Add functionality for location, posterURL
+            Event newEvent = new Event(title, startTime, endTime, description, "testlocation", "testURL", attendeeLimit, creatorId);
             newEvent.addEventToDatabase();
             finish();
             //Intent intent = new Intent(NewEventActivity.this, EventDetailsActivity.class);

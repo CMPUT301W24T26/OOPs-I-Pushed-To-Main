@@ -45,6 +45,14 @@ dependencies {
 
 //    implementation(files("C:/Users/matte/AppData/Local/Android/Sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
+    implementation(libs.androidx.preference)
+    implementation("com.google.android.gms:play-services-location:21.2.0")
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation("androidx.test:core")
+    debugImplementation("androidx.fragment:fragment-testing:1.4.0")
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.4.0")
 //    testImplementation(libs.junit)
 //    androidTestImplementation(libs.ext.junit)
 //    androidTestImplementation(libs.espresso.core)
@@ -62,9 +70,14 @@ dependencies {
     //Add the ZXing library for the QR code scanner https://github.com/zxing/zxing
     implementation("com.journeyapps:zxing-android-embedded:4.2.0")
     implementation("com.google.zxing:core:3.4.0")
+    //include the Jackson jackson-databind, allowing to use ObjectMapper and other related classes for JSON processing
+    implementation ("com.fasterxml.jackson.core:jackson-databind:2.4.+")
 
     // Mockito for testing
     androidTestImplementation("org.mockito:mockito-core:4.0.0")
+
+    // OpenStreetMaps
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 
     // Testing dependancies
     androidTestImplementation(libs.ext.junit)

@@ -10,53 +10,46 @@
 
 package com.oopsipushedtomain;
 
-import android.app.Activity;
-import android.app.Application;
-import android.content.Intent;
+import android.Manifest;
+
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.android.gms.tasks.OnSuccessListener;
+
 import android.util.Log;
-import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.Firebase;
+import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
-import com.oopsipushedtomain.ProfileActivity;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Database.ImageType;
 
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
+import org.checkerframework.checker.units.qual.C;
+
+import java.io.Serializable;
+import java.sql.Time;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * This class defines and represents a user
@@ -72,6 +65,9 @@ import java.util.concurrent.Executors;
  * @see ProfileActivity
  */
 public class User {
+
+    FirebaseAccess database;
+
     // User parameters
     /**
      * The UID of the user
@@ -79,9 +75,9 @@ public class User {
     private String uid;
     /**
      * The address of the user
-     * It says hi when you create a new account
+     * It says Bye when you create a new account
      */
-    private String address = "Hello";
+    private String address = "Bye"; // Changing this breaks a test
     /**
      * The birthday of the user
      */
@@ -110,250 +106,216 @@ public class User {
     /**
      * The UID of the user's profile picture
      */
-    private String imageUID = null;
+    private String profileImageUID = null;
+    /**
+     * The user's profile picture
+     */
+    private Bitmap profileImage = null;
     /**
      * The Firebase Installation ID (fid)
      */
     private String fid = null;
 
-    // Announcements
     /**
-     * The array list to store annoncements for this user
+     * Whether the data in the class is current
      */
-    private ArrayList<String> announcementsList;
-
-    // Database parameters
-    /**
-     * A reference to the Firestore database
-     */
-    private FirebaseFirestore db;
-    /**
-     * A reference to the users collection
-     */
-    private CollectionReference userRef;
-    /**
-     * A reference to the doucment for this user
-     */
-    private DocumentReference userDocRef;
-    /**
-     * A reference to the events collection for each user
-     */
-    private CollectionReference userEventRef;
-
-
-    // Firebase storage
-    /**
-     * A reference to Firebase Storage
-     */
-    private FirebaseStorage storage;
-    /**
-     * A reference to the storage pool for images
-     */
-    private StorageReference storageRef;
+    private boolean dataIsCurrent = false;
 
     /**
-     * Interface for checking when data is loaded into the user
+     * Whether the user has geolocation enabled
      */
-    public interface DataLoadedListener {
-        /**
-         * Call back for when data is loaded into the user
-         */
-        void onDataLoaded();
+    private boolean geolocation = false;
+
+    /**
+     * Generates a new user
+     * Sets the database reference only, use User.createNewObject to create a new object
+     */
+    private User() {
+        // Create a reference to the users database
+        database = new FirebaseAccess(FirestoreAccessType.USERS);
+
     }
 
     /**
-     * Interface for checking when a new user is created
-     */
-    public interface UserCreatedListener {
-        /**
-         * Callback for passing back the created user when creating a new user
-         * @param user The new user that was created
-         */
-        void onDataLoaded(User user);
-    }
-
-    /**
-     * Interface for checking when the image is loaded from the database
-     */
-    public interface OnBitmapReceivedListener {
-        /**
-         * Callback for passing back the user's profile picture when it was received
-         * @param bitmap The received bitmap
-         */
-        void onBitmapReceived(Bitmap bitmap);
-    }
-
-    /**
-     * Initializes the database parameters for accessing firestore
-     */
-    public void InitDatabase() {
-        db = FirebaseFirestore.getInstance();
-        userRef = db.collection("users");
-        storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference();
-    }
-
-
-    /**
-     * Generates a new user and uploads them to the database
-     * Instantiates all parameters to null. They need to be set later
+     * Creates a new User object
      *
-     * @param listener The listener for determining when the transfer is complete
+     * @return A completable future to get the user
      */
-    public User(UserCreatedListener listener) {
-        // Initialize the database
-        InitDatabase();
-
-        // Create array list
-        announcementsList = new ArrayList<>();
-
-        // Get the user id of a new document
-        uid = userRef.document().getId().toUpperCase();
-        uid = "USER-" + uid;
-
-        // Get the UID for an image
-        imageUID = userRef.document().getId().toUpperCase();
-        imageUID = "IMGE-" + imageUID;
-
-        Log.e("asdf", "test");
-
-        // Create a hash map for all string variables and set all fields to null
-        HashMap<String, Object> data = new HashMap<>();
-        data.put("address", address);
-        data.put("birthday", birthday);
-        data.put("email", email);
-        data.put("homepage", homepage);
-        data.put("name", name);
-        data.put("nickname", nickname);
-        data.put("phone", phone);
-        data.put("profileImage", imageUID);
-        data.put("fid", fid);
-
-
-        // Create a new document and set all parameters
-        userRef.document(uid).set(data);
-
-        // Set the document reference to this document
-        userDocRef = userRef.document(uid);
-
-
-        Log.e("asdf2", "test");
-        // Create the inner collection for events
-        userEventRef = userDocRef.collection("events");
-
-        // Create empty data to force creation of the document
-        HashMap<String, String> emptyData = new HashMap<>();
-
-        // Add the documents
-        userEventRef.document("checkedin").set(emptyData);
-        userEventRef.document("created").set(emptyData);
-        userEventRef.document("signedup").set(emptyData);
-
-        // Notify complete
-        listener.onDataLoaded(this);
+    public static CompletableFuture<User> createNewObject() {
+        return User.createNewObject(null);
     }
 
     /**
-     * Creates an instance of the new user class given a UID.
-     * Loads the data from the database
+     * Creates a new User object
      *
-     * @param userID   The UID of the user to find in the database
-     * @param listener Listener for checking when file transfer is complete
+     * @param UID The UID of the user to create. If null, creates a new one
+     * @return A completable future to get the user
      */
-    public User(String userID, DataLoadedListener listener) {
-        // Initialize database
-        InitDatabase();
+    public static CompletableFuture<User> createNewObject(String UID) {
+        User createdUser;
+        CompletableFuture<User> future = new CompletableFuture<>();
 
-        // Create array list
-        announcementsList = new ArrayList<>();
+        // If the UID is null, create a new User
+        if (UID == null) {
+            createdUser = new User();
 
-        // Set the document ID
-        uid = userID;
-        userDocRef = userRef.document(uid);
+            // Create a hash map for all string variables and set all fields to null
+            HashMap<String, Object> data = new HashMap<>();
+            data.put("address", "Bye");
+            data.put("birthday", null);
+            data.put("email", null);
+            data.put("homepage", null);
+            data.put("name", null);
+            data.put("nickname", null);
+            data.put("phone", null);
+            data.put("fid", null);
+            data.put("geolocation", false);
 
-        // Set the events document id
-        userEventRef = userDocRef.collection("events");
+            // Upload the data to the database
+            Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);
 
-        // Set the fields of the class
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                UpdateAllDataFields(listener);
-                ;
-            }
-        }).start();
+            // Set the UID
+            createdUser.uid = (String) storeReturn.get("outer");
+
+            // Wait for the data to be stored before completing the future
+            CompletableFuture<Void> storeFuture = (CompletableFuture<Void>) storeReturn.get("future");
+            assert storeFuture != null;
+            storeFuture.thenAccept(result -> {
+                // Data is current
+                createdUser.dataIsCurrent = true;
+                future.complete(createdUser);
+            });
+
+            // Return the future
+            return future;
+        } else {
+            // Otherwise create a new user and load in the data
+            createdUser = new User();
+
+            // Set the UID of the user
+            createdUser.uid = UID;
+
+            // Update the user details
+            createdUser.updateUserFromDatabase().thenAccept(result -> {
+                // Data is current
+                createdUser.dataIsCurrent = true;
+                future.complete(createdUser);
+            });
+
+            // Return the future
+            return future;
+        }
+
+    }
+
+    /**
+     * Stores the received Firestore data in the class
+     *
+     * @param data The Firestore data
+     */
+    private void parseFirestoreData(Map<String, Object> data) {
+        // Store the data in the class
+        this.address = (String) data.get("address");
+        if (data.get("birthday") != null) {
+            this.birthday = ((Timestamp) Objects.requireNonNull(data.get("birthday"))).toDate();
+        }
+        this.email = (String) data.get("email");
+        this.homepage = (String) data.get("homepage");
+        this.name = (String) data.get("name");
+        this.nickname = (String) data.get("nickname");
+        this.phone = (String) data.get("phone");
+        this.fid = (String) data.get("fid");
+        if (data.get("geolocation") != null) {
+            this.geolocation = (Boolean) data.get("geolocation");
+        }
 
     }
 
 
     /**
-     * Updates all fields in the class
-     * Needs to be called before getting any data
+     * Updates the user from the database
      *
-     * @param listener Listener for checking when data transfer is complete
+     * @return A completable future for waiting for data to be received
      */
-    public void UpdateAllDataFields(DataLoadedListener listener) {
-        // Get the data in the document
-        userDocRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        // Get the data from the query - there should only be 1 document
-                        Map<String, Object> data = document.getData();
+    public CompletableFuture<Void> updateUserFromDatabase() {
+        // Create the future to return
+        CompletableFuture<Void> future = new CompletableFuture<>();
 
-                        // Get Single element fields
-                        assert data != null;
-                        address = (String) data.get("address");
-                        Object birthdayObject = data.get("birthday");
-                        if (birthdayObject instanceof Timestamp) {
-                            birthday = ((Timestamp) birthdayObject).toDate();
-                        } else {
-                            // Handle the case where birthday is null or not a Timestamp. You could set a default value or leave it as null
-                            birthday = null; // or set a default date if appropriate
-                        }
-                        email = (String) data.get("email");
-                        homepage = (String) data.get("homepage");
-                        name = (String) data.get("name");
-                        nickname = (String) data.get("nickname");
-                        phone = (String) data.get("phone");
-                        imageUID = (String) data.get("profileImage");
-                        fid = (String) data.get("fid");
+        // Check if the data is already current
+        if (!dataIsCurrent) {
+            // Get the data from firestore
+            database.getDataFromFirestore(this.uid).thenAccept(data -> {
+                // Load into the class
+                parseFirestoreData(data);
 
-                        // Load the announcements
-                        // ChatGPT: How do I load an array list from firebase
-                        try {
-                            List<Object> rawList = (List<Object>) data.get("announcements");
-                            Log.d("Firebase", "Array list loading");
+                // Get the profile picture
+                database.getAllRelatedImagesFromFirestore(this.uid, ImageType.profilePictures).thenAccept(dataList -> {
+                    if (dataList == null) {
+                        // If the datalist is empty, there is no profile picture
+                        this.profileImage = null;
 
-                            // Convert each element a string
-                            if (rawList != null) {
-                                for (Object item : rawList) {
-                                    if (item instanceof String) {
-                                        announcementsList.add((String) item);
-                                    }
-                                }
-                            }
-                        } catch (ClassCastException e) {
-                            Log.d("Firebase", "Array list loading failed");
-                        }
+                        // Complete the future
+                        future.complete(null);
 
-
-                        // Inform complete
-                        Log.d("Firebase", "Data Loaded");
-                        listener.onDataLoaded();
-
+                        // Data is current
+                        dataIsCurrent = true;
                     } else {
-                        Log.d("Firebase", "No such document");
+                        // Set the UID and profile image
+                        this.profileImage = (Bitmap) dataList.get(0).get("image");
+                        this.profileImageUID = (String) dataList.get(0).get("UID");
+
+                        // Complete the future
+                        future.complete(null);
+
+                        // Data is current
+                        dataIsCurrent = true;
                     }
-                } else {
-                    Log.d("Firebase Failure", "get failed with ", task.getException());
-                }
-            }
-        });
+                });
+
+            });
+        } else {
+            // Data is current, just complete the future
+            future.complete(null);
+        }
+
+        // Return the future
+        return future;
     }
 
+    /*
+        Getters
+     */
+
+    /**
+     * Gets the UID for the user
+     *
+     * @return The UID of the user
+     */
+    public String getUID() {
+        return uid;
+    }
+
+
+    /**
+     * Gets the address of the user
+     *
+     * @return The address of the user
+     */
+    public CompletableFuture<String> getAddress() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.address);
+        });
+
+        // Return the future
+        return future;
+    }
 
     /**
      * Updates the user's address
@@ -367,7 +329,28 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("address", this.address);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the birthday of the user
+     *
+     * @return The birthday of the user
+     */
+    public CompletableFuture<Date> getBirthday() {
+        // Create a future to return
+        CompletableFuture<Date> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.birthday);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -382,7 +365,28 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("birthday", this.birthday);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the email of the user
+     *
+     * @return The email of the user
+     */
+    public CompletableFuture<String> getEmail() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.email);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -397,7 +401,28 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("email", this.email);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the homepage of the user
+     *
+     * @return The homepage of the user
+     */
+    public CompletableFuture<String> getHomepage() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.homepage);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -412,7 +437,28 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("homepage", this.homepage);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the name of the user
+     *
+     * @return The name of the user
+     */
+    public CompletableFuture<String> getName() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.name);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -427,7 +473,67 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("name", this.name);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the user's geolocation preference
+     *
+     * @return The location preference of the user
+     */
+    public CompletableFuture<Boolean> getGeolocation() {
+        // Create a future to return
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.geolocation);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Sets the user's geolocation preference
+     */
+    public void setGeolocation(Boolean geolocation) {
+        // Update in the class
+        this.geolocation = geolocation;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("geolocation", this.geolocation);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+
+    /*
+        Setters
+     */
+
+    /**
+     * Gets the nickname of the user
+     *
+     * @return The nickname of the user
+     */
+    public CompletableFuture<String> getNickname() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.nickname);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -442,7 +548,85 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("nickname", this.nickname);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the image string of the user
+     *
+     * @return The image string of the user
+     */
+    public CompletableFuture<String> getProfileImageUID() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.profileImageUID);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Gets the FID of the user
+     *
+     * @return The FID of the user
+     */
+    public CompletableFuture<String> getFID() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.fid);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Updates the user's FID
+     *
+     * @param fid The fid of the installation
+     */
+    public void setFID(String fid) {
+        // Update in the class
+        this.fid = fid;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("fid", this.fid);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
+     * Gets the phone number of the user
+     *
+     * @return The phone number of the user
+     */
+    public CompletableFuture<String> getPhone() {
+        // Create a future to return
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.phone);
+        });
+
+        // Return the future
+        return future;
     }
 
     /**
@@ -457,26 +641,29 @@ public class User {
         // Update in database
         HashMap<String, Object> data = new HashMap<>();
         data.put("phone", this.phone);
-        userDocRef.update(data);
+        database.storeDataInFirestore(this.uid, data);
     }
 
     /**
-     * Updates the user's FID
-     *
-     * @param fid The fid of the installation
+     * Gets the users profile image from the database.
+     * The Bitmap profile image is passed out through the future
      */
-    public void setFid(String fid) {
-        // Update in the class
-        this.fid = fid;
+    public CompletableFuture<Bitmap> getProfileImage() {
+        // Create a future to return
+        CompletableFuture<Bitmap> future = new CompletableFuture<>();
 
-        // Update in database
-        HashMap<String, Object> data = new HashMap<>();
-        data.put("fid", this.fid);
-        userDocRef.update(data);
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.profileImage);
+        });
+
+        // Return the future
+        return future;
+
     }
-
-
-    // ChatGPT: How can you upload an image to firebase?
 
     /**
      * Sets the user's profile image in the database
@@ -484,180 +671,43 @@ public class User {
      * @param profileImage The image to store as a bitmap
      */
     public void setProfileImage(Bitmap profileImage) {
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.e("Firebase Storage", "Invalid imageUID, cannot upload image.");
-            return;
-        }
-        // Convert the bitmap to PNG for upload
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        profileImage.compress(Bitmap.CompressFormat.PNG, 100, baos);
-        byte[] data = baos.toByteArray();
+        // Update in the class
+        this.profileImage = profileImage;
 
-        // Upload the image to firebase
-        UploadTask uploadTask = storageRef.child(imageUID).putBytes(data);
-        uploadTask.addOnSuccessListener(taskSnapshot -> {
-            Log.d("Firebase Storage", "Image upload successful");
-        }).addOnFailureListener(exception -> {
-            Log.d("Firebase Storage", "Image upload failed");
-        });
+        // Update in database
+        String imageUID = null;
+        if (this.profileImageUID == null) {
+            this.profileImageUID = database.storeImageInFirestore(this.uid, null, ImageType.profilePictures, profileImage);
+        } else {
+            this.profileImageUID = database.storeImageInFirestore(this.uid, this.profileImageUID, ImageType.profilePictures, profileImage);
+        }
+
     }
-    // ChatGPT: How can you delete an image to firebase storage?
+
+
+    /*
+        Deleters
+     */
 
     /**
      * Deletes the user's profile image in the database
      */
     public void deleteProfileImage() {
         // Check if there is an image to delete
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.d("Firebase Storage", "No image to delete.");
+        if (profileImageUID == null || profileImageUID.isEmpty()) {
+            Log.d("User", "No image to delete!");
             return;
         }
 
-        // Delete the image from Firebase Storage
-        StorageReference fileRef = storageRef.child(imageUID);
-        fileRef.delete().addOnSuccessListener(aVoid -> {
-            Log.d("Firebase Storage", "Image successfully deleted");
-        }).addOnFailureListener(e -> {
-            Log.d("Firebase Storage", "Error deleting image", e);
-        });
+        // Set the image to null
+        this.profileImage = null;
+
+        // Delete the image from the database
+        database.deleteImageFromFirestore(this.uid, this.profileImageUID, ImageType.profilePictures);
+
+        // Set the image UID to null
+        this.profileImageUID = null;
     }
-
-    /**
-     * Gets the UID for the user
-     *
-     * @return The UID of the user
-     */
-    public String getUid() {
-//        this.UpdateAllDataFields();
-        return uid;
-    }
-
-    /**
-     * Gets the address of the user
-     *
-     * @return The address of the user
-     */
-    public String getAddress() {
-//        this.UpdateAllDataFields();
-        return address;
-    }
-
-    /**
-     * Gets the birthday of the user
-     *
-     * @return The birthday of the user
-     */
-    public Date getBirthday() {
-//        this.UpdateAllDataFields();
-        return birthday;
-    }
-
-    /**
-     * Gets the email of the user
-     *
-     * @return The email of the user
-     */
-    public String getEmail() {
-//        this.UpdateAllDataFields();
-        return email;
-    }
-
-    /**
-     * Gets the homepage of the user
-     *
-     * @return The homepage of the user
-     */
-    public String getHomepage() {
-//        this.UpdateAllDataFields();
-        return homepage;
-    }
-
-    /**
-     * Gets the name of the user
-     *
-     * @return The name of the user
-     */
-    public String getName() {
-//        this.UpdateAllDataFields();
-        return name;
-    }
-
-    /**
-     * Gets the nickname of the user
-     *
-     * @return The nickname of the user
-     */
-    public String getNickname() {
-//        this.UpdateAllDataFields();
-        return nickname;
-    }
-
-    /**
-     * Gets the phone number of the user
-     *
-     * @return The phone number of the user
-     */
-    public String getPhone() {
-//        this.UpdateAllDataFields();
-        return phone;
-    }
-
-    /**
-     * Gets the image string of the user
-     *
-     * @return The image string of the user
-     */
-    public String getImageUID() {
-        return imageUID;
-    }
-
-
-    /**
-     * Gets the FID of the user
-     *
-     * @return The FID of the user
-     */
-    public String getFid() {
-//        this.UpdateAllDataFields();
-        return fid;
-    }
-
-
-    // ChatGPT: Now i want to do the reverse and load the image and convert it back to a bitmap
-
-    /**
-     * Gets the users profile image from the database.
-     * The Bitmap profile image is passed out through the listener
-     * @param listener The listener to to see when data transfer is finished
-     */
-    public void getProfileImage(OnBitmapReceivedListener listener) {
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.d("User", "No imageUID available for user: " + uid);
-            // Call the listener with a null or default bitmap
-            listener.onBitmapReceived(null); // or pass a default Bitmap
-            return;
-        }
-
-        StorageReference profileImageRef = storageRef.child(imageUID);
-        final long ONE_MEGABYTE = 1024 * 1024;
-        profileImageRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(bytes -> {
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            listener.onBitmapReceived(bitmap);
-        }).addOnFailureListener(e -> {
-            Log.e("User", "Failed to load profile image for user: " + uid, e);
-            listener.onBitmapReceived(null); // or pass a default Bitmap on failure
-        });
-    }
-
-    /**
-     * Gets the array list containing the announcements
-     *
-     * @return The announcements array list
-     */
-    public ArrayList<String> getAnnouncementsList() {
-        return announcementsList;
-    }
-
 
     /**
      * Checks a user into the specified event.
@@ -665,47 +715,113 @@ public class User {
      *
      * @param eventID The UID of the event
      */
-    public void checkIn(String eventID) {
-        // Check to see if the user has checked in before
-        DocumentReference checkInRef = userEventRef.document("checkedin");
-        checkInRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                DocumentSnapshot document = task.getResult();
-                // Check if document exists
-                if (document.exists()) {
-                    // Check if this event is already there, if it is, increment that count
-                    if (document.get(eventID) != null) {
-                        // Get the field in the map
-                        String countField = eventID + ".count";
+    public void checkIn(String eventID, Context context) {
+        // Check to see if the user has checked in already
+        database.getDataFromFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID).thenAccept(data -> {
+            // If there is no data create a new one
+            if (data == null) {
+                // Create a map for the new event data
+                HashMap<String, Object> eventInfo = new HashMap<>();
 
-                        // Update the count
-                        checkInRef.update(countField, FieldValue.increment(1));
+                // Add the data to the internal map
+                int count = 1;
+                eventInfo.put("count", count);
+                eventInfo.put("date-time", new Date());
 
-                    } else {
-                        // Event does not already exist, make a new event
-                        HashMap<String, Object> data = new HashMap<>();
-                        HashMap<String, Object> internalMap = new HashMap<>();
+                // If the user has geolocation on, store their current location
+                getUserGeolocation(context).thenAccept(location -> {
+                    // Add to the map
+                    data.put("location", location);
 
-                        // Add the data to the internal map
-                        internalMap.put("count", 1);
-                        internalMap.put("date-time", new Date());
-                        internalMap.put("location", new GeoPoint(0, 0));
+                    // Store the data into Firestore
+                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+                });
 
-                        // Add the map to the document
-                        data.put(eventID, internalMap);
-                        checkInRef.update(data);
-                    }
+            } else {
+                // Just update the count
+                long count = (long) data.get("count");
+                data.put("count", count + 1);
 
-                    // Subscribe the user to notifications
-                    FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+                // Update the location as well
+                getUserGeolocation(context).thenAccept(location -> {
+                    // Add to the map
+                    data.put("location", location);
 
-                } else {
-                    Log.d("Firebase Check In", "No such document");
-                }
-
+                    // Store the data into Firestore
+                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+                });
             }
+
+            // Sign the user up for notifications for the event
+            FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+        });
+    }
+
+    /**
+     * Deletes the current user from the database
+     *
+     * @return A future for waiting for the operation to complete
+     */
+    public CompletableFuture<Void> deleteUser() {
+        // Create the future to return
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        // Delete their profile picture
+        if (profileImageUID != null) {
+            this.deleteProfileImage();
+        }
+
+        // Then delete the user from the database
+        database.deleteDataFromFirestore(this.uid).thenAccept(result -> {
+            future.complete(null);
         });
 
+        // Return the future
+        return future;
     }
+
+    // Chat GPT: How do I get a user's location in latitude and longitude in Android using Java. I already have the permissions
+    private CompletableFuture<GeoPoint> getUserGeolocation(Context context) {
+        // Create a future
+        CompletableFuture<GeoPoint> locationFuture = new CompletableFuture<>();
+
+        // Check if location is enabled
+        if (!User.this.geolocation) {
+            Log.d("Geolocation", "User has location disabled");
+            locationFuture.complete(null);
+            return locationFuture;
+        }
+
+        // Set up for getting location
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(context.getApplicationContext());
+        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        // Check for permissions again
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // This should never run!! Permissions should be enabled already if we make it here
+            Log.e("Geolocation", "Location permissions not given!!");
+            locationFuture.complete(null);
+            return locationFuture;
+        }
+
+        // Get the location
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.getToken())
+                .addOnSuccessListener(new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        // Create a geopoint from the location
+                        GeoPoint geoPoint  = new GeoPoint(location.getLatitude(), location.getLongitude());
+
+                        // Complete the future with the Geopoint
+                        locationFuture.complete(geoPoint);
+                    }
+                });
+
+        // Return the future
+        return locationFuture;
+
+    }
+
+    ;
 }

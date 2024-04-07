@@ -14,6 +14,7 @@ navigationFragment = "2.7.7"
 fragmentTesting = "1.6.2"
 espressoContrib = "3.5.1"
 glide = "5.0.0-rc01"
+preference = "1.2.1"
 
 [libraries]
 androidx-espresso-core = { module = "androidx.support.test.espresso:espresso-core", version.ref = "espressoCoreVersion" }
@@ -31,6 +32,7 @@ navigation-fragment = { group = "androidx.navigation", name = "navigation-fragme
 fragment-testing = { group = "androidx.fragment", name = "fragment-testing", version.ref = "fragmentTesting" }
 espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espressoContrib" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

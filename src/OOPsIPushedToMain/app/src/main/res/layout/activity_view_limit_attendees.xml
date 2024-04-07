@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Signed Up Attendees"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textColor="#009688"
+        android:textStyle="bold" />
+
+    <ListView
+        android:id="@+id/signedUpAttendeesListView"
+        android:layout_width="match_parent"
+        android:layout_height="547dp"
+        android:layout_weight="1" />
+
+    <EditText
+        android:id="@+id/limitEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter attendee limit"
+        android:inputType="number"/>
+
+    <Button
+        android:id="@+id/setLimitButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:backgroundTint="#009688"
+        android:text="Set Limit"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

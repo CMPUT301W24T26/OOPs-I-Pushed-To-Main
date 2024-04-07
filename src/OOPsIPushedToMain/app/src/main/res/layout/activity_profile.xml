@@ -20,12 +20,9 @@
             android:layout_height="125dp"
             android:padding="3sp"
             android:scaleType="centerCrop"
-            android:src="@drawable/default_image"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:shapeAppearanceOverlay="@style/CircularShape"
-            app:strokeColor="?attr/colorAccent"
-            app:strokeWidth="5sp" />
+            app:shapeAppearanceOverlay="@style/CircularShape" />
 
         <!-- Name TextView -->
         <TextView
@@ -157,7 +154,7 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <Switch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/toggleGeolocationSwitch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

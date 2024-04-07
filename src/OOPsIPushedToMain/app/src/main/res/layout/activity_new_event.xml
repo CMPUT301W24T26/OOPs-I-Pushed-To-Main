@@ -52,7 +52,7 @@
         android:id="@+id/new_event_start_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="32dp"
         android:text="Start Date/Time"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="@+id/NewEvent"
@@ -72,7 +72,7 @@
         android:id="@+id/new_event_end_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="32dp"
         android:text="End Date/Time"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="@+id/NewEvent"
@@ -92,7 +92,7 @@
         android:id="@+id/new_event_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="32dp"
         android:text="Description"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="@+id/NewEvent"
@@ -107,6 +107,27 @@
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@+id/NewEvent"
         app:layout_constraintTop_toBottomOf="@+id/new_event_description" />
+
+    <TextView
+        android:id="@+id/new_event_attendee_limit_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Attendee Limit"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="@+id/NewEvent"
+        app:layout_constraintTop_toBottomOf="@+id/new_event_description_e" />
+
+    <EditText
+        android:id="@+id/new_event_attendee_limit_e"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Enter limit"
+        android:inputType="number"
+        android:textSize="15sp"
+        app:layout_constraintStart_toStartOf="@+id/new_event_attendee_limit_label"
+        app:layout_constraintTop_toBottomOf="@+id/new_event_attendee_limit_label" />
 
     <Button
         android:id="@+id/btnCreateNewEvent"
