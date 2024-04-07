@@ -255,11 +255,15 @@ public class ProfileActivity extends AppCompatActivity {
                                 break;
                             case "adminQRCode":
                                 runOnUiThread(() -> {
-                                    Log.d("QRScanner","The User is now an admin!!");
-                                });
+                                    // Show confirmation
+                                    Toast.makeText(getApplicationContext(), "Congratulations! You are now an Admin!", Toast.LENGTH_LONG).show();
 
-                                // Make the user an admin
-                                // TODO: Update user to support account types
+                                    // Make the user an admin
+                                    user.makeAdmin();
+
+                                    // Show the admin button
+                                    adminButton.setVisibility(View.VISIBLE);
+                                });
                                 break;
 
                         }
@@ -297,8 +301,16 @@ public class ProfileActivity extends AppCompatActivity {
                 // Update the views on the new data
                 updateUIElements();
 
-                // TODO: Implement a proper sign in feature
-                CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
+
+                // Check if the user has admin access
+                user.isAdmin().thenAccept(admin -> {
+                    if (!admin) {
+                        runOnUiThread(() -> {
+                            // Hide the admin button if they are not an Admin
+                            adminButton.setVisibility(View.GONE);
+                        });
+                    }
+                });
 
                 // Set the toggle switch based of the loaded value
                 user.getGeolocation().thenAccept(value -> {
@@ -317,6 +329,9 @@ public class ProfileActivity extends AppCompatActivity {
                         initialRun = false;
                     });
                 });
+
+
+
 
 
             });
