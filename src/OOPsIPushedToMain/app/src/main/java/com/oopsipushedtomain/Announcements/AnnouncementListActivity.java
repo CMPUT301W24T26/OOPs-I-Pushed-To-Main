@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.oopsipushedtomain.Event;
 import com.oopsipushedtomain.R;
 
 import java.util.ArrayList;
@@ -26,10 +25,6 @@ import java.util.ArrayList;
  * @see AnnouncementListAdapter
  */
 public class AnnouncementListActivity extends AppCompatActivity {
-    /**
-     * The view that shows the list of announcements
-     */
-    private ListView announcementList;
 
     /**
      * The list of announcement
@@ -81,7 +76,7 @@ public class AnnouncementListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_announcement_list);
 
         // Initialize the list and list adapter
-        announcementList = findViewById(R.id.announcement_list);
+        ListView announcementList = findViewById(R.id.announcement_list);
         announcementDataList = new ArrayList<>();
 
         announcementListAdapter = new AnnouncementListAdapter(this, announcementDataList);
@@ -132,7 +127,9 @@ public class AnnouncementListActivity extends AppCompatActivity {
                                     DocumentSnapshot announcementDoc = getAnnouncementTask.getResult();
                                     if (announcementDoc.exists()) {  // The announcement was successfully found
                                         Announcement newAnnouncement = announcementDoc.toObject(Announcement.class);
-                                        newAnnouncement.setAnmtId(announcementDoc.getId());
+                                        if (newAnnouncement != null) {
+                                            newAnnouncement.setAnmtId(announcementDoc.getId());
+                                        }
                                         announcementDataList.add(newAnnouncement);
                                         announcementListAdapter.notifyDataSetChanged();
                                         Log.d("test", getFirstAnnouncement());
