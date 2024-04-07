@@ -4,17 +4,26 @@ import android.Manifest;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,6 +38,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
+import com.google.firebase.Firebase;
+import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
@@ -36,8 +49,12 @@ import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.DialogInputListeners.PhonePickerDialog;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -59,6 +76,11 @@ public class ProfileActivity extends AppCompatActivity {
      * A unique request code for getting geolocation permissions
      */
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 110; // A unique request code
+
+    /**
+     * A unique request code for getting notification permissions
+     */
+    private static final int MY_PERMISSIONS_REQUEST_NOTIFICATION = 120; // A unique request code
 
     /**
      * Toggle for camera permissions
@@ -98,8 +120,11 @@ public class ProfileActivity extends AppCompatActivity {
     /**
      * The reference to the view of the profile image
      */
-    private View profileImageView;
-
+    private ImageView profileImageView;
+    /**
+     * Username held as global so that image can be generated in the case it is deleted
+     */
+    private String profileUserName;
     /**
      * Get the image from the camera
      */
@@ -112,7 +137,7 @@ public class ProfileActivity extends AppCompatActivity {
                     // Get the bitmap
                     Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
                     // Set the image in the view
-                    ((ImageView) profileImageView).setImageBitmap(photo);
+                    profileImageView.setImageBitmap(photo);
                     // Update the user profile
                     if (user != null) {
                         // Set the new profile image
@@ -143,7 +168,7 @@ public class ProfileActivity extends AppCompatActivity {
                     Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
 
                     // Set in the view
-                    ((ImageView) profileImageView).setImageURI(result);
+                    profileImageView.setImageURI(result);
 
                     // Update the user
                     if (user != null) {
@@ -180,17 +205,77 @@ public class ProfileActivity extends AppCompatActivity {
                 // Get the data
                 Intent data = o.getData();
 
-                // If the data is not null, load the QR code
+                // If the data is not null, load the scanned QR code
                 if (data != null) {
-                    String qrCodeString = data.getStringExtra("result");
+                    String qrCodeData = data.getStringExtra("result");
 
-                    // Check the user into the event
-                    user.checkIn(qrCodeString);
+                    // Get the QR code data from the database
+                    FirebaseAccess eventsDatabase = new FirebaseAccess(FirestoreAccessType.EVENTS);
+                    // As long as the image type is an QR code it will access the correct database
+                    eventsDatabase.getImageFromFirestore(qrCodeData, ImageType.eventQRCodes).thenAccept(imageData -> {
+                        // If no data is found cancel
+                        if (imageData == null) {
+                            runOnUiThread(() -> Log.d("QRScanner", "No QR image found"));
 
-                    // Show the scanned data
-                    Toast.makeText(getApplicationContext(), "Checked into event: " + qrCodeString, Toast.LENGTH_LONG).show();
-                    Log.d("QR Code", "Checked into event: " + qrCodeString);
+                            return;
+                        }
 
+                        // Perform the correct action depending on the type of QR code
+                        String qrType = (String) imageData.get("type");
+                        if (qrType == null) {
+                            // There was a problem
+                            runOnUiThread(() -> Log.d("QR Scanner", "Error getting type"));
+                            return;
+                        }
+
+                        // Get the eventID, for admin will be null
+                        String eventID = (String) imageData.get("origin");
+
+                        switch (qrType) {
+                            case "eventQRCodes":
+                                // Get the event name
+                                eventsDatabase.getDataFromFirestore(eventID).thenAccept(event -> {
+                                    runOnUiThread(() -> {
+                                        // Check the event exists
+                                        if (event == null) {
+                                            runOnUiThread(() -> Log.d("QRScanner", "Event does not exist!"));
+                                            return;
+                                        }
+                                        // Get the title of the event
+                                        String eventTitle = (String) event.get("title");
+
+                                        // Check the user into the event
+                                        runOnUiThread(() -> {
+                                            user.checkIn(eventID, ProfileActivity.this);
+                                        });
+
+
+                                        // Show a confirmation message
+                                        Toast.makeText(getApplicationContext(), "Checked into event: " + eventTitle, Toast.LENGTH_LONG).show();
+                                    });
+                                });
+                                break;
+                            case "promoQRCodes":
+                                // Open the event details page
+                                runOnUiThread(() -> {
+                                    // Get the id of the loaded user
+                                    Intent intent = new Intent(ProfileActivity.this, EventDetailsActivity.class);
+                                    intent.putExtra("userId", user.getUID());
+                                    intent.putExtra("selectedEventId", eventID);
+                                    startActivity(intent);
+                                });
+                                break;
+                            case "adminQRCode":
+                                runOnUiThread(() -> {
+                                    Log.d("QRScanner","The User is now an admin!!");
+                                });
+
+                                // Make the user an admin
+                                // TODO: Update user to support account types
+                                break;
+
+                        }
+                    });
                 } else {
                     Toast.makeText(getApplicationContext(), "Data Error", Toast.LENGTH_LONG).show();
                     Log.d("QR Code", "QR Code Not Scanned");
@@ -240,9 +325,24 @@ public class ProfileActivity extends AppCompatActivity {
                             ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                                     Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
 
+                        } else {
+                            requestNotificationPermission();
                         }
                         initialRun = false;
                     });
+                });
+
+                // Generate picture
+                user.getProfileImage().thenAccept(image -> {
+                    if (image == null){
+                        user.getName().thenAccept(name -> {
+                           runOnUiThread(() -> {
+                               // Generate the bitmap
+                               CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(name);
+                               profileImageView.setImageBitmap(generator.createInitialBitmap());
+                           });
+                        });
+                    }
                 });
 
 
@@ -273,8 +373,10 @@ public class ProfileActivity extends AppCompatActivity {
         // Profile pictures
         profileImageView = findViewById(R.id.profileImageView);
         // Get the default profile picture
-        defaultImage = ((ImageView) profileImageView).getDrawable();
-
+        defaultImage = profileImageView.getDrawable();
+        // TODO: set default profile picture to the generated picture and compare with current
+        // TODO: OR just get rid of the logic altogether. Just have a 3-option menu
+        // if you don't like your colour, it'll generate a new one
 
         /*
             Set click listeners
@@ -287,6 +389,15 @@ public class ProfileActivity extends AppCompatActivity {
                 if (input != null) {
                     nameValue.setText((String) input);
                     user.setName((String) input);
+                    profileUserName = (String) input;
+
+                    user.getProfileImage().thenAccept(image -> {
+                        if (image == null){
+                            // Generate a new image
+                            CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(profileUserName);
+                            profileImageView.setImageBitmap(generator.createInitialBitmap());
+                        }
+                    });
                 }
             });
 
@@ -295,6 +406,7 @@ public class ProfileActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     // Show the dialog
                     textDialog.show("Edit Name", data);
+                    profileUserName = data;
                 });
             });
 
@@ -561,7 +673,7 @@ public class ProfileActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 // Update the fields
                 if (image != null) {
-                    ((ImageView) profileImageView).setImageBitmap(image);
+                    profileImageView.setImageBitmap(image);
                 }
             });
         });
@@ -577,82 +689,93 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-
     /**
      * Handles updating the profile picture when the profile image is clicked
      */
     public void handleProfileImageClick() {
         // Get the current profile image
-        Drawable currentImage = ((ImageView) profileImageView).getDrawable();
+//        Drawable currentImage = profileImageView.getDrawable();
+//        boolean isDefaultImage = currentImage.equals(defaultImage);
 
         // Build a new alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
         builder.setTitle("Update Profile Image");
 
         // If the current image is the default image, don't show the delete option
-        if (currentImage.equals(defaultImage)) {
+//        if (isDefaultImage) {
             // Set the items in the dialog
-            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery"},
-                    // Set the listener for the selection on the dialog
-                    (dialog, which) -> {
-                        switch (which) {
-                            // Take a photo using the camera
-                            case 0: // Take Photo
-                                // Check for camera permissions
-                                if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                                    // Permission is not granted, request permissions
-                                    ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
-                                } else {
-                                    // Camera permissions are granted
-                                    cameraEnabled = true;
-                                }
-
-                                // Perform the proper action
-                                if (cameraEnabled) {
-                                    // Open the camera
-                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                    cameraResultLauncher.launch(cameraIntent);
-                                    Log.d("Camera", "Picture taken!");
-                                    break;
-                                } else {
-                                    // Show a message saying camera permission is required
-                                    Log.d("Camera", "No permissions!");
-                                    Toast.makeText(ProfileActivity.this, "Camera Permissions Required!!", Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-
-
-                            case 1: // Choose from Gallery
-                                galleryResultLauncher.launch("image/*");
-                                Log.d("Gallery", "Image selected from the gallery");
-                                break;
-                        }
-                    });
-            builder.show();
-        } else {
-            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            switch (which) {
-                                case 0: // Take Photo
-                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                    cameraResultLauncher.launch(cameraIntent);
-                                    break;
-                                case 1: // Choose from Gallery
-                                    galleryResultLauncher.launch("image/*");
-                                    break;
-                                case 2: // Delete Photo
-                                    if (user != null) {
-                                        user.deleteProfileImage();
-                                        ((ImageView) profileImageView).setImageDrawable(defaultImage);
-                                    }
-                                    break;
+        builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
+                // Set the listener for the selection on the dialog
+                (dialog, which) -> {
+                    switch (which) {
+                        // Take a photo using the camera
+                        case 0: // Take Photo
+                            // Check for camera permissions
+                            if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                                // Permission is not granted, request permissions
+                                ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
+                            } else {
+                                // Camera permissions are granted
+                                cameraEnabled = true;
                             }
-                        }
-                    });
-            builder.show();
-        }
+
+                            // Perform the proper action
+                            if (cameraEnabled) {
+                                // Open the camera
+                                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                cameraResultLauncher.launch(cameraIntent);
+                                Log.d("Camera", "Picture taken!");
+                                break;
+                            } else {
+                                // Show a message saying camera permission is required
+                                Log.d("Camera", "No permissions!");
+                                Toast.makeText(ProfileActivity.this, "Camera Permissions Required!!", Toast.LENGTH_LONG).show();
+                                return;
+                            }
+
+                        case 1: // Choose from Gallery
+                            galleryResultLauncher.launch("image/*");
+                            Log.d("Gallery", "Image selected from the gallery");
+                            break;
+
+                        case 2: // Delete Photo
+                            if (user != null) {
+                                user.deleteProfileImage();
+
+                                // Generate a new one based off the name
+                                if (profileUserName != null){
+                                    CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(profileUserName);
+                                    profileImageView.setImageBitmap(generator.createInitialBitmap());
+                                }
+                            }
+                            break;
+                    }
+                });
+        builder.show();
+//        } else {
+//            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
+//                    new DialogInterface.OnClickListener() {
+//                        @Override
+//                        public void onClick(DialogInterface dialog, int which) {
+//                            switch (which) {
+//                                case 0: // Take Photo
+//                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//                                    cameraResultLauncher.launch(cameraIntent);
+//                                    break;
+//                                case 1: // Choose from Gallery
+//                                    galleryResultLauncher.launch("image/*");
+//                                    break;
+//                                case 2: // Delete Photo
+//                                    if (user != null) {
+//                                        user.deleteProfileImage();
+//                                        // TODO: Set default image back to generator picture
+////                                        profileImageView.setImageDrawable(defaultImage);
+//                                        setAvatarInitial(profileUserName);
+//                                    }
+//                                    break;
+//                            }
+//                        }
+//                    });
     }
 
     // ChatGPT: How do I request location permission in android?
@@ -692,7 +815,7 @@ public class ProfileActivity extends AppCompatActivity {
      * Handles when permissions are requested
      *
      * @param requestCode  The request code passed in {@link #requestPermissions(
-     *android.app.Activity, String[], int)}
+     * android.app.Activity, String[], int)}
      * @param permissions  The requested permissions. Never null.
      * @param grantResults The grant results for the corresponding permissions
      *                     which is either {@link android.content.pm.PackageManager#PERMISSION_GRANTED}
@@ -722,10 +845,11 @@ public class ProfileActivity extends AppCompatActivity {
                     // At least one was granted
                     locationEnabled = true;
                 } else {
-                    // Location denyed
+                    // Location denied
                     locationEnabled = false;
                 }
-                return;
+                // Sequentially request notification permissions after handling location request
+                requestNotificationPermission();
             }
         }
     }
@@ -745,4 +869,18 @@ public class ProfileActivity extends AppCompatActivity {
         dialog.show(getSupportFragmentManager(), "EditFieldDialogFragment");
     }
 
+    /**
+     * Gets the current user. Used for intent testing (Announcements)
+     * @return The current user object
+     */
+    public User getUser() {
+        return this.user;
+    }
+
+    private void requestNotificationPermission() {
+        // Check if they're already enabled, if not, request them
+        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, MY_PERMISSIONS_REQUEST_NOTIFICATION);
+        }
+    }
 }

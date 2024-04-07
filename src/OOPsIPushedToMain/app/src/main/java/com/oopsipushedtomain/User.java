@@ -10,9 +10,40 @@
 
 package com.oopsipushedtomain;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.util.Log;
 
+import androidx.core.app.ActivityCompat;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import android.Manifest;
+
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.android.gms.tasks.OnSuccessListener;
+
+import android.util.Log;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -21,6 +52,8 @@ import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
+import org.checkerframework.checker.units.qual.C;
+
 import java.io.Serializable;
 import java.sql.Time;
 import java.util.Date;
@@ -28,6 +61,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * This class defines and represents a user
@@ -694,7 +728,7 @@ public class User {
      *
      * @param eventID The UID of the event
      */
-    public void checkIn(String eventID) {
+    public void checkIn(String eventID, Context context) {
         // Check to see if the user has checked in already
         database.getDataFromFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID).thenAccept(data -> {
             // If there is no data create a new one
@@ -706,22 +740,66 @@ public class User {
                 int count = 1;
                 eventInfo.put("count", count);
                 eventInfo.put("date-time", new Date());
-                eventInfo.put("location", new GeoPoint(0, 0));
 
-                // Store the data into firestore
-                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, eventInfo);
+                // If the user has geolocation on, store their current location
+                getUserGeolocation(context).thenAccept(location -> {
+                    // Add to the map
+                    data.put("location", location);
+
+                    // Store the data into Firestore
+                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+                });
+
             } else {
                 // Just update the count
                 long count = (long) data.get("count");
                 data.put("count", count + 1);
 
-                // Write the new data back
-                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+                // Update the location as well
+                getUserGeolocation(context).thenAccept(location -> {
+                    // Add to the map
+                    data.put("location", location);
 
+                    // Store the data into Firestore
+                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+                });
             }
 
             // Sign the user up for notifications for the event
             FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+
+            // Save the check-in location IF the user has enabled geolocation tracking
+            if (this.geolocation) {
+                FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
+                FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    Log.e("UserCheckIn", "User has location app permissions disabled");
+                    return;
+                }
+                fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            // Got last known location. In some rare situations this can be null.
+                            if (location != null) {
+                                GeoPoint point = new GeoPoint(location.getLatitude(), location.getLongitude());
+                                HashMap<String, Object> geoLocData = new HashMap<String, Object>();
+                                Log.d("UserCheckIn", String.valueOf(point));
+                                geoLocData.put("coordinates", point);
+                                geoLocData.put("userId", getUID());
+                                geoLocData.put("timestamp", new java.sql.Timestamp(System.currentTimeMillis()));
+                                eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, geoLocData);
+                            }
+                        }
+                    });
+            }
         });
     }
 
@@ -747,4 +825,49 @@ public class User {
         // Return the future
         return future;
     }
+
+    // Chat GPT: How do I get a user's location in latitude and longitude in Android using Java. I already have the permissions
+    private CompletableFuture<GeoPoint> getUserGeolocation(Context context) {
+        // Create a future
+        CompletableFuture<GeoPoint> locationFuture = new CompletableFuture<>();
+
+        // Check if location is enabled
+        if (!User.this.geolocation) {
+            Log.d("Geolocation", "User has location disabled");
+            locationFuture.complete(null);
+            return locationFuture;
+        }
+
+        // Set up for getting location
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(context.getApplicationContext());
+        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        // Check for permissions again
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // This should never run!! Permissions should be enabled already if we make it here
+            Log.e("Geolocation", "Location permissions not given!!");
+            locationFuture.complete(null);
+            return locationFuture;
+        }
+
+        // Get the location
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.getToken())
+                .addOnSuccessListener(new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        // Create a geopoint from the location
+                        GeoPoint geoPoint  = new GeoPoint(location.getLatitude(), location.getLongitude());
+
+                        // Complete the future with the Geopoint
+                        locationFuture.complete(geoPoint);
+                    }
+                });
+
+        // Return the future
+        return locationFuture;
+
+    }
+
+    ;
 }

@@ -159,4 +159,39 @@ public class QRCode {
         return future;
     }
 
+    /**
+     * Generates the admin qr code
+     * @return
+     */
+    public static Bitmap generateAdminQRCode() {
+//        FirebaseInnerCollection innerColl = FirebaseInnerCollection.valueOf(imageType.name());
+//        String imageUID = FirebaseAccess.generateNewUID(FirestoreAccessType.EVENTS, innerColl);
+//        createQRCode.setImageUID(imageUID);
+
+        // Generating QRCode
+        // The size of the QR Code
+        int qrSize = 400;
+
+        // Create the MultiFormatWriter to generate the qr code
+        MultiFormatWriter writer = new MultiFormatWriter();
+        // Encode the text into a QR code format
+        BitMatrix matrix = null;
+        try {
+            matrix = writer.encode("ADMIN-CODE", BarcodeFormat.QR_CODE, qrSize, qrSize);
+        } catch (Exception e) {
+            Log.d("QRCODE", "Error generating QRCode");
+        }
+        // Create a new bitmap
+        Bitmap bmp = Bitmap.createBitmap(qrSize, qrSize, Bitmap.Config.RGB_565);
+
+        // Create the bitmap pixel by pixel
+        for (int x = 0; x < qrSize; x++) {
+            for (int y = 0; y < qrSize; y++) {
+                bmp.setPixel(x, y, matrix.get(x, y) ? Color.BLACK : Color.WHITE);
+            }
+        }
+
+        return bmp;
+    }
+
 }

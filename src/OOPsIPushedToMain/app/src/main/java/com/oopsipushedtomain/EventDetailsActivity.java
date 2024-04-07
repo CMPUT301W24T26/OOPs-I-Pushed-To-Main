@@ -2,8 +2,9 @@ package com.oopsipushedtomain;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
-import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,28 +14,28 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.FragmentActivity;
+import androidx.core.content.FileProvider;
 
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
-import com.oopsipushedtomain.Database.ImageType;
-import com.oopsipushedtomain.Geolocation.MapActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Database.ImageType;
+import com.oopsipushedtomain.Geolocation.MapActivity;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * EventDetailsActivity allows organizers to view and edit details of an event.
@@ -79,7 +80,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     /**
      * The references to the buttons
      */
-    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton;
+    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton;
 
     /**
      * The UID of the user
@@ -121,6 +122,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewLimitAttendeeButton = findViewById(R.id.btnViewLimitAttendees);
         deleteButton = findViewById(R.id.btnDeleteEvent);
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
+        viewEventPromoQRCodeButton = findViewById(R.id.btnViewPromoQRCode);
 //        currentUserUID = CustomFirebaseAuth.getInstance().getCurrentUserID();
         viewMapButton = findViewById(R.id.btnViewMap);
 
@@ -137,34 +139,21 @@ public class EventDetailsActivity extends AppCompatActivity {
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
         event = new Event();
         try {
-            Log.e("EventDetailsActivity", "trying to get event");
             firebaseAccess.getDataFromFirestore(eventID).thenAccept(datalist -> {
                 if (datalist == null) {
                     Log.e("EventDetailsActivity", "event is null");
                 } else {
-                    datalist.forEach((key, value) -> Log.d("map", key + ":" + value));
-//                    event = new Event(
-//                            datalist.get("UID").toString(),
-//                            datalist.get("title").toString(),
-//                            datalist.get("startTime").toString(),
-//                            datalist.get("description").toString(),
-//                            datalist.get("location").toString(),
-//                            datalist.get("posterUrl").toString(),
-//                            (int) datalist.get("attendeeLimit"),
-//                            datalist.get("creatorId").toString()
-//                    );
-//                    event = new Event();
                     event.setEventId(datalist.get("UID").toString());
                     event.setTitle(datalist.get("title").toString());
                     event.setStartTime(datalist.get("startTime").toString());
                     event.setDescription(datalist.get("description").toString());
                     event.setLocation(datalist.get("location").toString());
                     event.setPosterUrl(datalist.get("posterUrl").toString());
-                    event.setAttendeeLimit(Integer.valueOf(datalist.get("attendeeLimit").toString()));
+                    event.setAttendeeLimit(Integer.parseInt(datalist.get("attendeeLimit").toString()));
                     event.setCreatorId(datalist.get("creatorId").toString());
 
                     // Set the text for the TextViews with event details
-                    Log.e("EventDetailsActivity", event.getTitle());
+                    Log.d("EventDetailsActivity", event.getTitle());
                     runOnUiThread(() -> {
                         eventTitleEdit.setText(event.getTitle());
                         eventStartTimeEdit.setText(event.getStartTime());
@@ -172,11 +161,10 @@ public class EventDetailsActivity extends AppCompatActivity {
                         eventDescriptionEdit.setText(event.getDescription());
 
                         // TODO: not currently working
-                        determineUserRole(userId, eventID, this::updateUIForRole);
+//                        determineUserRole(userId, eventID, this::updateUIForRole);
                     });
                 }
             });
-            Log.e("EventDetailsActivity", "event loaded?");
         } catch (Exception e) {
             Log.e("EventDetailsActivity", String.valueOf(e));
         }
@@ -228,12 +216,71 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         viewLimitAttendeeButton.setOnClickListener(v -> {
-            //Intent intent = new Intent(this, ViewLimitAttendeesActivity.class);
-            //startActivity(intent);
+            Intent intent = new Intent(EventDetailsActivity.this, ViewLimitAttendeesActivity.class);
+            intent.putExtra("eventId", event.getEventId()); // Pass the event ID to the new activity
+            startActivity(intent);
         });
 
         viewEventQRCodeButton.setOnClickListener(v -> {
-            // TODO
+            ImageType imageType = ImageType.eventQRCodes;
+
+            QRCode.loadQRCodeObject(eventID, imageType).thenAccept(qrCode -> {
+                Bitmap qrCodeBitmap = qrCode.getQRCodeImage();
+
+                if (qrCodeBitmap != null) {
+                    runOnUiThread(() -> {
+                        // Save the bitmap to a file and get its URI
+                        Uri qrCodeUri = saveBitmapToFile(qrCodeBitmap, "qrCodeImage.png");
+
+                        if (qrCodeUri != null) {
+                            // Start ShowImageActivity with the URI of the saved image
+                            Intent intent = new Intent(EventDetailsActivity.this, ShowImageActivity.class);
+                            intent.putExtra("qrCodeUri", qrCodeUri.toString()); // Pass URI as a string
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivity(intent);
+                        } else {
+                            Toast.makeText(EventDetailsActivity.this, "Failed to load QR Code image.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    runOnUiThread(() ->
+                            Toast.makeText(EventDetailsActivity.this, "QR Code image not available.", Toast.LENGTH_SHORT).show());
+                }
+            }).exceptionally(exception -> {
+                Log.e("QRCodeLoading", "Error loading QR Code", exception);
+                return null;
+            });
+        });
+
+        viewEventPromoQRCodeButton.setOnClickListener(v -> {
+            ImageType imageType = ImageType.promoQRCodes;
+
+            QRCode.loadQRCodeObject(eventID, imageType).thenAccept(qrCode -> {
+                Bitmap qrCodeBitmap = qrCode.getQRCodeImage();
+
+                if (qrCodeBitmap != null) {
+                    runOnUiThread(() -> {
+                        // Save the bitmap to a file and get its URI
+                        Uri qrCodeUri = saveBitmapToFile(qrCodeBitmap, "qrCodeImage.png");
+
+                        if (qrCodeUri != null) {
+                            // Start ShowImageActivity with the URI of the saved image
+                            Intent intent = new Intent(EventDetailsActivity.this, ShowImageActivity.class);
+                            intent.putExtra("qrCodeUri", qrCodeUri.toString()); // Pass URI as a string
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivity(intent);
+                        } else {
+                            Toast.makeText(EventDetailsActivity.this, "Failed to load QR Code image.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    runOnUiThread(() ->
+                            Toast.makeText(EventDetailsActivity.this, "QR Code image not available.", Toast.LENGTH_SHORT).show());
+                }
+            }).exceptionally(exception -> {
+                Log.e("QRCodeLoading", "Error loading QR Code", exception);
+                return null;
+            });
         });
 
         viewMapButton.setOnClickListener(v -> {
@@ -243,7 +290,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         deleteButton.setOnClickListener(v -> {
-            final String eventId = getIntent().getStringExtra("eventId");
+            final String eventId = getIntent().getStringExtra("selectedEventId");
             // Call deleteEvent with the eventId
             if (eventId != null) {
                 deleteEvent(eventId);
@@ -253,6 +300,24 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
     }
+
+    private Uri saveBitmapToFile(Bitmap bitmap, String fileName) {
+        try {
+            File cachePath = new File(getCacheDir(), "images");
+            cachePath.mkdirs(); // Create directories if needed
+            FileOutputStream stream = new FileOutputStream(cachePath + "/" + fileName); // Overwrites this image every time
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            stream.close();
+
+            File imagePath = new File(getCacheDir(), "images");
+            File newFile = new File(imagePath, fileName);
+            return FileProvider.getUriForFile(this, "com.oopsipushedtomain.fileprovider", newFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     /**
      * Saves the event details to the class parameters
@@ -448,6 +513,13 @@ public class EventDetailsActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Returns the current event ID. Used for Intent testing (MapActivity)
+     * @return The event ID
+     */
+    public String getEventID() {
+        return eventID;
+    }
 
 
 }
