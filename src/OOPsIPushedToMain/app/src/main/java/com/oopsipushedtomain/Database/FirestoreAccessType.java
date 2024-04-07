@@ -4,12 +4,6 @@ package com.oopsipushedtomain.Database;
  * An enum for the main collections in Firestore
  */
 public enum FirestoreAccessType {
-
-    /**
-     * The announcements collection.
-     * Contains information about announcements
-     */
-    ANNOUNCEMENTS,
     /**
      * The events collection
      * Contains information about events

@@ -79,9 +79,6 @@ public class FirebaseAccess {
 
         // Set the collection
         switch (databaseType) {
-            case ANNOUNCEMENTS:
-                collRef = db.collection("announcements");
-                break;
             case EVENTS:
                 collRef = db.collection("events");
                 break;

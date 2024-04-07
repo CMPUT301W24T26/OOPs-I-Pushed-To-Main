@@ -7,24 +7,17 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-
-import static com.google.android.gms.common.api.CommonStatusCodes.TIMEOUT;
-import static org.hamcrest.CoreMatchers.anything;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import android.app.Activity;
-import android.app.Instrumentation;
-import android.content.Intent;
 import android.Manifest;
+import android.content.Intent;
 import android.util.Log;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.action.ViewActions;
-import androidx.test.espresso.intent.Intents;
-import androidx.test.espresso.intent.matcher.IntentMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -35,7 +28,6 @@ import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 
-import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 
@@ -51,8 +43,6 @@ public class AnnouncementsIntentTest {
     private User user;
     private String eventId;
     private FirebaseAccess eventDB;
-    private FirebaseAccess anmtDB;
-    private String anmtId;
 
     /**
      * Manually request fine location permissions so that the dialog doesn't pop up
@@ -79,12 +69,6 @@ public class AnnouncementsIntentTest {
     public ActivityTestRule<EventDetailsActivity> eventDetailsActivityRule = new ActivityTestRule<>(EventDetailsActivity.class);
 
     /**
-     * Used to access the currently running AnnouncementListActivity
-     */
-    @Rule
-    public ActivityTestRule<AnnouncementListActivity> anmtListActivityRule = new ActivityTestRule<>(AnnouncementListActivity.class);
-
-    /**
      * Used to access the currently running ProfileActivity
      */
     @Rule
@@ -95,10 +79,9 @@ public class AnnouncementsIntentTest {
      */
     @Before
     public void setup() {
-        // Initialize the databases
+        // Initialize the database
         try {
             eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
-            anmtDB = new FirebaseAccess(FirestoreAccessType.ANNOUNCEMENTS);
         } catch (Exception e) {
             // There was an error, the test failed
             Log.e("AnmtsIntentTestSetUp", "Error: " + e.getMessage());
@@ -158,8 +141,6 @@ public class AnnouncementsIntentTest {
         onView(withId(R.id.btnViewAnnouncements)).perform(click());
         Thread.sleep(3000);
         onView(withText(titleToType)).check(matches(isDisplayed()));
-        AnnouncementListActivity anmtListActivity = anmtListActivityRule.getActivity();
-        anmtId = anmtListActivity.getFirstAnnouncement();
 
         // Wait for the push notification to arrive
         UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
@@ -177,11 +158,10 @@ public class AnnouncementsIntentTest {
      */
     @After
     public void cleanUp() {
-        // Delete the user, event, and announcement
+        // Delete the user and event
         try {
             user.deleteUser().get();
-            eventDB.deleteDataFromFirestore(eventId);
-            anmtDB.deleteDataFromFirestore(anmtId);
+            eventDB.deleteDataFromFirestore(eventId).get();
         } catch (Exception e) {
             // There was an error, the test failed
             Log.e("AnmtsIntentTestCleanUp", "Error: " + e.getMessage());

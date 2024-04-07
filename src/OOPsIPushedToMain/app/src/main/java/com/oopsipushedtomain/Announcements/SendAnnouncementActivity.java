@@ -6,17 +6,14 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.R;
 
 import java.util.HashMap;
@@ -45,26 +42,19 @@ public class SendAnnouncementActivity extends AppCompatActivity {
     private Button sendAnnouncementButton, cancelButton;
 
     /**
-     * The event title or id
+     * The UID of the event to send this announcement for
      */
-    private String eventTitle, eventId;
-    /**
-     * A reference to the Firestore database
-     */
-    private FirebaseFirestore db;
-    /**
-     * The reference to the collection for announcement
-     */
-    private CollectionReference announcementsRef;
+    private String eventId;
 
     /**
-     * A reference to the event document for the announcement
+     * Custom database access class
      */
-    private DocumentReference eventRef;
+    private FirebaseAccess db;
+
     /**
      * Tag for logging
      */
-    private final String TAG = "SendAnnouncement";
+    private final String TAG = "SendAnnouncementActivity";
 
     /**
      * Initialize the activity by restoring the state if necessary, setting the ContentView,
@@ -78,15 +68,14 @@ public class SendAnnouncementActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send_announcement);
 
-        // Initialize database reference to Announcements collection
-        db = FirebaseFirestore.getInstance();
-        announcementsRef = db.collection("announcements");
+        // Initialize database for Events collection
+        db = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
         // Initialize EditTexts and Buttons
         initializeViews();
 
         // Get the event info
-        getEvent();
+        getEventInfo();
 
         // Set button listeners
         setListeners();
@@ -97,26 +86,18 @@ public class SendAnnouncementActivity extends AppCompatActivity {
      * is then queried to find the event in the 'events' collection. Uses the event title it
      * finds in the database to get the (uneditable) announcementTitleE EditText.
      */
-    private void getEvent() {
+    private void getEventInfo() {
         eventId = getIntent().getStringExtra("eventId");
-        Log.d(TAG, eventId);
+        if (eventId != null) {
+            Log.d(TAG, eventId);
+        }
 
-        // Get the event from the database
-        eventRef = db.collection("events").document(eventId);
-        eventRef.get().addOnCompleteListener(getEventTask -> {
-            if (getEventTask.isSuccessful()) {
-                DocumentSnapshot eventDoc = getEventTask.getResult();
-                if (eventDoc.exists()) {  // The event was successfully found
-                    eventTitle = eventDoc.getString("title");
-                    Log.d(TAG, String.format("Found event %s", eventTitle));
-                    eventTitleE.setText(eventTitle);
-                } else {
-                    Log.e(TAG,
-                            String.format("Could not find event %s", eventId));
-                }
+        db.getDataFromFirestore(eventId).thenAccept(event -> {
+            if (event == null) {
+                Log.e(TAG, "Could not retrieve info for event");
             } else {
-                Log.e(TAG, "Get individual event task failed, ",
-                        getEventTask.getException());
+                Log.d(TAG, "Found data for event");
+                runOnUiThread(() -> eventTitleE.setText((String) event.get("title")));
             }
         });
     }
@@ -137,7 +118,7 @@ public class SendAnnouncementActivity extends AppCompatActivity {
     /**
      * Set the button listeners.
      * The Send button builds an announcement object and passes it to sendAnnouncement()
-     * The cancel button closes this activity (TODO maybe unnecessary? Feel free to remove)
+     * The cancel button closes this activity
      */
     private void setListeners() {
         sendAnnouncementButton.setOnClickListener(v -> {
@@ -151,14 +132,14 @@ public class SendAnnouncementActivity extends AppCompatActivity {
                 return;
             }
 
-            // Build and send the announcement
+            // Build and store the announcement in the database
             Map<String, Object> announcement = new HashMap<>();
             announcement.put("title", title);
             announcement.put("body", body);
             announcement.put("imageId", "image");
             announcement.put("eventId", eventId);
             Log.d("Announcements", "Sending announcement");
-            sendAnnouncement(announcement);
+            db.storeDataInFirestore(eventId, FirebaseInnerCollection.announcements, null, announcement);
             finish();
         });
 
@@ -181,29 +162,5 @@ public class SendAnnouncementActivity extends AppCompatActivity {
                 });
         AlertDialog dialog = alert.create();
         dialog.show();
-    }
-
-    /**
-     * Takes an announcement Map and posts it to the database.
-     * Uses Firestore to generate announcement UIDs
-     * @param announcement The announcement Map with all the info to post to the database.
-     */
-    private void sendAnnouncement(Map<String, Object> announcement) {
-        // Generate a unique ID using Firestore
-        String uid = announcementsRef.document().getId().toUpperCase();
-        Log.d("Announcement", "ANMT-" + uid);
-
-        announcementsRef
-                .document("ANMT-" + uid)
-                .set(announcement)
-                .addOnSuccessListener(e -> {
-                    Log.d("Announcement", "Announcement successfully sent to DB");
-                    Toast.makeText(getBaseContext(), "Success, your announcement was sent!", Toast.LENGTH_LONG).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.d("Announcement", "Announcement could not be sent to DB" + e);
-                    Toast.makeText(getBaseContext(), "Error: Your announcement could not be sent", Toast.LENGTH_LONG).show();
-                });
-        eventRef.update("announcements", FieldValue.arrayUnion("ANMT-" + uid));
     }
 }

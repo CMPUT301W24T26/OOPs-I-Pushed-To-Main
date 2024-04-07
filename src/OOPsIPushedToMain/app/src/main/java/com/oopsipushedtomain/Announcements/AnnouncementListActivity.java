@@ -7,12 +7,13 @@ import android.widget.ListView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.R;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * This activity obtains and displays a list of announcements sent for that even. The eventId is
@@ -37,14 +38,9 @@ public class AnnouncementListActivity extends AppCompatActivity {
     private AnnouncementListAdapter announcementListAdapter;
 
     /**
-     * A reference to the Firestore database
+     * Database access object
      */
-    private FirebaseFirestore db;
-
-    /**
-     * A reference to the announcements document
-     */
-    private DocumentReference announcementRef;
+    private FirebaseAccess db;
 
     /**
      * The event ID of the announcement
@@ -52,14 +48,9 @@ public class AnnouncementListActivity extends AppCompatActivity {
     private String eventId;
 
     /**
-     * An list of all the announcement stored as strings
-     */
-    private ArrayList<String> announcements;
-
-    /**
      * The tag for Log output
      */
-    private final String TAG = "EventAnnouncements";
+    private final String TAG = "AnnouncementListActivity";
 
     /**
      * Creates and instantiates the activity.
@@ -89,7 +80,7 @@ public class AnnouncementListActivity extends AppCompatActivity {
             Log.d(TAG, eventId);
 
         // Initialize Firestore instance and get the event's announcements
-        db = FirebaseFirestore.getInstance();
+        db = new FirebaseAccess(FirestoreAccessType.EVENTS);
         if (eventId != null)
             getEventAnnouncements();
     }
@@ -100,54 +91,19 @@ public class AnnouncementListActivity extends AppCompatActivity {
      * individual announcements from the 'announcements' collection.
      */
     private void getEventAnnouncements() {
-        // Find the event in the 'events' collection
-        DocumentReference eventRef = db.collection("events").document(eventId);
-        eventRef.get().addOnCompleteListener(getEventTask -> {
-            if (getEventTask.isSuccessful()) {
-                DocumentSnapshot eventDocument = getEventTask.getResult();
-                if (eventDocument.exists()) {  // This means we successfully found the event
-                    Log.d(TAG, "Found event document");
-
-                    // Get the array of 'announcements' from the 'event' document
-                    announcements = (ArrayList<String>) eventDocument.get("announcements");
-                    announcementListAdapter.clear();
-
-                    // Iterate over the announcements we found for that event
-                    if (announcements == null) {
-                        Log.d(TAG, "No announcements to show");
-                    } else {
-                        for (String announcement : announcements) {
-                            Log.d(TAG, announcement);
-
-                            // Take the announcement UID and find that announcement in the
-                            // 'announcements' collection
-                            announcementRef = db.collection("announcements").document(announcement);
-                            announcementRef.get().addOnCompleteListener(getAnnouncementTask -> {
-                                if (getAnnouncementTask.isSuccessful()) {
-                                    DocumentSnapshot announcementDoc = getAnnouncementTask.getResult();
-                                    if (announcementDoc.exists()) {  // The announcement was successfully found
-                                        Announcement newAnnouncement = announcementDoc.toObject(Announcement.class);
-                                        if (newAnnouncement != null) {
-                                            newAnnouncement.setAnmtId(announcementDoc.getId());
-                                        }
-                                        announcementDataList.add(newAnnouncement);
-                                        announcementListAdapter.notifyDataSetChanged();
-                                        Log.d("test", getFirstAnnouncement());
-                                    } else {
-                                        Log.e(TAG, String.format("Could not find announcement %s for event %s", announcementDoc, eventId));
-                                    }
-                                } else {
-                                    Log.e(TAG, "Get individual announcement task failed, ", getAnnouncementTask.getException());
-                                }
-                            });
-                        }
-                    }
-                } else {
-                    Log.e(TAG, "Could not find event's announcements");
-                }
+        db.getAllDocuments(eventId, FirebaseInnerCollection.announcements).thenAccept(announcements -> {
+            if (announcements == null) {
+                Log.d(TAG, "No announcements found");
             } else {
-                Log.e(TAG, "Get event announcements task failed, ", getEventTask.getException());
+                Log.d(TAG, "Found announcements");
+                runOnUiThread(() -> {
+                    announcementDataList.addAll(announcements.stream().map(Announcement::new).collect(Collectors.toList()));
+                    announcementListAdapter.notifyDataSetChanged();
+                });
             }
+        }).exceptionally(e -> {
+            Log.e(TAG, "Error getting announcements", e);
+            return null;
         });
     }
 
