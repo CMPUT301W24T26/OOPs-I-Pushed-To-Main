@@ -292,14 +292,14 @@
             android:id="@+id/btnViewLimitAttendees"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="View Attendees" />
+            android:text="View Checked In" />
 
         <Button
             android:id="@+id/btnViewSignedUp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="20sp"
-            android:text="View/Limit Signed Up Attendees" />
+            android:text="View Signed Up" />
     </LinearLayout>
 
     <Button

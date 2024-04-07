@@ -209,17 +209,6 @@ public class Event implements Serializable {
         void onBitmapReceived(Bitmap bitmap);
     }
 
-    /**
-     * Initializes the firebase parameters
-     */
-    private void InitDatabase() {
-        db = FirebaseFirestore.getInstance();
-        eventRef = db.collection("events");
-        storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference();
-        eventId = eventRef.document().getId().toUpperCase();
-        eventId = "EVNT-" + eventId;
-    }
 
     /**
      * Adds the current object to the database

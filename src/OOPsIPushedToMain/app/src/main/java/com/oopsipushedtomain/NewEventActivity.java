@@ -14,9 +14,14 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.DialogInputListeners.CustomDateTimePickerDialog;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -63,6 +68,9 @@ public class NewEventActivity extends AppCompatActivity {
      */
     private Button newEventCreateButton;
 
+    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+    private FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
     /**
      * Initializes all parameters of this class including the click listeners and database
      *
@@ -74,6 +82,9 @@ public class NewEventActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_event);
+
+        // Set the database
+
 
         // The event details
         newEventTitleEdit = findViewById(R.id.new_event_title_e);
@@ -92,12 +103,123 @@ public class NewEventActivity extends AppCompatActivity {
         /*
             Click listeners
          */
+        // Start time button
+        startTimeButton.setOnClickListener(v -> {
+            // This should be a date picker
+            CustomDateTimePickerDialog datePickerDialog = new CustomDateTimePickerDialog(this, input -> {
+                // Convert the input to a date
+                Date inputDate = (Date) input;
+
+                // Format the given date, ChatGPT: How do i format a string into date
+                String startDateString = formatter.format(inputDate);
+
+                // Print the date to the screen
+                newEventStartTimeEdit.setText(startDateString);
+
+                // Show the create button
+                if (checkForValidEvent()) {
+                    newEventCreateButton.setVisibility(View.VISIBLE);
+                }
 
 
+            });
+            datePickerDialog.show("Edit Start Date/Time", new Date());
+
+        });
+
+        // End time button
+        endTimeButton.setOnClickListener(v -> {
+            // This should be a date picker
+            CustomDateTimePickerDialog datePickerDialog = new CustomDateTimePickerDialog(this, input -> {
+                // Convert the input to a date
+                Date inputDate = (Date) input;
+
+                // Format the given date, ChatGPT: How do i format a string into date
+                String startDateString = formatter.format(inputDate);
+
+                // Print the date to the screen
+                newEventEndTimeEdit.setText(startDateString);
+
+                // Show the create button
+                if (checkForValidEvent()) {
+                    newEventCreateButton.setVisibility(View.VISIBLE);
+                }
 
 
+            });
+            datePickerDialog.show("Edit Start Date/Time", new Date());
 
-        setupListeners();
+        });
+
+        // Create button
+        newEventCreateButton.setOnClickListener(v -> {
+            // Check for valid event details
+            if (!checkForValidEvent()) {
+                // Do not create a new event yet
+                return;
+            }
+
+            // Date storage
+            Date date = null;
+
+            // Create a new event
+            Event newEvent = new Event();
+
+            // Title
+            newEvent.setTitle(newEventTitleEdit.getText().toString());
+
+            // Start time
+            try {
+                date = formatter.parse(newEventStartTimeEdit.getText().toString());
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+            newEvent.setStartTime(date);
+
+            // End time
+            date = null;
+            try {
+                date = formatter.parse(newEventEndTimeEdit.getText().toString());
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+            newEvent.setEndTime(date);
+
+
+            // Set the description
+            newEvent.setDescription(newEventDescriptionEdit.getText().toString());
+
+            // Attendee limit
+            if (newEventAttendeeLimitEdit.getText() == null){
+                newEvent.setAttendeeLimit(0);
+            } else {
+                newEvent.setAttendeeLimit(Integer.parseInt(newEventAttendeeLimitEdit.getText().toString()));
+            }
+
+            // User ID
+            newEvent.setCreatorId(creatorId);
+
+
+            // Update the event in the database
+            newEvent.addEventToDatabase();
+
+            // Show confirmation
+            Toast.makeText(NewEventActivity.this, "Event has been created", Toast.LENGTH_SHORT).show();
+
+            // Move to the event details page
+            Intent intent = new Intent(NewEventActivity.this, EventDetailsActivity.class);
+            intent.putExtra("userId", creatorId);
+            intent.putExtra("selectedEventId", newEvent.getEventId());
+
+            // Start the activity
+            startActivity(intent);
+
+            // Close this page
+            finish();
+
+        });
+
+
         // Retrieve the userId passed from EventListActivity
         Intent intent = getIntent();
         if (intent != null) {
@@ -106,56 +228,8 @@ public class NewEventActivity extends AppCompatActivity {
 
     }
 
-
-    /**
-     * Sets all of the on click listeners for the class
-     */
-    private void setupListeners() {
-        newEventPosterEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // Intent to start a new activity
-                //Intent intent = new Intent(EventDetailsActivityOrganizer.this, ImageDetailsActivity.class);
-                //startActivity(intent);
-            }
-        });
-
-        // TODO: Fix event creation to support times
-        newEventCreateButton.setOnClickListener(v -> {
-            // Capture input from user
-            String title = newEventTitleEdit.getText().toString();
-            String startTime = newEventStartTimeEdit.getText().toString();
-            String endTime = newEventEndTimeEdit.getText().toString();
-            String description = newEventDescriptionEdit.getText().toString();
-            String attendeeLimitStr = newEventAttendeeLimitEdit.getText().toString();
-            int attendeeLimit = attendeeLimitStr.isEmpty() ? 0 : Integer.parseInt(attendeeLimitStr);
-            // TODO: Add functionality for location, posterURL
-            Event newEvent = new Event(title, startTime, null, null, "testlocation", "testURL", attendeeLimit, creatorId);
-            newEvent.addEventToDatabase();
-            finish();
-            //Intent intent = new Intent(NewEventActivity.this, EventDetailsActivity.class);
-            //startActivity(intent);
-        });
+    public Boolean checkForValidEvent() {
+        return true;
     }
 
-    /**
-     * Shows a date time picker
-     *
-     * @param editText The edit text you are editing
-     */
-    private void showDateTimePicker(final EditText editText) {
-        Calendar currentDate = Calendar.getInstance();
-        new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-            Calendar time = Calendar.getInstance();
-            new TimePickerDialog(this, (view1, hourOfDay, minute) -> {
-                time.set(Calendar.YEAR, year);
-                time.set(Calendar.MONTH, month);
-                time.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                time.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                time.set(Calendar.MINUTE, minute);
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                editText.setText(dateFormat.format(time.getTime()));
-            }, currentDate.get(Calendar.HOUR_OF_DAY), currentDate.get(Calendar.MINUTE), false).show();
-        }, currentDate.get(Calendar.YEAR), currentDate.get(Calendar.MONTH), currentDate.get(Calendar.DATE)).show();
-    }
 }
