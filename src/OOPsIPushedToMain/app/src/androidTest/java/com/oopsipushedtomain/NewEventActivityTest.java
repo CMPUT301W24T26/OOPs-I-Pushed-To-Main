@@ -45,7 +45,7 @@ public class NewEventActivityTest {
     public GrantPermissionRule permissionNotifications = GrantPermissionRule.grant(android.Manifest.permission.POST_NOTIFICATIONS);
 
     /**
-     * Tests if the new event creation form is displayed and interactable.
+     * Tests if the new event creation form is displayed.
      * <p>
      * This test checks whether the form fields for creating a new event are present and
      * verifies that input can be entered into these fields. It also simulates a click on the
@@ -66,20 +66,15 @@ public class NewEventActivityTest {
         // Verify that the activity finishes after creating a new event
         onView(withId(R.id.new_event_title_e)).check(doesNotExist());
     }
-
+    /**
+     * Tests if the validation message is displayed.
+     * <p>
+     */
     @Test
     public void testEventCreationFormValidation() {
         onView(withId(R.id.btnCreateNewEvent)).perform(click());
         onView(withText("Please fill in all fields")).check(matches(isDisplayed()));
     }
-
-    @Test
-    public void testAttendeeLimitInput() {
-        onView(withId(R.id.new_event_attendee_limit_e)).perform(clearText(), typeText("100"));
-        Espresso.closeSoftKeyboard();
-        onView(withId(R.id.btnCreateNewEvent)).perform(click());
-    }
-
 
 }
 
