@@ -172,10 +172,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         }
     });
-    /**
-     * The reference to the image drawable
-     */
-    private Drawable defaultImage;
+
     /**
      * The UID of the user
      */
@@ -367,10 +364,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Profile pictures
         profileImageView = findViewById(R.id.profileImageView);
-        // Get the default profile picture
-        defaultImage = profileImageView.getDrawable();
-        // TODO: set default profile picture to the generated picture and compare with current
-        // TODO: OR just get rid of the logic altogether. Just have a 3-option menu
         // if you don't like your colour, it'll generate a new one
 
         /*
@@ -386,6 +379,7 @@ public class ProfileActivity extends AppCompatActivity {
                     user.setName((String) input);
                     profileUserName = (String) input;
 
+                    // If the user does not have an uploaded profile picture, generate a new one
                     user.getProfileImage().thenAccept(image -> {
                         if (image == null){
                             // Generate a new image
@@ -589,6 +583,7 @@ public class ProfileActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 // Update the fields
                 if (name != null) {
+                    this.profileUserName = name;
                     nameValue.setText(name);
                 }
             });
@@ -688,17 +683,12 @@ public class ProfileActivity extends AppCompatActivity {
      * Handles updating the profile picture when the profile image is clicked
      */
     public void handleProfileImageClick() {
-        // Get the current profile image
-//        Drawable currentImage = profileImageView.getDrawable();
-//        boolean isDefaultImage = currentImage.equals(defaultImage);
 
         // Build a new alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
         builder.setTitle("Update Profile Image");
 
         // If the current image is the default image, don't show the delete option
-//        if (isDefaultImage) {
-            // Set the items in the dialog
         builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
                 // Set the listener for the selection on the dialog
                 (dialog, which) -> {
@@ -735,6 +725,7 @@ public class ProfileActivity extends AppCompatActivity {
 
                         case 2: // Delete Photo
                             if (user != null) {
+                               // Delete the image from the user
                                 user.deleteProfileImage();
 
                                 // Generate a new one based off the name
@@ -747,30 +738,6 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
         builder.show();
-//        } else {
-//            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
-//                    new DialogInterface.OnClickListener() {
-//                        @Override
-//                        public void onClick(DialogInterface dialog, int which) {
-//                            switch (which) {
-//                                case 0: // Take Photo
-//                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//                                    cameraResultLauncher.launch(cameraIntent);
-//                                    break;
-//                                case 1: // Choose from Gallery
-//                                    galleryResultLauncher.launch("image/*");
-//                                    break;
-//                                case 2: // Delete Photo
-//                                    if (user != null) {
-//                                        user.deleteProfileImage();
-//                                        // TODO: Set default image back to generator picture
-////                                        profileImageView.setImageDrawable(defaultImage);
-//                                        setAvatarInitial(profileUserName);
-//                                    }
-//                                    break;
-//                            }
-//                        }
-//                    });
     }
 
     // ChatGPT: How do I request location permission in android?
