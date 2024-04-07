@@ -5,6 +5,7 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -14,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.FragmentActivity;
 
 import com.google.firebase.firestore.DocumentReference;
@@ -31,6 +33,8 @@ import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.QRCode;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -240,29 +244,29 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewEventQRCodeButton.setOnClickListener(v -> {
             ImageType imageType = ImageType.eventQRCodes;
 
-            // Call the asynchronous method to get the QRCode object
             QRCode.loadQRCodeObject(eventID, imageType).thenAccept(qrCode -> {
-                // This code block is executed asynchronously when the QRCode object is available
                 Bitmap qrCodeBitmap = qrCode.getQRCodeImage();
 
-                // Check if the QR code bitmap is not null
                 if (qrCodeBitmap != null) {
-                    // Since this is an asynchronous callback, ensure you run UI operations on the UI thread
                     runOnUiThread(() -> {
-                        // Create and show the ShowImageFragment with the QRCode image
-                        ShowImageFragment showImageFragment = ShowImageFragment.newInstance(qrCodeBitmap);
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.image_view, showImageFragment) // Make sure this is the ID of your actual container
-                                .addToBackStack(null) // Optional: Add this transaction to the back stack
-                                .commit();
+                        // Save the bitmap to a file and get its URI
+                        Uri qrCodeUri = saveBitmapToFile(qrCodeBitmap, "qrCodeImage.png");
+
+                        if (qrCodeUri != null) {
+                            // Start ShowImageActivity with the URI of the saved image
+                            Intent intent = new Intent(EventDetailsActivity.this, ShowImageActivity.class);
+                            intent.putExtra("qrCodeUri", qrCodeUri.toString()); // Pass URI as a string
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivity(intent);
+                        } else {
+                            Toast.makeText(EventDetailsActivity.this, "Failed to load QR Code image.", Toast.LENGTH_SHORT).show();
+                        }
                     });
                 } else {
-                    // Handle the case where the QR code bitmap is null, also on the UI thread
                     runOnUiThread(() ->
                             Toast.makeText(EventDetailsActivity.this, "QR Code image not available.", Toast.LENGTH_SHORT).show());
                 }
             }).exceptionally(exception -> {
-                // Handle any exceptions here
                 Log.e("QRCodeLoading", "Error loading QR Code", exception);
                 return null;
             });
@@ -271,35 +275,33 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewEventPromoQRCodeButton.setOnClickListener(v -> {
             ImageType imageType = ImageType.promoQRCodes;
 
-            // Call the asynchronous method to get the QRCode object
             QRCode.loadQRCodeObject(eventID, imageType).thenAccept(qrCode -> {
-                // This code block is executed asynchronously when the QRCode object is available
                 Bitmap qrCodeBitmap = qrCode.getQRCodeImage();
 
-                // Check if the QR code bitmap is not null
                 if (qrCodeBitmap != null) {
-                    // Since this is an asynchronous callback, ensure you run UI operations on the UI thread
                     runOnUiThread(() -> {
-                        // Create and show the ShowImageFragment with the QRCode image
-                        ShowImageFragment showImageFragment = ShowImageFragment.newInstance(qrCodeBitmap);
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.image_view, showImageFragment) // Make sure this is the ID of your actual container
-                                .addToBackStack(null) // Optional: Add this transaction to the back stack
-                                .commit();
+                        // Save the bitmap to a file and get its URI
+                        Uri qrCodeUri = saveBitmapToFile(qrCodeBitmap, "qrCodeImage.png");
+
+                        if (qrCodeUri != null) {
+                            // Start ShowImageActivity with the URI of the saved image
+                            Intent intent = new Intent(EventDetailsActivity.this, ShowImageActivity.class);
+                            intent.putExtra("qrCodeUri", qrCodeUri.toString()); // Pass URI as a string
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivity(intent);
+                        } else {
+                            Toast.makeText(EventDetailsActivity.this, "Failed to load QR Code image.", Toast.LENGTH_SHORT).show();
+                        }
                     });
                 } else {
-                    // Handle the case where the QR code bitmap is null, also on the UI thread
                     runOnUiThread(() ->
                             Toast.makeText(EventDetailsActivity.this, "QR Code image not available.", Toast.LENGTH_SHORT).show());
                 }
             }).exceptionally(exception -> {
-                // Handle any exceptions here
                 Log.e("QRCodeLoading", "Error loading QR Code", exception);
                 return null;
             });
         });
-
-
 
         viewMapButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, MapActivity.class);
@@ -318,6 +320,24 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
     }
+
+    private Uri saveBitmapToFile(Bitmap bitmap, String fileName) {
+        try {
+            File cachePath = new File(getCacheDir(), "images");
+            cachePath.mkdirs(); // Create directories if needed
+            FileOutputStream stream = new FileOutputStream(cachePath + "/" + fileName); // Overwrites this image every time
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            stream.close();
+
+            File imagePath = new File(getCacheDir(), "images");
+            File newFile = new File(imagePath, fileName);
+            return FileProvider.getUriForFile(this, "com.oopsipushedtomain.fileprovider", newFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     /**
      * Saves the event details to the class parameters

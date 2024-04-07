@@ -11,6 +11,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -111,27 +114,35 @@ public class ProfileActivity extends AppCompatActivity {
     /**
      * The reference to the view of the profile image
      */
-    private View profileImageView;
+    private ImageView profileImageView;
+    /**
+     * Username held as global so that image can be generated in the case it is deleted
+     */
+    private String profileUserName;
     /**
      * The result launcher for getting the photo taken with the camera
      */
-    private final ActivityResultLauncher<Intent> cameraResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-        Log.d("ProfileActivity", "ActivityResult received");
-        // If the returned result is good
-        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-            // Get the bitmap
-            Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
-            // Set the image in the view
-            ((ImageView) profileImageView).setImageBitmap(photo);
-            // Update the user profile
-            if (user != null) {
-                // Set the new profile image
-                user.setProfileImage(photo);
-            } else {
-                Log.d("ProfileActivity", "User object is null");
+    private final ActivityResultLauncher<Intent> cameraResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                Log.d("ProfileActivity", "ActivityResult received");
+                // If the returned result is good
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    // Get the bitmap
+                    Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
+                    // Set the image in the view
+                    profileImageView.setImageBitmap(photo);
+                    // Update the user profile
+                    if (user != null) {
+                        // Set the new profile image
+                        user.setProfileImage(photo);
+                    } else {
+                        Log.d("ProfileActivity", "User object is null");
+                    }
+                }
             }
-        }
-    });
+    );
+
     /**
      * The result launcher for getting the photo from the gallery
      */
@@ -148,8 +159,8 @@ public class ProfileActivity extends AppCompatActivity {
             InputStream finalInputStream = inputStream;
             Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
 
-            // Set in the view
-            ((ImageView) profileImageView).setImageURI(result);
+                    // Set in the view
+                    profileImageView.setImageURI(result);
 
             // Update the user
             if (user != null) {
@@ -315,6 +326,21 @@ public class ProfileActivity extends AppCompatActivity {
                         initialRun = false;
                     });
                 });
+
+                // Generate picture
+                user.getProfileImage().thenAccept(image -> {
+                    if (image == null){
+                        user.getName().thenAccept(name -> {
+                           runOnUiThread(() -> {
+                               // Generate the bitmap
+                               CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(name);
+                               profileImageView.setImageBitmap(generator.createInitialBitmap());
+                           });
+                        });
+                    }
+                });
+
+
             });
         });
 
@@ -342,8 +368,10 @@ public class ProfileActivity extends AppCompatActivity {
         // Profile pictures
         profileImageView = findViewById(R.id.profileImageView);
         // Get the default profile picture
-        defaultImage = ((ImageView) profileImageView).getDrawable();
-
+        defaultImage = profileImageView.getDrawable();
+        // TODO: set default profile picture to the generated picture and compare with current
+        // TODO: OR just get rid of the logic altogether. Just have a 3-option menu
+        // if you don't like your colour, it'll generate a new one
 
         /*
             Set click listeners
@@ -356,6 +384,15 @@ public class ProfileActivity extends AppCompatActivity {
                 if (input != null) {
                     nameValue.setText((String) input);
                     user.setName((String) input);
+                    profileUserName = (String) input;
+
+                    user.getProfileImage().thenAccept(image -> {
+                        if (image == null){
+                            // Generate a new image
+                            CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(profileUserName);
+                            profileImageView.setImageBitmap(generator.createInitialBitmap());
+                        }
+                    });
                 }
             });
 
@@ -364,6 +401,7 @@ public class ProfileActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     // Show the dialog
                     textDialog.show("Edit Name", data);
+                    profileUserName = data;
                 });
             });
 
@@ -630,7 +668,7 @@ public class ProfileActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 // Update the fields
                 if (image != null) {
-                    ((ImageView) profileImageView).setImageBitmap(image);
+                    profileImageView.setImageBitmap(image);
                 }
             });
         });
@@ -646,81 +684,93 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-
     /**
      * Handles updating the profile picture when the profile image is clicked
      */
     public void handleProfileImageClick() {
         // Get the current profile image
-        Drawable currentImage = ((ImageView) profileImageView).getDrawable();
+//        Drawable currentImage = profileImageView.getDrawable();
+//        boolean isDefaultImage = currentImage.equals(defaultImage);
 
         // Build a new alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
         builder.setTitle("Update Profile Image");
 
         // If the current image is the default image, don't show the delete option
-        if (currentImage.equals(defaultImage)) {
+//        if (isDefaultImage) {
             // Set the items in the dialog
-            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery"},
-                    // Set the listener for the selection on the dialog
-                    (dialog, which) -> {
-                        switch (which) {
-                            // Take a photo using the camera
-                            case 0: // Take Photo
-                                // Check for camera permissions
-                                if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                                    // Permission is not granted, request permissions
-                                    ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
-                                } else {
-                                    // Camera permissions are granted
-                                    cameraEnabled = true;
-                                }
-
-                                // Perform the proper action
-                                if (cameraEnabled) {
-                                    // Open the camera
-                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                    cameraResultLauncher.launch(cameraIntent);
-                                    Log.d("Camera", "Picture taken!");
-                                    break;
-                                } else {
-                                    // Show a message saying camera permission is required
-                                    Log.d("Camera", "No permissions!");
-                                    Toast.makeText(ProfileActivity.this, "Camera Permissions Required!!", Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-
-
-                            case 1: // Choose from Gallery
-                                galleryResultLauncher.launch("image/*");
-                                Log.d("Gallery", "Image selected from the gallery");
-                                break;
-                        }
-                    });
-            builder.show();
-        } else {
-            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"}, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
+        builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
+                // Set the listener for the selection on the dialog
+                (dialog, which) -> {
                     switch (which) {
+                        // Take a photo using the camera
                         case 0: // Take Photo
-                            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                            cameraResultLauncher.launch(cameraIntent);
-                            break;
+                            // Check for camera permissions
+                            if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                                // Permission is not granted, request permissions
+                                ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
+                            } else {
+                                // Camera permissions are granted
+                                cameraEnabled = true;
+                            }
+
+                            // Perform the proper action
+                            if (cameraEnabled) {
+                                // Open the camera
+                                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                cameraResultLauncher.launch(cameraIntent);
+                                Log.d("Camera", "Picture taken!");
+                                break;
+                            } else {
+                                // Show a message saying camera permission is required
+                                Log.d("Camera", "No permissions!");
+                                Toast.makeText(ProfileActivity.this, "Camera Permissions Required!!", Toast.LENGTH_LONG).show();
+                                return;
+                            }
+
                         case 1: // Choose from Gallery
                             galleryResultLauncher.launch("image/*");
+                            Log.d("Gallery", "Image selected from the gallery");
                             break;
+
                         case 2: // Delete Photo
                             if (user != null) {
                                 user.deleteProfileImage();
-                                ((ImageView) profileImageView).setImageDrawable(defaultImage);
+
+                                // Generate a new one based off the name
+                                if (profileUserName != null){
+                                    CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(profileUserName);
+                                    profileImageView.setImageBitmap(generator.createInitialBitmap());
+                                }
                             }
                             break;
                     }
-                }
-            });
-            builder.show();
-        }
+                });
+        builder.show();
+//        } else {
+//            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
+//                    new DialogInterface.OnClickListener() {
+//                        @Override
+//                        public void onClick(DialogInterface dialog, int which) {
+//                            switch (which) {
+//                                case 0: // Take Photo
+//                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//                                    cameraResultLauncher.launch(cameraIntent);
+//                                    break;
+//                                case 1: // Choose from Gallery
+//                                    galleryResultLauncher.launch("image/*");
+//                                    break;
+//                                case 2: // Delete Photo
+//                                    if (user != null) {
+//                                        user.deleteProfileImage();
+//                                        // TODO: Set default image back to generator picture
+////                                        profileImageView.setImageDrawable(defaultImage);
+//                                        setAvatarInitial(profileUserName);
+//                                    }
+//                                    break;
+//                            }
+//                        }
+//                    });
     }
 
     // ChatGPT: How do I request location permission in android?
