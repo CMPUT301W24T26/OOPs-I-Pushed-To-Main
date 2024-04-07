@@ -79,9 +79,10 @@
         <activity android:name=".Geolocation.MapActivity"
             android:exported="false"
             android:hardwareAccelerated="false"/>
-        <activity android:name=".ShowImageActivity">
-            android:exported="false"
-        </activity>
+        <activity android:name=".ViewLimitAttendeesActivity"
+            android:exported="false" />
+        <activity android:name=".ShowImageActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

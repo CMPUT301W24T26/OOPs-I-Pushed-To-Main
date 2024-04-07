@@ -15,6 +15,8 @@ fragmentTesting = "1.6.2"
 espressoContrib = "3.5.1"
 glide = "5.0.0-rc01"
 preference = "1.2.1"
+playServicesLocation = "21.2.0"
+uiautomator = "2.3.0"
 
 [libraries]
 androidx-espresso-core = { module = "androidx.support.test.espresso:espresso-core", version.ref = "espressoCoreVersion" }
@@ -33,6 +35,8 @@ fragment-testing = { group = "androidx.fragment", name = "fragment-testing", ver
 espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espressoContrib" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
