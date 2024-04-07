@@ -4,7 +4,11 @@ import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.typeText;
+import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
+import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 import android.content.Intent;
 
@@ -12,6 +16,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.Espresso;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,6 +37,13 @@ public class NewEventActivityTest {
             new ActivityScenarioRule<>(new Intent(ApplicationProvider.getApplicationContext(), NewEventActivity.class)
                     .putExtra("userId", "testUserId"));
 
+    @Rule
+    public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
+    @Rule
+    public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+    @Rule
+    public GrantPermissionRule permissionNotifications = GrantPermissionRule.grant(android.Manifest.permission.POST_NOTIFICATIONS);
+
     /**
      * Tests if the new event creation form is displayed and interactable.
      * <p>
@@ -47,11 +59,28 @@ public class NewEventActivityTest {
         onView(withId(R.id.new_event_end_time_e)).perform(clearText(), typeText("01/01/2025 14:00"));
         onView(withId(R.id.new_event_description_e)).perform(clearText(), typeText("This is a test event."));
         onView(withId(R.id.new_event_attendee_limit_e)).perform(clearText(), typeText("50"));
+        Espresso.closeSoftKeyboard(); // Close the keyboard to ensure the button is clickable
+
+        onView(withId(R.id.btnCreateNewEvent)).perform(click());
+
+        // Verify that the activity finishes after creating a new event
+        onView(withId(R.id.new_event_title_e)).check(doesNotExist());
+    }
+
+    @Test
+    public void testEventCreationFormValidation() {
+        onView(withId(R.id.btnCreateNewEvent)).perform(click());
+        onView(withText("Please fill in all fields")).check(matches(isDisplayed()));
+    }
+
+    @Test
+    public void testAttendeeLimitInput() {
+        onView(withId(R.id.new_event_attendee_limit_e)).perform(clearText(), typeText("100"));
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.btnCreateNewEvent)).perform(click());
     }
 
-    // Additional tests can be added here to cover other functionalities
+
 }
 
 

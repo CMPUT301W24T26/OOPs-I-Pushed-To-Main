@@ -7,6 +7,7 @@ import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 
 import android.content.Intent;
@@ -16,6 +17,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.Espresso;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -24,6 +26,15 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class EventDetailsActivityTest {
+
+    @Rule
+    public ActivityScenarioRule<EventDetailsActivity> activityRule = new ActivityScenarioRule<>(EventDetailsActivity.class);
+    @Rule
+    public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
+    @Rule
+    public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+    @Rule
+    public GrantPermissionRule permissionNotifications = GrantPermissionRule.grant(android.Manifest.permission.POST_NOTIFICATIONS);
 
     /**
      * Sets up the testing environment before each test.
@@ -51,11 +62,26 @@ public class EventDetailsActivityTest {
     public void testEditEventDetails() {
         onView(withId(R.id.event_details_organizer_title_e)).check(matches(isDisplayed()));
         onView(withId(R.id.event_details_organizer_title_e)).perform(clearText(), typeText("Updated Test Event"));
-        Espresso.closeSoftKeyboard(); // Close the keyboard to ensure the button is clickable
+        Espresso.closeSoftKeyboard();
         onView(withId(R.id.btnSaveEventDetails)).perform(click());
     }
 
-    // Additional tests can be added here to cover other functionalities
+    @Test
+    public void testEditEventDescription() {
+        onView(withId(R.id.event_details_organizer_description_e)).check(matches(isDisplayed()));
+        onView(withId(R.id.event_details_organizer_description_e)).perform(clearText(), typeText("Updated Description"));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.btnSaveEventDetails)).perform(click());
+    }
+
+    @Test
+    public void testDeleteEvent() {
+        onView(withId(R.id.btnDeleteEvent)).perform(click());
+        onView(withText("Yes")).perform(click());
+    }
+
+
+
 }
 
 

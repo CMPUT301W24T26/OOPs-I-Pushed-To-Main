@@ -55,6 +55,7 @@ import java.util.concurrent.CompletableFuture;
  * 4. The placeholder methods for sending notifications, viewing/limiting attendees, viewing event QR code,
  * and deleting the event need to be fully implemented.
  */
+
 public class EventDetailsActivity extends AppCompatActivity {
     // TODO: Change logic to hide buttons depending on user type
     /**
