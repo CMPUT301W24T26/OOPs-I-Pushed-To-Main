@@ -155,9 +155,4 @@ public class Announcement implements Serializable {
     public String toString() {
         return String.format("Title: %s\nBody: %s\neventId: %s\nimageId: %s\n", this.getTitle(), this.getBody(), this.getEventId(), this.getImageId());
     }
-
-    public int compareTo(Object o) {
-        Announcement announcement = (Announcement) o;
-        return this.compareTo(announcement);
-    }
 }
