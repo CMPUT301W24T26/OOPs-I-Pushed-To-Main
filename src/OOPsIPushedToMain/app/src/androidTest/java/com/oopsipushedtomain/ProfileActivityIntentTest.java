@@ -2,35 +2,27 @@ package com.oopsipushedtomain;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.pressKey;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.withClassName;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.fail;
 
 import android.Manifest;
-import android.content.Intent;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.widget.DatePicker;
+import android.widget.EditText;
 
-import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.action.ViewActions;
+import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.rule.ActivityTestRule;
 import androidx.test.rule.GrantPermissionRule;
-import androidx.test.uiautomator.By;
-import androidx.test.uiautomator.UiDevice;
-import androidx.test.uiautomator.UiObject2;
-import androidx.test.uiautomator.Until;
-
-import com.oopsipushedtomain.Database.FirebaseAccess;
-import com.oopsipushedtomain.Database.FirestoreAccessType;
 
 import org.junit.After;
 import org.junit.Before;
@@ -38,14 +30,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CountDownLatch;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class ProfileActivityIntentTest {
     private User user;
-    private FirebaseAccess userDB;
-    private final String TAG = "ProfileActivityIntentTest";
 
     /**
      * Manually request all permissions so that the dialogs don't appear
@@ -65,97 +58,169 @@ public class ProfileActivityIntentTest {
             new ActivityScenarioRule<>(ProfileActivity.class);
 
     /**
-     * Initialize the database.
-     */
-    @Before
-    public void setup() {
-        // Initialize the database
-        try {
-            userDB = new FirebaseAccess(FirestoreAccessType.USERS);
-            User.createNewObject().thenAccept(newUser -> {
-                user = newUser;
-            });
-        } catch (Exception e) {
-            // There was an error, the test failed
-            Log.e(TAG, "Setup error: " + e.getMessage());
-            fail();
-        }
-    }
-
-    /**
+     * US 02.02.03 - Update personal profile information (name)
+     * US 02.05.01 - Automatic profile picture generation
      *
      * @throws InterruptedException For Thread.sleep()
      */
     @Test
-    public void testProfileActivity() throws InterruptedException {
-        // Launch MainActivity
-        Intent i = new Intent(getInstrumentation().getTargetContext(), ProfileActivity.class);
-        ActivityScenario.launch(i);
-        Thread.sleep(2000);
-        ActivityScenario<ProfileActivity> scenario = activityRule.getScenario();
-        scenario.onActivity(activity -> {
+    public void testUpdateName() throws InterruptedException {
+        Thread.sleep(500); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> {
             user = activity.getUser();
-
-            // Get the automatically generated test user
-            try {
-                Thread.sleep(2000);  // Wait for automatic profile generation to finish
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-//        ProfileActivity profileActivity = profileActivityRule.getActivity();
-//        user = profileActivity.getUser();
-
-            user.setName("Announcements tester");
-            onView(withId(R.id.eventsButton)).perform(click());
-            String titleToType = "Announcements test event " + (Math.random() * 10 + 1);
-            String startDateToType = "2024-01-01";
-            String endDateToType = "2024-01-02";
-            String descriptionToType = "Event to test announcements";
-            onView(withId(R.id.create_event_button)).perform(click());
-            onView(withId(R.id.new_event_title_e)).perform(ViewActions.typeText(titleToType));
-            onView(withId(R.id.new_event_start_time_e)).perform(ViewActions.typeText(startDateToType));
-            onView(withId(R.id.new_event_end_time_e)).perform(ViewActions.typeText(endDateToType));
-            onView(withId(R.id.new_event_description_e)).perform(ViewActions.typeText(descriptionToType));
-            Espresso.closeSoftKeyboard();
-            onView(withId(R.id.btnCreateNewEvent)).perform(click());
-
-            // Open an event and sign up for it, thus signing up to receive push notifications
-            try {
-                Thread.sleep(3000);  // Wait for EventList to populate
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            onView(withText(containsString(titleToType))).perform(click());
-            onView(withId(R.id.btnSignUpEvent)).perform(click());
-
-            // Send an announcement
-            titleToType = "UI Test Notification " + (Math.random() * 10 + 1);
-            String bodyToType = "This is a test notification";
-            onView(withId(R.id.btnSendNotification)).perform(click());
-            onView(withId(R.id.announcement_title_e)).perform(ViewActions.typeText(titleToType));
-            onView(withId(R.id.announcement_body_e)).perform(ViewActions.typeText(bodyToType));
-            Espresso.closeSoftKeyboard();
-            onView(withId(R.id.btnSendNotification)).perform(click());
-
-            // Look for the announcement in the AnnouncementListActivity
-            onView(withId(R.id.btnViewAnnouncements)).perform(click());
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            onView(withText(titleToType)).check(matches(isDisplayed()));
-
-            // Wait for the push notification to arrive
-            UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-            device.openNotification();
-            device.wait(Until.hasObject(By.text(titleToType)), 60000);
-            UiObject2 title = device.findObject(By.text(titleToType));
-            UiObject2 text = device.findObject(By.text(bodyToType));
-            assertEquals(titleToType, title.getText());
-            assertEquals(bodyToType, text.getText());
-            device.pressBack();
         });
+
+        // Click on the name field to bring up the edit dialog
+        onView(withId(R.id.nameTextView)).perform(click());
+        typeTextInDialog("Mock name", 0);
+
+        // Verify the name TextView is updated with the new name
+        onView(withId(R.id.nameTextView)).check(matches(withText("Mock name")));
+        
+        // TODO pfp
+    }
+
+    /**
+     * US 02.02.03 - Update personal profile information (nickname)
+     *
+     * @throws InterruptedException For Thread.sleep()
+     */
+    @Test
+    public void testUpdateNickName() throws InterruptedException {
+        Thread.sleep(500); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> {
+            user = activity.getUser();
+        });
+
+        // Click on the nickname field to bring up the edit dialog
+        onView(withId(R.id.nicknameTextView)).perform(click());
+        typeTextInDialog("Mock nickname", 0);
+
+        // Verify the nickname TextView is updated with the new nickname
+        onView(withId(R.id.nicknameTextView)).check(matches(withText("Mock nickname")));
+    }
+
+    /**
+     * US 02.02.03 - Update personal profile information (birthday)
+     *
+     * @throws InterruptedException For Thread.sleep()
+     */
+    @Test
+    public void testUpdateBirthday() throws InterruptedException {
+        Thread.sleep(500); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> {
+            user = activity.getUser();
+        });
+
+        // Get today's date as a string
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat("yyy-MM-dd", Locale.getDefault());
+        String formattedDate = df.format(c);
+
+        // Open the date picker and hit save (defaults to today's date)
+        onView(withId(R.id.birthdayValueTextView)).perform(click());
+        onView(withText("OK")).perform(click());
+
+        // Verify the birthday TextView is updated with the new birthday
+        onView(withId(R.id.birthdayValueTextView)).check(matches(withText(formattedDate)));
+    }
+
+    /**
+     * US 02.02.03 - Update personal profile information (homepage URL)
+     *
+     * @throws InterruptedException For Thread.sleep()
+     */
+    @Test
+    public void testUpdateHomepage() throws InterruptedException {
+        Thread.sleep(500); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> {
+            user = activity.getUser();
+        });
+
+        // Click on the homepage field to bring up the edit dialog
+        onView(withId(R.id.homepageValueTextView)).perform(click());
+        typeTextInDialog("www.mock-homepage.com", 0);
+
+        // Verify the homepage TextView is updated with the new homepage URL
+        onView(withId(R.id.homepageValueTextView)).check(matches(withText("www.mock-homepage.com")));
+    }
+
+    /**
+     * US 02.02.03 - Update personal profile information (address)
+     *
+     * @throws InterruptedException For Thread.sleep()
+     */
+    @Test
+    public void testUpdateAddress() throws InterruptedException {
+        Thread.sleep(500); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> {
+            user = activity.getUser();
+        });
+
+        // Click on the address field to bring up the edit dialog
+        onView(withId(R.id.addressValueTextView)).perform(click());
+        typeTextInDialog("123 Mock Street", 3);
+
+        // Verify the address TextView is updated with the new address
+        onView(withId(R.id.addressValueTextView)).check(matches(withText("123 Mock Street")));
+    }
+
+    /**
+     * US 02.02.03 - Update personal profile information (phone number)
+     *
+     * @throws InterruptedException For Thread.sleep()
+     */
+    @Test
+    public void testUpdatePhoneNumber() throws InterruptedException {
+        Thread.sleep(500); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> {
+            user = activity.getUser();
+        });
+
+        // Click on the phone number field to bring up the edit dialog
+        onView(withId(R.id.phoneNumberValueTextView)).perform(click());
+        typeTextInDialog("1234567890", 0);
+
+        // Verify the phone number TextView is updated with the new phone number
+        onView(withId(R.id.phoneNumberValueTextView)).check(matches(withText("(123) 456-7890")));
+    }
+
+    /**
+     * US 02.02.03 - Update personal profile information (email)
+     *
+     * @throws InterruptedException For Thread.sleep()
+     */
+    @Test
+    public void testUpdateEmail() throws InterruptedException {
+        Thread.sleep(500); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> {
+            user = activity.getUser();
+        });
+
+        // Click on the email field to bring up the edit dialog
+        onView(withId(R.id.emailValueTextView)).perform(click());
+        typeTextInDialog("mock-email@example.com", 0);
+
+        // Verify the email TextView is updated with the new email
+        onView(withId(R.id.emailValueTextView)).check(matches(withText("mock-email@example.com")));
+    }
+
+    /**
+     * Helper function to type text into a dialog EditText that is already visible and press save.
+     * @param textToType Text string that will be typed into the EditText.
+     * @param numBackspaces Number of times to hit backspace before typing. Used for birthday since
+     *                      its default value is "Bye".
+     */
+    public void typeTextInDialog(String textToType, int numBackspaces) {
+        for (int i = 0; i < numBackspaces; i++) {
+            onView(ViewMatchers.isAssignableFrom(EditText.class))
+                    .perform(pressKey(KeyEvent.KEYCODE_DEL));
+        }
+
+        // Type the text, close the keyboard, and hit save
+        onView(ViewMatchers.isAssignableFrom(EditText.class)).perform(ViewActions.typeText(textToType));
+        Espresso.closeSoftKeyboard(); // Ensure the keyboard is closed before clicking the save button
+        onView(withText("Save")).perform(click());
     }
 
     /**
@@ -168,7 +233,7 @@ public class ProfileActivityIntentTest {
             user.deleteUser().get();
         } catch (Exception e) {
             // There was an error, the test failed
-            Log.e(TAG, "Clean-up error: " + e.getMessage());
+            Log.e("ProfileActivityIntentTest", "Clean-up error: " + e.getMessage());
             fail();
         }
     }
