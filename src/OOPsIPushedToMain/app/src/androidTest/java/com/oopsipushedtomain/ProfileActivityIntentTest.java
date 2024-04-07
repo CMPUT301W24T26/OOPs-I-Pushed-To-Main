@@ -1,6 +1,5 @@
 package com.oopsipushedtomain;
 
-import static android.icu.number.NumberFormatter.with;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.pressKey;
@@ -15,13 +14,11 @@ import static org.junit.Assert.fail;
 import android.Manifest;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.os.RemoteException;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.EditText;
 import android.widget.ImageView;
 
-import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.matcher.ViewMatchers;
@@ -30,10 +27,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.By;
-import androidx.test.uiautomator.Direction;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject;
-import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.UiObjectNotFoundException;
 import androidx.test.uiautomator.UiSelector;
 import androidx.test.uiautomator.Until;
@@ -300,30 +295,6 @@ public class ProfileActivityIntentTest {
             // Verify that the bitmap does not exist
             assertNull(drawable);
         });
-    }
-
-    @Test
-    public void testPersistentProfile() throws InterruptedException, RemoteException {
-        Thread.sleep(startupDelay); // Wait for automatic profile generation to complete
-        activityRule.getScenario().onActivity(activity -> user = activity.getUser());
-
-        // Click on the name field to bring up the edit dialog
-        onView(withId(R.id.nameTextView)).perform(click());
-        typeTextInDialog("Mock name", 0);
-
-        UiDevice device = UiDevice.getInstance(getInstrumentation());
-        device.pressRecentApps(); // Open recent apps view
-        UiObject2 appCard = device.wait(Until.findObject(By.pkg("com.oopsipushedtomain")), 5000); // Locate your app's card in recent apps
-        appCard.swipe(Direction.UP, 1); // Swipe up to force stop
-        device.pressHome(); // Go back to home screen
-
-        // Reopen the app
-        device.swipe(device.getDisplayWidth() / 2, device.getDisplayHeight(), device.getDisplayWidth() / 2, 0, 10); // Swipe up on the screen
-        UiObject2 appIcon = device.wait(Until.findObject(By.text("OOPsIPushedToMain")), 5000);
-        appIcon.click();
-
-
-        Log.d("t","t");
     }
 
     /**
