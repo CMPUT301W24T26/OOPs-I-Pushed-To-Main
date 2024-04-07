@@ -70,6 +70,10 @@ public class User {
 
     // User parameters
     /**
+     * The permission level of the user
+     */
+    boolean isAdmin = false;
+    /**
      * The UID of the user
      */
     private String uid;
@@ -102,7 +106,6 @@ public class User {
      * The phone number of the user
      */
     private String phone = null;
-
     /**
      * The UID of the user's profile picture
      */
@@ -115,21 +118,14 @@ public class User {
      * The Firebase Installation ID (fid)
      */
     private String fid = null;
-
     /**
      * Whether the data in the class is current
      */
     private boolean dataIsCurrent = false;
-
     /**
      * Whether the user has geolocation enabled
      */
     private boolean geolocation = false;
-
-    /**
-     * The permission level of the user
-     */
-    boolean isAdmin = false;
 
     /**
      * Generates a new user
@@ -620,7 +616,7 @@ public class User {
     /**
      * Returns whether the current user in an admin
      *
-     * @return The phone number of the user
+     * @return Whether the user is an admin
      */
     public CompletableFuture<Boolean> isAdmin() {
         // Create a future to return
@@ -651,6 +647,11 @@ public class User {
         database.storeDataInFirestore(this.uid, data);
     }
 
+    /**
+     * Gets the phone number of the user
+     *
+     * @return The user's phone number
+     */
     public CompletableFuture<String> getPhone() {
         // Create a future to return
         CompletableFuture<String> future = new CompletableFuture<>();
@@ -822,6 +823,7 @@ public class User {
 
     /**
      * Gets the user's current geolocation
+     *
      * @param context The context this function is called from
      * @return A Geopoint containing the last known location of the user
      */
@@ -855,7 +857,7 @@ public class User {
                     public void onSuccess(Location location) {
                         // Got last known location. In some rare situations this can be null.
                         // Create a geopoint from the location
-                        GeoPoint geoPoint  = new GeoPoint(location.getLatitude(), location.getLongitude());
+                        GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
 
                         // Complete the future with the Geopoint
                         locationFuture.complete(geoPoint);

@@ -112,74 +112,63 @@ public class ProfileActivity extends AppCompatActivity {
      * The reference to the view of the profile image
      */
     private View profileImageView;
-
     /**
-     * Get the image from the camera
+     * The result launcher for getting the photo taken with the camera
      */
-    private final ActivityResultLauncher<Intent> cameraResultLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                Log.d("ProfileActivity", "ActivityResult received");
-                // If the returned result is good
-                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                    // Get the bitmap
-                    Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
-                    // Set the image in the view
-                    ((ImageView) profileImageView).setImageBitmap(photo);
-                    // Update the user profile
-                    if (user != null) {
-                        // Set the new profile image
-                        user.setProfileImage(photo);
-                    } else {
-                        Log.d("ProfileActivity", "User object is null");
-                    }
-                }
+    private final ActivityResultLauncher<Intent> cameraResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        Log.d("ProfileActivity", "ActivityResult received");
+        // If the returned result is good
+        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+            // Get the bitmap
+            Bitmap photo = (Bitmap) result.getData().getExtras().get("data");
+            // Set the image in the view
+            ((ImageView) profileImageView).setImageBitmap(photo);
+            // Update the user profile
+            if (user != null) {
+                // Set the new profile image
+                user.setProfileImage(photo);
+            } else {
+                Log.d("ProfileActivity", "User object is null");
             }
-    );
-
+        }
+    });
     /**
-     * Getting the result from the photo gallery for image upload
+     * The result launcher for getting the photo from the gallery
      */
-    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(
-            new ActivityResultContracts.GetContent(),
-            result -> {
-                if (result != null) {
-                    // Handle the selected image URI
-                    InputStream inputStream = null;
-                    try {
-                        inputStream = getContentResolver().openInputStream(result);
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                    // Get the bitmap image
-                    InputStream finalInputStream = inputStream;
-                    Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
-
-                    // Set in the view
-                    ((ImageView) profileImageView).setImageURI(result);
-
-                    // Update the user
-                    if (user != null) {
-                        // Set the new profile image
-                        user.setProfileImage(picture);
-                    } else {
-                        Log.d("ProfileActivity", "User object is null");
-                    }
-
-                }
+    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), result -> {
+        if (result != null) {
+            // Handle the selected image URI
+            InputStream inputStream = null;
+            try {
+                inputStream = getContentResolver().openInputStream(result);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
             }
-    );
+            // Get the bitmap image
+            InputStream finalInputStream = inputStream;
+            Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
 
+            // Set in the view
+            ((ImageView) profileImageView).setImageURI(result);
+
+            // Update the user
+            if (user != null) {
+                // Set the new profile image
+                user.setProfileImage(picture);
+            } else {
+                Log.d("ProfileActivity", "User object is null");
+            }
+
+        }
+    });
     /**
      * The reference to the image drawable
      */
     private Drawable defaultImage;
-
     /**
      * The UID of the user
      */
     private String userId; // Get from bundle
-
     /**
      * Activity result launcher for getting the result of the QRCodeScan
      * Performs the correct action depending on the type of QR code scanned.
@@ -265,7 +254,6 @@ public class ProfileActivity extends AppCompatActivity {
                                     adminButton.setVisibility(View.VISIBLE);
                                 });
                                 break;
-
                         }
                     });
                 } else {
@@ -318,22 +306,15 @@ public class ProfileActivity extends AppCompatActivity {
                         toggleGeolocationSwitch.setChecked(value);
 
                         // Request location permissions
-                        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                                ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
                             // At least one of the permissions are not granted, request them
-                            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+                            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
 
                         }
                         initialRun = false;
                     });
                 });
-
-
-
-
-
             });
         });
 
@@ -432,8 +413,7 @@ public class ProfileActivity extends AppCompatActivity {
                     Date defaultDate;
                     if (data == null) {
                         defaultDate = new Date();
-                    } else
-                        defaultDate = data;
+                    } else defaultDate = data;
 
                     // Show the dialog
                     datePickerDialog.show("Edit Birthday", defaultDate);
@@ -562,6 +542,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     /**
      * Updates the user elements on the UI
+     * Only called when the user is first loaded
      */
     private void updateUIElements() {
 
@@ -718,27 +699,26 @@ public class ProfileActivity extends AppCompatActivity {
                     });
             builder.show();
         } else {
-            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            switch (which) {
-                                case 0: // Take Photo
-                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                    cameraResultLauncher.launch(cameraIntent);
-                                    break;
-                                case 1: // Choose from Gallery
-                                    galleryResultLauncher.launch("image/*");
-                                    break;
-                                case 2: // Delete Photo
-                                    if (user != null) {
-                                        user.deleteProfileImage();
-                                        ((ImageView) profileImageView).setImageDrawable(defaultImage);
-                                    }
-                                    break;
+            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"}, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which) {
+                        case 0: // Take Photo
+                            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                            cameraResultLauncher.launch(cameraIntent);
+                            break;
+                        case 1: // Choose from Gallery
+                            galleryResultLauncher.launch("image/*");
+                            break;
+                        case 2: // Delete Photo
+                            if (user != null) {
+                                user.deleteProfileImage();
+                                ((ImageView) profileImageView).setImageDrawable(defaultImage);
                             }
-                        }
-                    });
+                            break;
+                    }
+                }
+            });
             builder.show();
         }
     }
@@ -750,12 +730,10 @@ public class ProfileActivity extends AppCompatActivity {
      */
     private void handleGeolocationToggled() {
         // Check for geolocation permissions
-        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             // At least one of the permissions are not granted, request them
-            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
 
         } else {
             locationEnabled = true;
@@ -804,9 +782,7 @@ public class ProfileActivity extends AppCompatActivity {
                 return;
             }
             case MY_PERMISSIONS_REQUEST_LOCATION: {
-                if (grantResults.length > 0
-                        && (grantResults[0] == PackageManager.PERMISSION_GRANTED
-                        || grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
+                if (grantResults.length > 0 && (grantResults[0] == PackageManager.PERMISSION_GRANTED || grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
                     // At least one was granted
                     locationEnabled = true;
                 } else {
@@ -816,21 +792,6 @@ public class ProfileActivity extends AppCompatActivity {
                 return;
             }
         }
-    }
-
-    /**
-     * Shows the edit field dialog for a field on the page using its current value
-     *
-     * @param fieldName  The field we are editing
-     * @param fieldValue The value of the field
-     */
-    public void showEditFieldDialog(String fieldName, String fieldValue) {
-        DialogFragment dialog = new EditFieldDialogFragment();
-        Bundle args = new Bundle();
-        args.putString("fieldName", fieldName);
-        args.putString("fieldValue", fieldValue);
-        dialog.setArguments(args);
-        dialog.show(getSupportFragmentManager(), "EditFieldDialogFragment");
     }
 
 }
