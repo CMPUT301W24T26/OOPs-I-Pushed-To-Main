@@ -782,10 +782,10 @@ public class User {
                 // If the user has geolocation on, store their current location
                 getUserGeolocation(context).thenAccept(location -> {
                     // Add to the map
-                    data.put("location", location);
+                    eventInfo.put("location", location);
 
                     // Store the data into Firestore
-                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, eventInfo);
                 });
 
             } else {
@@ -797,6 +797,9 @@ public class User {
                 getUserGeolocation(context).thenAccept(location -> {
                     // Add to the map
                     data.put("location", location);
+
+                    // Remove the eventid
+                    data.remove("UID");
 
                     // Store the data into Firestore
                     database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
@@ -811,13 +814,6 @@ public class User {
                 FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
                 FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
                 if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
                     Log.e("UserCheckIn", "User has location app permissions disabled");
                     return;
                 }
@@ -838,6 +834,45 @@ public class User {
                         }
                     });
             }
+        });
+    }
+
+    /**
+     * Checks a user into the specified event.
+     * It will create a new entry if it does not exist already
+     *
+     * @param eventID The UID of the event
+     */
+    public void signUp(String eventID) {
+        // Check to see if the user has signed in in already
+        database.getDataFromFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID).thenAccept(data -> {
+            // If there is no data create a new one
+            if (data == null) {
+                // Create a map for the new event data
+                HashMap<String, Object> eventInfo = new HashMap<>();
+
+                // Add the data to the internal map
+                int count = 1;
+                eventInfo.put("count", count);
+                eventInfo.put("date-time", new Date());
+
+                // Store the data into Firestore
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, eventInfo);
+
+            } else {
+                // Just update the count
+                long count = (long) data.get("count");
+                data.put("count", count + 1);
+
+                // Remove the UID
+                data.remove("UID");
+
+                // Store the data into Firestore
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, data);
+            }
+
+            // Sign the user up for notifications for the event
+            FirebaseMessaging.getInstance().subscribeToTopic(eventID);
         });
     }
 

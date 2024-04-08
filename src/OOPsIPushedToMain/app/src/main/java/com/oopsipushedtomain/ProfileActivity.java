@@ -140,8 +140,10 @@ public class ProfileActivity extends AppCompatActivity {
             // Get the bitmap image
             InputStream finalInputStream = inputStream;
             Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
+          
             // Set in the view
             profileImageView.setImageURI(result);
+
             // Update the user
             if (user != null) {
                 // Set the new profile image
@@ -534,6 +536,11 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Set up click listeners for the buttons
         eventsButton.setOnClickListener(view -> {
+//            Intent intent = new Intent(ProfileActivity.this, EventDetailsActivity.class);
+//            intent.putExtra("selectedEventId", "EVNT-B8W8HSRH2JESXEQ8URR9");
+//            intent.putExtra("userId", userId); // Assuming userId is the ID of the current user
+//            startActivity(intent);
+
             Intent intent = new Intent(ProfileActivity.this, EventListActivity.class);
             intent.putExtra("userId", user.getUID()); // Assuming userId is the ID of the current user
             startActivity(intent);
