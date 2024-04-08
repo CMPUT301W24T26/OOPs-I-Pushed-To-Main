@@ -40,6 +40,8 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
     private String eventId;
     private FirebaseAccess firebaseAccess;
 
+    private static FirebaseAccess firebaseAccessInstanceForTesting = null;
+
     /**
      * Initializes the activity, its views, and fetches the list of signed-up attendees.
      *
@@ -57,21 +59,30 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
         setLimitButton = findViewById(R.id.setLimitButton);
 
         eventId = getIntent().getStringExtra("eventId");
-        firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
         signedUpAttendeesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, signedUpAttendees);
         signedUpAttendeesListView.setAdapter(signedUpAttendeesAdapter);
+
+        firebaseAccess = (firebaseAccessInstanceForTesting != null) ? firebaseAccessInstanceForTesting : new FirebaseAccess(FirestoreAccessType.EVENTS);
 
         fetchSignedUpAttendees();
 
         setLimitButton.setOnClickListener(v -> setAttendeeLimit());
     }
 
+
+    public static void setFirebaseAccessInstanceForTesting(FirebaseAccess firebaseAccess) {
+        firebaseAccessInstanceForTesting = firebaseAccess;
+    }
+
+    public FirebaseAccess getFirebaseAccess() {
+        return firebaseAccess;
+    }
     /**
      * Fetches the list of signed-up attendees for the event from Firestore and updates the ListView.
      * This method uses the {@link FirebaseAccess} class to asynchronously fetch event data based on the eventId.
      */
-    private void fetchSignedUpAttendees() {
+    public void fetchSignedUpAttendees() {
         firebaseAccess.getDataFromFirestore(eventId).thenAccept(eventData -> {
             if (eventData != null && eventData.containsKey("signedUpAttendees")) {
                 List<String> userIds = (List<String>) eventData.get("signedUpAttendees");
@@ -115,7 +126,7 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
      * Sets the attendee limit for the event in Firestore.
      * This method reads the attendee limit from the EditText field and updates the event's attendee limit in Firestore.
      */
-    private void setAttendeeLimit() {
+    public void setAttendeeLimit() {
         String limitStr = limitEditText.getText().toString();
         if (!limitStr.isEmpty()) {
             int limit = Integer.parseInt(limitStr);

@@ -43,9 +43,12 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment:2.7.7")
 //    implementation(libs.glide)
 
+
 //    implementation(files("C:/Users/matte/AppData/Local/Android/Sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
     implementation(libs.androidx.preference)
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.uiautomator)
     implementation("com.google.android.gms:play-services-location:21.2.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

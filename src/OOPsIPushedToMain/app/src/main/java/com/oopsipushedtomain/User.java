@@ -10,6 +10,17 @@
 
 package com.oopsipushedtomain;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.location.Location;
+import android.util.Log;
+
+import androidx.core.app.ActivityCompat;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import android.Manifest;
 
 import android.content.Context;
@@ -50,6 +61,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * This class defines and represents a user
@@ -69,6 +81,10 @@ public class User {
     FirebaseAccess database;
 
     // User parameters
+    /**
+     * The permission level of the user
+     */
+    boolean isAdmin = false;
     /**
      * The UID of the user
      */
@@ -102,7 +118,6 @@ public class User {
      * The phone number of the user
      */
     private String phone = null;
-
     /**
      * The UID of the user's profile picture
      */
@@ -115,12 +130,10 @@ public class User {
      * The Firebase Installation ID (fid)
      */
     private String fid = null;
-
     /**
      * Whether the data in the class is current
      */
     private boolean dataIsCurrent = false;
-
     /**
      * Whether the user has geolocation enabled
      */
@@ -170,6 +183,7 @@ public class User {
             data.put("phone", null);
             data.put("fid", null);
             data.put("geolocation", false);
+            data.put("isAdmin", false);
 
             // Upload the data to the database
             Map<String, Object> storeReturn = createdUser.database.storeDataInFirestore(null, data);
@@ -227,6 +241,9 @@ public class User {
         this.fid = (String) data.get("fid");
         if (data.get("geolocation") != null) {
             this.geolocation = (Boolean) data.get("geolocation");
+        }
+        if (data.get("isAdmin") != null) {
+            this.isAdmin = (Boolean) data.get("isAdmin");
         }
 
     }
@@ -609,9 +626,43 @@ public class User {
     }
 
     /**
+     * Returns whether the current user in an admin
+     *
+     * @return Whether the user is an admin
+     */
+    public CompletableFuture<Boolean> isAdmin() {
+        // Create a future to return
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        // Update data if needed
+        CompletableFuture<Void> updateFuture = this.updateUserFromDatabase();
+
+        // Complete the future
+        updateFuture.thenAccept(result -> {
+            future.complete(this.isAdmin);
+        });
+
+        // Return the future
+        return future;
+    }
+
+    /**
+     * Makes a user an admin
+     */
+    public void makeAdmin() {
+        // Update in the class
+        this.isAdmin = true;
+
+        // Update in database
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("isAdmin", this.isAdmin);
+        database.storeDataInFirestore(this.uid, data);
+    }
+
+    /**
      * Gets the phone number of the user
      *
-     * @return The phone number of the user
+     * @return The user's phone number
      */
     public CompletableFuture<String> getPhone() {
         // Create a future to return
@@ -731,10 +782,10 @@ public class User {
                 // If the user has geolocation on, store their current location
                 getUserGeolocation(context).thenAccept(location -> {
                     // Add to the map
-                    data.put("location", location);
+                    eventInfo.put("location", location);
 
                     // Store the data into Firestore
-                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, eventInfo);
                 });
 
             } else {
@@ -747,9 +798,77 @@ public class User {
                     // Add to the map
                     data.put("location", location);
 
+                    // Remove the eventid
+                    data.remove("UID");
+
                     // Store the data into Firestore
                     database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
                 });
+            }
+
+            // Sign the user up for notifications for the event
+            FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+
+            // Save the check-in location IF the user has enabled geolocation tracking
+            if (this.geolocation) {
+                FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
+                FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    Log.e("UserCheckIn", "User has location app permissions disabled");
+                    return;
+                }
+                fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            // Got last known location. In some rare situations this can be null.
+                            if (location != null) {
+                                GeoPoint point = new GeoPoint(location.getLatitude(), location.getLongitude());
+                                HashMap<String, Object> geoLocData = new HashMap<String, Object>();
+                                Log.d("UserCheckIn", String.valueOf(point));
+                                geoLocData.put("coordinates", point);
+                                geoLocData.put("userId", getUID());
+                                geoLocData.put("timestamp", new java.sql.Timestamp(System.currentTimeMillis()));
+                                eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, geoLocData);
+                            }
+                        }
+                    });
+            }
+        });
+    }
+
+    /**
+     * Checks a user into the specified event.
+     * It will create a new entry if it does not exist already
+     *
+     * @param eventID The UID of the event
+     */
+    public void signUp(String eventID) {
+        // Check to see if the user has signed in in already
+        database.getDataFromFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID).thenAccept(data -> {
+            // If there is no data create a new one
+            if (data == null) {
+                // Create a map for the new event data
+                HashMap<String, Object> eventInfo = new HashMap<>();
+
+                // Add the data to the internal map
+                int count = 1;
+                eventInfo.put("count", count);
+                eventInfo.put("date-time", new Date());
+
+                // Store the data into Firestore
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, eventInfo);
+
+            } else {
+                // Just update the count
+                long count = (long) data.get("count");
+                data.put("count", count + 1);
+
+                // Remove the UID
+                data.remove("UID");
+
+                // Store the data into Firestore
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, data);
             }
 
             // Sign the user up for notifications for the event
@@ -781,6 +900,13 @@ public class User {
     }
 
     // Chat GPT: How do I get a user's location in latitude and longitude in Android using Java. I already have the permissions
+
+    /**
+     * Gets the user's current geolocation
+     *
+     * @param context The context this function is called from
+     * @return A Geopoint containing the last known location of the user
+     */
     private CompletableFuture<GeoPoint> getUserGeolocation(Context context) {
         // Create a future
         CompletableFuture<GeoPoint> locationFuture = new CompletableFuture<>();
@@ -811,7 +937,7 @@ public class User {
                     public void onSuccess(Location location) {
                         // Got last known location. In some rare situations this can be null.
                         // Create a geopoint from the location
-                        GeoPoint geoPoint  = new GeoPoint(location.getLatitude(), location.getLongitude());
+                        GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
 
                         // Complete the future with the Geopoint
                         locationFuture.complete(geoPoint);
@@ -822,6 +948,4 @@ public class User {
         return locationFuture;
 
     }
-
-    ;
 }

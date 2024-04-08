@@ -3,6 +3,7 @@ package com.oopsipushedtomain.Announcements;
 import androidx.annotation.NonNull;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * This class represents Announcement objects in the app, with String fields for the announcements
@@ -34,24 +35,37 @@ public class Announcement implements Serializable {
     private String eventId;
 
     /**
-     * Create an announcement
+     * The unique ID of this announcement
+     */
+    private String anmtId;
+
+    /**
+     * Create an announcement with a specified UID
      *
      * @param title   The title of the announcement
      * @param body    The body of the announcement
      * @param imageId The image UID for the announcement
      * @param eventId The event UID for the announcement
+     * @param anmtId  The unique announcement ID
      */
-    public Announcement(String title, String body, String imageId, String eventId) {
+    public Announcement(String title, String body, String imageId, String eventId, String anmtId) {
         this.title = title;
         this.body = body;
         this.imageId = imageId;
         this.eventId = eventId;
+        this.anmtId = anmtId;
     }
 
     /**
-     * No-argument constructor so that Announcement can be deserialized
+     * Construct an Announcement object from a Map of properties
+     * @param properties A map containing the announcement details
      */
-    public Announcement() {
+    public Announcement(Map<String, Object> properties) {
+        this.title = (String) properties.get("title");
+        this.body = (String) properties.get("body");
+        this.imageId = (String) properties.get("imageId");
+        this.eventId = (String) properties.get("eventId");
+        this.anmtId = (String) properties.get("anmtId");
     }
 
     /**
@@ -124,6 +138,22 @@ public class Announcement implements Serializable {
      */
     public void setEventId(String eventId) {
         this.eventId = eventId;
+    }
+
+    /**
+     * Gets the UID of this announcement
+     * @return Unique announcement ID
+     */
+    public String getAnmtId() {
+        return anmtId;
+    }
+
+    /**
+     * Sets the UID of this announcement
+     * @param anmtId Unique announcement ID to set
+     */
+    public void setAnmtId(String anmtId) {
+        this.anmtId = anmtId;
     }
 
     /**

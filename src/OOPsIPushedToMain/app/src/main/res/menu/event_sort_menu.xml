@@ -3,12 +3,12 @@
         android:id="@+id/sort_by_all_events"
         android:title="All Events"/>
     <item
+        android:id="@+id/sort_by_checked_in"
+        android:title="Checked In"/>
+    <item
         android:id="@+id/sort_by_signed_up"
         android:title="Signed Up"/>
     <item
         android:id="@+id/sort_by_user_event"
-        android:title="Your Events"/>
-    <item
-        android:id="@+id/sort_by_date"
-        android:title="Sort by date"/>
+        android:title="Created Events"/>>
 </menu>

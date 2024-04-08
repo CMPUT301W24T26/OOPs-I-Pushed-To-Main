@@ -2,9 +2,10 @@ package com.oopsipushedtomain;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
-import android.content.Context;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,36 +13,46 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
-import androidx.fragment.app.FragmentActivity;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.messaging.FirebaseMessaging;
-//import com.google.zxing.qrcode.encoder.QRCode;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
-import com.oopsipushedtomain.Database.ImageType;
-import com.oopsipushedtomain.Geolocation.MapActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
-import com.oopsipushedtomain.QRCode;
+import com.oopsipushedtomain.Database.ImageType;
+import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
+import com.oopsipushedtomain.DialogInputListeners.CustomDateTimePickerDialog;
+import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
+import com.oopsipushedtomain.Geolocation.MapActivity;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.sql.Time;
+import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * EventDetailsActivity allows organizers to view and edit details of an event.
@@ -62,23 +73,16 @@ import java.util.concurrent.ExecutionException;
  * and deleting the event need to be fully implemented.
  */
 public class EventDetailsActivity extends AppCompatActivity {
-    // TODO: Change logic to hide buttons depending on user type
     /**
-     * The view of the event title
+     * Text views for event details
      */
-    private EditText eventTitleEdit;
+    private TextView eventTitle, eventStartTime, eventEndTime, eventDescription;
+
     /**
-     * The view of the event start time
+     * Buttons for editing the event details
      */
-    private EditText eventStartTimeEdit;
-    /**
-     * The view of the event end time
-     */
-    private EditText eventEndTimeEdit;
-    /**
-     * The view of the event description
-     */
-    private EditText eventDescriptionEdit;
+    private Button eventTitleButton, eventStartTimeButton, eventEndTimeButton, eventDescriptionButton;
+
     /**
      * The view for the event image poster
      */
@@ -86,7 +90,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     /**
      * The references to the buttons
      */
-    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton;
+    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton, viewSignedUpButton, viewCheckedInButton, getViewSignedUpButton;
 
     /**
      * The UID of the user
@@ -103,6 +107,24 @@ public class EventDetailsActivity extends AppCompatActivity {
      */
     private Event event;
 
+    private FirebaseAccess database;
+
+    private SimpleDateFormat formatter =  new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+    private User user;
+    private boolean userIsOrganizer = false;
+    /**
+     * Event poster image
+     */
+    Bitmap eventPoster = null;
+    /**
+     * Boolean to check if the event poster is the default image
+     */
+    private boolean isDefaultPoster = true;
+    /**
+     * UID for event poster
+     */
+    String eventPosterUID = null;
+
     /**
      * Initializes the class with all parameters
      *
@@ -112,135 +134,361 @@ public class EventDetailsActivity extends AppCompatActivity {
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Default for creating a new view
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
-        CompletableFuture<Event> future = new CompletableFuture<>();
 
-        eventTitleEdit = findViewById(R.id.event_details_organizer_title_e);
-        eventStartTimeEdit = findViewById(R.id.event_details_organizer_start_time_e);
-        eventEndTimeEdit = findViewById(R.id.event_details_organizer_end_time_e);
-        eventDescriptionEdit = findViewById(R.id.event_details_organizer_description_e);
+        // Create a new future for getting the event and user
+        CompletableFuture<Void> eventFuture = new CompletableFuture<>();
+        CompletableFuture<Void> userFuture = new CompletableFuture<>();
+
+        // Get the database reference
+        database = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
+        // Get the required details from passed from the calling activity
+        // User ID
+        Intent intent2 = getIntent();
+        userId = intent2.getStringExtra("userId");
+        eventID = intent2.getStringExtra("selectedEventId");
+
+        // Create a new empty event
+        event = new Event();
+
+        // Using the event ID, get the data from Firestore
+        database.getDataFromFirestore(eventID).thenAccept(eventData -> {
+            // If the event does not exists, throw an error
+            if (eventData == null){
+                Log.e("EventDetails", "The event does not exist!");
+            }
+            // Assign all the parameters to the event
+            event.setEventId(eventData.get("UID").toString());
+            event.setTitle(eventData.get("title").toString());
+            event.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
+            event.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
+            event.setDescription(eventData.get("description").toString());
+            event.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
+            event.setCreatorId(eventData.get("creatorId").toString());
+
+            // Set the details on the screen
+            runOnUiThread(() -> {
+                eventTitle.setText(eventData.get("title").toString());
+                if (eventData.get("startTime") != null) {
+                    eventStartTime.setText(formatter.format(((Timestamp) eventData.get("startTime")).toDate()));
+                }
+                if (eventData.get("endTime") != null) {
+                    eventEndTime.setText(formatter.format(((Timestamp) eventData.get("endTime")).toDate()));
+                }
+                eventDescription.setText(eventData.get("description").toString());
+            });
+
+            database.getAllRelatedImagesFromFirestore(event.getEventId(), ImageType.eventPosters).thenAccept(dataList -> {
+                if (dataList == null) {
+                    // If the datalist is empty, there is no profile picture
+                    this.eventPoster = null;
+                    // Set default image to true
+                    isDefaultPoster = true;
+                } else {
+                    // Set the UID and profile image if there's an existing image
+                    this.eventPoster = (Bitmap) dataList.get(0).get("image");
+                    this.eventPosterUID = (String) dataList.get(0).get("UID");
+                    // Custom poster exists
+                    isDefaultPoster = false;
+                    // Set the image
+                    runOnUiThread(() -> {
+                        eventPosterEdit.setImageBitmap(this.eventPoster);
+                    });
+                }
+            });
+
+
+            // Finished getting the event details
+            eventFuture.complete(null);
+        });
+
+        // Create a new user from the UserID
+        User.createNewObject(userId).thenAccept(newUser -> {
+            user = newUser;
+
+            // Finished getting the user
+            userFuture.complete(null);
+        });
+
+
+        // Find the texts for the event details
+        eventTitle = findViewById(R.id.event_details_organizer_title_e);
+        eventStartTime = findViewById(R.id.event_details_organizer_start_time_e);
+        eventEndTime = findViewById(R.id.event_details_organizer_end_time_e);
+        eventDescription = findViewById(R.id.event_details_organizer_description_e);
+
+        // Event poster
         eventPosterEdit = findViewById(R.id.eventPosterImageViewEdit);
+
+        // Buttons
         eventSaveButton = findViewById(R.id.btnSaveEventDetails);
         sendNotificationButton = findViewById(R.id.btnSendNotification);
         viewAnnouncementsButton = findViewById(R.id.btnViewAnnouncements);
         signUpButton = findViewById(R.id.btnSignUpEvent);
-        viewLimitAttendeeButton = findViewById(R.id.btnViewLimitAttendees);
         deleteButton = findViewById(R.id.btnDeleteEvent);
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
         viewEventPromoQRCodeButton = findViewById(R.id.btnViewPromoQRCode);
-//        currentUserUID = CustomFirebaseAuth.getInstance().getCurrentUserID();
         viewMapButton = findViewById(R.id.btnViewMap);
+        viewSignedUpButton = findViewById(R.id.btnViewCheckedIn);
+        viewCheckedInButton = findViewById(R.id.btnViewSignedUp);
 
-        eventStartTimeEdit.setOnClickListener(v -> showDateTimePicker(eventStartTimeEdit));
-        eventEndTimeEdit.setOnClickListener(v -> showDateTimePicker(eventEndTimeEdit));
 
-        // Retrieve the userId passed from EventListActivity
-        Intent intent_a = getIntent();
-        if (intent_a != null) {
-            userId = intent_a.getStringExtra("userId");
-        }
+        // Edit event buttons
+        eventTitleButton = findViewById(R.id.edit_event_title_button);
+        eventStartTimeButton = findViewById(R.id.edit_event_start_button);
+        eventEndTimeButton = findViewById(R.id.edit_event_end_button);
+        eventDescriptionButton = findViewById(R.id.edit_event_description_button);
 
-        eventID = getIntent().getStringExtra("selectedEventId");
-        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        event = new Event();
-        try {
-            Log.e("EventDetailsActivity", "trying to get event");
-            firebaseAccess.getDataFromFirestore(eventID).thenAccept(datalist -> {
-                if (datalist == null) {
-                    Log.e("EventDetailsActivity", "event is null");
-                } else {
-                    datalist.forEach((key, value) -> Log.d("map", key + ":" + value));
-//                    event = new Event(
-//                            datalist.get("UID").toString(),
-//                            datalist.get("title").toString(),
-//                            datalist.get("startTime").toString(),
-//                            datalist.get("description").toString(),
-//                            datalist.get("location").toString(),
-//                            datalist.get("posterUrl").toString(),
-//                            (int) datalist.get("attendeeLimit"),
-//                            datalist.get("creatorId").toString()
-//                    );
-//                    event = new Event();
-                    event.setEventId(datalist.get("UID").toString());
-                    event.setTitle(datalist.get("title").toString());
-                    event.setStartTime(datalist.get("startTime").toString());
-                    event.setDescription(datalist.get("description").toString());
-                    event.setLocation(datalist.get("location").toString());
-                    event.setPosterUrl(datalist.get("posterUrl").toString());
-                    event.setAttendeeLimit(Integer.valueOf(datalist.get("attendeeLimit").toString()));
-                    event.setCreatorId(datalist.get("creatorId").toString());
+        // If we have both the event and the user, check to see if the user is the organizer of this event
+        userFuture.thenAccept(userVal -> {
+            eventFuture.thenAccept(eventVal -> {
+                // Compare event organizer and the current user
+                if (Objects.equals(user.getUID(), event.getCreatorId())){
+                    // They are the organizer, show relevant buttons
+                    userIsOrganizer = true;
 
-                    // Set the text for the TextViews with event details
-                    Log.e("EventDetailsActivity", event.getTitle());
                     runOnUiThread(() -> {
-                        eventTitleEdit.setText(event.getTitle());
-                        eventStartTimeEdit.setText(event.getStartTime());
-                        eventEndTimeEdit.setText(event.getEndTime());
-                        eventDescriptionEdit.setText(event.getDescription());
+                        // Event details
+                        eventTitleButton.setVisibility(View.VISIBLE);
+                        eventStartTimeButton.setVisibility(View.VISIBLE);
+                        eventEndTimeButton.setVisibility(View.VISIBLE);
+                        eventDescriptionButton.setVisibility(View.VISIBLE);
 
-                        // TODO: not currently working
-                        determineUserRole(userId, eventID, this::updateUIForRole);
+                        // Delete button
+                        deleteButton.setVisibility(View.VISIBLE);
+
+                        // Event options
+                        sendNotificationButton.setVisibility(View.VISIBLE);
+                        viewCheckedInButton.setVisibility(View.VISIBLE);
+                        viewSignedUpButton.setVisibility(View.VISIBLE);
+                        viewEventQRCodeButton.setVisibility(View.VISIBLE);
+                        viewMapButton.setVisibility(View.VISIBLE);
                     });
                 }
             });
-            Log.e("EventDetailsActivity", "event loaded?");
-        } catch (Exception e) {
-            Log.e("EventDetailsActivity", String.valueOf(e));
-        }
+        });
 
+        /*
+            Click Listeners
+         */
+
+        // Start Date
+        eventStartTimeButton.setOnClickListener(v -> {
+            // This should be a date picker
+            CustomDateTimePickerDialog datePickerDialog = new CustomDateTimePickerDialog(this, input -> {
+                // Convert the input to a date
+                Date inputDate = (Date) input;
+
+                // Format the given date, ChatGPT: How do i format a string into date
+                String startDateString = formatter.format(inputDate);
+
+                // Print the date to the screen
+                eventStartTime.setText(startDateString);
+
+                // Show the save button
+                eventSaveButton.setVisibility(View.VISIBLE);
+
+            });
+            datePickerDialog.show("Edit Start Date/Time", new Date());
+
+
+        });
+
+        // End Date
+        eventEndTimeButton.setOnClickListener(v -> {
+            // This should be a date picker
+            CustomDateTimePickerDialog datePickerDialog = new CustomDateTimePickerDialog(this, input -> {
+                // Convert the input to a date
+                Date inputDate = (Date) input;
+
+                // Format the given date, ChatGPT: How do i format a string into date
+                String startDateString = formatter.format(inputDate);
+
+                // Print the date to the screen
+                eventEndTime.setText(startDateString);
+
+                // Show the save button
+                eventSaveButton.setVisibility(View.VISIBLE);
+
+            });
+            datePickerDialog.show("Edit Start Date/Time", new Date());
+
+
+        });
+
+        // Event Title
+        eventTitleButton.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    eventTitle.setText((String) input);
+                }
+
+                // Show the save button
+                eventSaveButton.setVisibility(View.VISIBLE);
+            });
+
+            // Show the dialog with the old value
+            textDialog.show("Edit Nickname", eventTitle.getText().toString());
+
+        });
+
+        // Event Description
+        eventDescriptionButton.setOnClickListener(v -> {
+            // This should be a regular text view
+            InputTextDialog textDialog = new InputTextDialog(this, input -> {
+                // If the input is not null, set the name
+                if (input != null) {
+                    eventDescription.setText((String) input);
+                }
+
+                // Show the save button
+                eventSaveButton.setVisibility(View.VISIBLE);
+            });
+
+            // Show the dialog with the old value
+            textDialog.show("Edit Nickname", eventDescription.getText().toString());
+        });
+
+        // Save button
+        eventSaveButton.setOnClickListener(v -> {
+            // Create a map to update the event in the database
+            Map<String, Object> eventMap = new HashMap<>();
+
+            // Set the event title
+            if (eventTitle.getText() != null){
+                event.setTitle(eventTitle.getText().toString());
+                eventMap.put("title", eventTitle.getText().toString());
+            }
+
+
+            // Set the start time
+            Date date = null;
+            if (eventStartTime.getText() != null) {
+                try {
+                    date = formatter.parse(eventStartTime.getText().toString());
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
+                event.setStartTime(date);
+                eventMap.put("startTime", date);
+            }
+
+            // Set the end time
+            date = null;
+            if (eventEndTime.getText() != null) {
+                try {
+                    date = formatter.parse(eventEndTime.getText().toString());
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
+                event.setEndTime(date);
+                eventMap.put("endTime", date);
+            }
+
+            // Set the description
+            if (eventDescription.getText() != null) {
+                event.setDescription(eventDescription.getText().toString());
+                eventMap.put("description", eventDescription.getText().toString());
+            }
+
+            // Update the event in the database
+            database.storeDataInFirestore(eventID, eventMap);
+
+            // Hide the save button
+            eventSaveButton.setVisibility(View.GONE);
+
+            // Show confirmation
+            Toast.makeText(EventDetailsActivity.this, "Event Details have been saved", Toast.LENGTH_SHORT).show();
+
+        });
+
+        // Custom event poster upload/deletion handling
         eventPosterEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Intent to start a new activity
-                //Intent intent = new Intent(EventDetailsActivity.this, ImageDetailsActivity.class);
-                //startActivity(intent);
-            }
-        });
-
-        // Set OnClickListener for the save button
-        eventSaveButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (validateInput()) {
-                    saveEventDetails();
-                    event.setTitle(eventTitleEdit.getText().toString());
-                    event.setStartTime(eventStartTimeEdit.getText().toString());
-                    event.setEndTime(eventEndTimeEdit.getText().toString());
-                    event.setDescription(eventDescriptionEdit.getText().toString());
-                    Intent intent = new Intent(EventDetailsActivity.this, EventListActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); // Clears the back stack
-                    startActivity(intent);
+                // User can only change the event poster if they are an Organizer
+                if(!userIsOrganizer) {
+                    return;
                 }
+                // Build a new alert dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(EventDetailsActivity.this);
+                builder.setTitle("Update Event Poster");
+                if (isDefaultPoster) {
+                    // If the current image is the default image, don't show the delete option
+                    builder.setItems(new CharSequence[]{"Choose from Gallery"},
+                            (dialog, which) -> {
+                                if (which == 0) {
+                                    galleryResultLauncher.launch("image/*");
+                                    // Event poster is no longer default image
+                                    isDefaultPoster = false;
+                                }
+                            });
+                } else {
+                    // If the image isn't the default image, give option to delete
+                    builder.setItems(new CharSequence[]{"Choose from Gallery", "Delete Poster"},
+                            (dialog, which) -> {
+                                switch (which) {
+                                    case 0: // Choose from Gallery
+                                        galleryResultLauncher.launch("image/*");
+                                        Log.d("Gallery", "Poster image selected from the gallery");
+                                        // Event poster is not default
+                                        isDefaultPoster = false;
+                                        break;
+
+                                    case 1: // Delete Poster
+                                        // If poster is deleted, set back to default poster image
+                                        eventPosterEdit.setImageResource(R.drawable.default_event_poser);
+                                        // Update image to null in the database
+                                        database.deleteImageFromFirestore(event.getEventId(), eventPosterUID, ImageType.eventPosters);
+                                        // Event poster is set to default
+                                        isDefaultPoster = true;
+                                        break;
+                                }
+                            });
+                }
+                builder.show();
             }
         });
 
-        signUpButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                signUpForEvent(event.getEventId());
-                FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
-            }
+        // Sign up button
+        signUpButton.setOnClickListener(v -> {
+            // Sign the user up for notifications
+            FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
+
+            // Sign in the user to the event
+            user.signUp(eventID);
+
+            // Show confirmation
+            Toast.makeText(EventDetailsActivity.this, "Signed up to attend this event!", Toast.LENGTH_SHORT).show();
         });
 
+        // Send notification button
         sendNotificationButton.setOnClickListener(v -> {
             Intent intent = new Intent(EventDetailsActivity.this, SendAnnouncementActivity.class);
             intent.putExtra("eventId", event.getEventId());
             startActivity(intent);
         });
 
+        // View announcements list button
         viewAnnouncementsButton.setOnClickListener(v -> {
             Intent intent = new Intent(EventDetailsActivity.this, AnnouncementListActivity.class);
             intent.putExtra("eventId", event.getEventId());
             startActivity(intent);
         });
 
-        viewLimitAttendeeButton.setOnClickListener(v -> {
+        // View and limit attendees button
+        viewSignedUpButton.setOnClickListener(v -> {
             Intent intent = new Intent(EventDetailsActivity.this, ViewLimitAttendeesActivity.class);
             intent.putExtra("eventId", event.getEventId()); // Pass the event ID to the new activity
             startActivity(intent);
         });
 
+        // View event QR code button
         viewEventQRCodeButton.setOnClickListener(v -> {
             ImageType imageType = ImageType.eventQRCodes;
 
@@ -272,6 +520,7 @@ public class EventDetailsActivity extends AppCompatActivity {
             });
         });
 
+        // View promo qr code button
         viewEventPromoQRCodeButton.setOnClickListener(v -> {
             ImageType imageType = ImageType.promoQRCodes;
 
@@ -303,14 +552,16 @@ public class EventDetailsActivity extends AppCompatActivity {
             });
         });
 
+        // View map button
         viewMapButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, MapActivity.class);
             intent.putExtra("eventId", eventID);
             startActivity(intent);
         });
 
+        // Delete event button
         deleteButton.setOnClickListener(v -> {
-            final String eventId = getIntent().getStringExtra("eventId");
+            final String eventId = getIntent().getStringExtra("selectedEventId");
             // Call deleteEvent with the eventId
             if (eventId != null) {
                 deleteEvent(eventId);
@@ -338,201 +589,48 @@ public class EventDetailsActivity extends AppCompatActivity {
         }
     }
 
-
-    /**
-     * Saves the event details to the class parameters
-     */
-    private void saveEventDetails() {
-
-        String title = eventTitleEdit.getText().toString();
-        String startTime = eventStartTimeEdit.getText().toString();
-        String endTime = eventEndTimeEdit.getText().toString();
-        String description = eventDescriptionEdit.getText().toString();
-
-        eventTitleEdit.setText(title);
-        eventStartTimeEdit.setText(startTime);
-        eventEndTimeEdit.setText(endTime);
-        eventDescriptionEdit.setText(description);
-
-        Map<String, Object> updatedEventData = new HashMap<>();
-        updatedEventData.put("title", title);
-        updatedEventData.put("startTime", startTime);
-        updatedEventData.put("endTime", endTime);
-        updatedEventData.put("description", description);
-        // Add any other event details you want to update
-
-        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        firebaseAccess.storeDataInFirestore(eventID, updatedEventData);
-
-    }
-
-    /**
-     * Shows a date and time picker
-     *
-     * @param editText The edit text being edited
-     */
-    private void showDateTimePicker(final EditText editText) {
-        Calendar currentDate = Calendar.getInstance();
-        new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-            Calendar time = Calendar.getInstance();
-            new TimePickerDialog(this, (view1, hourOfDay, minute) -> {
-                time.set(Calendar.YEAR, year);
-                time.set(Calendar.MONTH, month);
-                time.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                time.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                time.set(Calendar.MINUTE, minute);
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                editText.setText(dateFormat.format(time.getTime()));
-            }, currentDate.get(Calendar.HOUR_OF_DAY), currentDate.get(Calendar.MINUTE), false).show();
-        }, currentDate.get(Calendar.YEAR), currentDate.get(Calendar.MONTH), currentDate.get(Calendar.DATE)).show();
-    }
-
-    /**
-     * Validates the event parameters
-     *
-     * @return Whether the check passes
-     */
-    private boolean validateInput() {
-        if (eventTitleEdit.getText().toString().trim().isEmpty() || eventStartTimeEdit.getText().toString().trim().isEmpty() || eventEndTimeEdit.getText().toString().trim().isEmpty() || eventDescriptionEdit.getText().toString().trim().isEmpty()) {
-            Toast.makeText(this, "Please fill in all fields.", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        // Additional validation logic can go here
-        return true;
-    }
-
     /**
      * Deletes an event from firestore
      *
      * @param eventId The id of the event to delete
      */
     private void deleteEvent(String eventId) { // eventId passed as a parameter
-        FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        firebaseAccess.deleteDataFromFirestore(eventId);
-        finish();
-        /*FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events").document(eventId).delete().addOnSuccessListener(aVoid -> {
-            Toast.makeText(EventDetailsActivity.this, "Event deleted successfully", Toast.LENGTH_SHORT).show();
-            // Intent to navigate back or simply finish this activity
-            finish();
-        }).addOnFailureListener(e -> Toast.makeText(EventDetailsActivity.this, "Error deleting event", Toast.LENGTH_SHORT).show());*/
+        // Deletes the event
+        database.deleteDataFromFirestore(eventId);
     }
 
     /**
-     * Signs a user up for an event
-     * @param eventId The id of the event
+     * The result launcher for getting the photo from the gallery
      */
-    private void signUpForEvent(String eventId) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference eventRef = db.collection("events").document(eventId);
-
-        eventRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                DocumentSnapshot document = task.getResult();
-                if (document.exists()) {
-                    Event event = document.toObject(Event.class);
-                    if (event != null && event.getSignedUpAttendees().size() < event.getAttendeeLimit()) {
-                        // Proceed with signing up the user
-                        eventRef.update("signedUpAttendees", FieldValue.arrayUnion(userId))
-                                .addOnSuccessListener(aVoid -> Toast.makeText(EventDetailsActivity.this, "Signed up successfully", Toast.LENGTH_SHORT).show())
-                                .addOnFailureListener(e -> Toast.makeText(EventDetailsActivity.this, "Sign up failed, limit exceeded", Toast.LENGTH_SHORT).show());
-                    } else {
-                        Toast.makeText(EventDetailsActivity.this, "Event is full", Toast.LENGTH_SHORT).show();
-                    }
-                }
+    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), result -> {
+        if (result != null) {
+            // Handle the selected image URI
+            InputStream inputStream = null;
+            try {
+                inputStream = getContentResolver().openInputStream(result);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
             }
+            // Get the bitmap image
+            InputStream finalInputStream = inputStream;
+            Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
 
-        });
-    }
-
-    /**
-     * An enum for the user roles
-     * TODO: Need to change to proper parameters
-     */
-    public enum UserRole {
-        ORGANIZER, ATTENDEE_NOT_SIGNED_UP, ATTENDEE_SIGNED_UP
-    }
-
-    /**
-     * Determines the role of the user for the given event
-     * @param userId The UID of the user
-     * @param eventId The UID of the event
-     * @param callback The listener to deal with the result
-     *
-     *  TODO: Move this to the User class
-     */
-    public void determineUserRole(String userId, String eventId, final UserRoleCallback callback) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        DocumentReference createdRef = db.collection("users").document(userId).collection("created").document(eventId);
-        DocumentReference signedUpRef = db.collection("users").document(userId).collection("signedup").document(eventId);
-
-        createdRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
-                callback.onRoleDetermined(UserRole.ORGANIZER);
-            } else {
-                // Not an organizer, check if attendee
-                signedUpRef.get().addOnCompleteListener(task2 -> {
-                    if (task2.isSuccessful() && task2.getResult() != null && task2.getResult().exists()) {
-                        callback.onRoleDetermined(UserRole.ATTENDEE_SIGNED_UP);
-                    } else {
-                        callback.onRoleDetermined(UserRole.ATTENDEE_NOT_SIGNED_UP);
-                    }
-                });
+            if (result != null) {
+                // Set in view
+                eventPosterEdit.setImageURI(result);
+                // Set event image in the database
+                database.storeImageInFirestore(event.getEventId(), null, ImageType.eventPosters, picture);
             }
-        });
-    }
-
-    /**
-     * The interface for determining when data is received
-     */
-    public interface UserRoleCallback {
-        /**
-         * Callback for returning the role of the user once it has been found
-         * @param role The role of the user
-         */
-        void onRoleDetermined(UserRole role);
-    }
-
-    /**
-     * Hides specific buttons depending on the role of the user
-     * @param role The role of the user (user/admin)
-     */
-    private void updateUIForRole(UserRole role) {
-        switch (role) {
-            case ORGANIZER:
-                // Organizer should see all buttons except sign up button
-                eventSaveButton.setVisibility(View.VISIBLE);
-                sendNotificationButton.setVisibility(View.VISIBLE);
-                viewAnnouncementsButton.setVisibility(View.VISIBLE);
-                signUpButton.setVisibility(View.GONE);
-                deleteButton.setVisibility(View.VISIBLE);
-                viewLimitAttendeeButton.setVisibility(View.VISIBLE);
-                viewEventQRCodeButton.setVisibility(View.VISIBLE);
-                break;
-            case ATTENDEE_SIGNED_UP:
-                // Signed-up attendee should not see any button
-                eventSaveButton.setVisibility(View.GONE);
-                sendNotificationButton.setVisibility(View.GONE);
-                viewAnnouncementsButton.setVisibility(View.GONE);
-                signUpButton.setVisibility(View.GONE);
-                deleteButton.setVisibility(View.GONE);
-                viewLimitAttendeeButton.setVisibility(View.GONE);
-                viewEventQRCodeButton.setVisibility(View.GONE);
-                break;
-            case ATTENDEE_NOT_SIGNED_UP:
-                // Unsigned-up attendee should see the sign up button
-                eventSaveButton.setVisibility(View.GONE);
-                sendNotificationButton.setVisibility(View.GONE);
-                viewAnnouncementsButton.setVisibility(View.GONE);
-                signUpButton.setVisibility(View.VISIBLE);
-                deleteButton.setVisibility(View.GONE);
-                viewLimitAttendeeButton.setVisibility(View.GONE);
-                viewEventQRCodeButton.setVisibility(View.GONE);
-                break;
         }
-    }
+    });
 
+    /**
+     * Returns the current event ID. Used for Intent testing (MapActivity)
+     * @return The event ID
+     */
+    public String getEventID() {
+        return eventID;
+    }
 
 
 }

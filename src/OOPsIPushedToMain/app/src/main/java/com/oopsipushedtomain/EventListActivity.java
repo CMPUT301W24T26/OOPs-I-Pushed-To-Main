@@ -14,14 +14,22 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 
+import org.checkerframework.checker.units.qual.C;
+
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -71,8 +79,14 @@ public class EventListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_list);
+
+        // Set the database access
+        firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
+        // Find the create and sort buttons
         eventCreateButton = findViewById(R.id.create_event_button);
         eventSortButton = findViewById(R.id.sort_events_button);
+        eventList = findViewById(R.id.EventListView);
 
         // Retrieve the userId passed from ProfileActivity
         Intent intent = getIntent();
@@ -80,21 +94,27 @@ public class EventListActivity extends AppCompatActivity {
             userId = intent.getStringExtra("userId");
         }
 
-        initializeViews();
+        // Set up the click listeners
         setupListeners();
 
-        firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-        fetchEvents();
-    }
-
-    /**
-     * Initializes the views in the layout
-     */
-    private void initializeViews() {
+        // Create the data list
         eventDataList = new ArrayList<>();
-        eventList = findViewById(R.id.EventListView);
+
+        // Set the list adapter
         eventAdapter = new EventListAdapter(eventDataList, this);
         eventList.setAdapter(eventAdapter);
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Clear the current event list
+        eventDataList.clear();
+
+        // Get the list of all events
+        getAllEvents();
     }
 
     /**
@@ -121,13 +141,13 @@ public class EventListActivity extends AppCompatActivity {
                 popup.setOnMenuItemClickListener(item -> {
                     int itemId = item.getItemId();
                     if (itemId == R.id.sort_by_all_events) {
-                        fetchEvents();
+                        getAllEvents();
                     } else if (itemId == R.id.sort_by_signed_up) {
-                        fetchSignedUpEvents(userId);
+                        getAllSignedUpEvents();
+                    } else if (itemId == R.id.sort_by_checked_in) {
+                        getAllCheckedInEvents();
                     } else if (itemId == R.id.sort_by_user_event) {
-                        fetchUserCreatedEvents(userId);
-                    } else if (itemId == R.id.sort_by_date) {
-                        fetchEventsSortedByDate();
+                        getAllCreatedEvents();
                     }
                     return true;
                 });
@@ -156,40 +176,190 @@ public class EventListActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Refresh from the database when this activity is shown on the screen
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
 
-        firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+    private void getAllEvents() {
+        // Clear the event list
+        eventDataList.clear();
 
-        FirestoreEventUtils.getAllEvents(events -> {
-            eventDataList.clear();
-            eventDataList.addAll(events);
+        // Get all of the events in the database
+        firebaseAccess.getAllDocuments().thenAccept(dataList -> {
+            // Go through the list and create a new event for each one
+            for (Map<String, Object> eventData : dataList) {
+
+                // Create a new event
+                Event newEvent = new Event();
+
+                // Assign all the parameters to the event
+                newEvent.setEventId(eventData.get("UID").toString());
+                newEvent.setTitle(eventData.get("title").toString());
+                try {
+                    newEvent.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
+                } catch (Exception e) {
+                    newEvent.setStartTime(new Date());
+                }
+                try {
+                    newEvent.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
+                } catch (Exception e) {
+                    newEvent.setEndTime(new Date());
+                }
+
+                newEvent.setDescription(eventData.get("description").toString());
+
+//                newEvent.setLocation(eventData.get("location").toString());
+
+                newEvent.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
+                newEvent.setCreatorId(eventData.get("creatorId").toString());
+
+                // Add the event to the list
+                eventDataList.add(newEvent);
+            }
+
+            // Data is completely loaded, notify
+            runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
+        });
+    }
+
+    private void getAllSignedUpEvents() {
+        // Clear the list
+        eventDataList.clear();
+
+        // Get all of the events a user has signed up for
+        FirebaseAccess userDatabase = new FirebaseAccess(FirestoreAccessType.USERS);
+        FirebaseAccess eventsDatabase = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
+        // Future for data loading
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        // Get the list of signed up events
+        userDatabase.getAllDocuments(userId, FirebaseInnerCollection.signedUpEvents).thenAccept(eventList -> {
+            // If there are no signed up events, we are done
+            if (eventList == null) {
+                future.complete(null);
+                return;
+            }
+
+            // Go through the list and add all the events
+            for (Map<String, Object> data : eventList) {
+                // Get the event details
+                eventsDatabase.getDataFromFirestore((String) data.get("UID")).thenAccept(eventDetails -> {
+                    // Create a new event
+                    Event newEvent = new Event();
+
+                    // Set the params
+                    newEvent.setEventId((String) eventDetails.get("UID"));
+                    newEvent.setTitle((String) eventDetails.get("title"));
+
+                    // Add the event to the list
+                    eventDataList.add(newEvent);
+
+                    // If this is the last event, complete the future
+                    if (data.equals(eventList.get(eventList.size() - 1))) {
+                        // Complete the future
+                        future.complete(null);
+                    }
+                });
+            }
+        });
+
+        // When data loading is complete, notify
+        future.thenAccept(value -> {
             runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
         });
 
+    }
 
+    public void getAllCheckedInEvents() {
+        // Clear the list
+        eventDataList.clear();
 
-        /*FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                eventDataList.clear();
-                for (DocumentSnapshot documentSnapshot : task.getResult()) {
-                    Event event = documentSnapshot.toObject(Event.class);
-                    if (event != null) {
-                        // Set the eventId of the Event object to the document ID
-                        event.setEventId(documentSnapshot.getId());
-                        eventDataList.add(event);
-                    }
-                }
-                eventAdapter.notifyDataSetChanged();
-            } else {
-                Toast.makeText(EventListActivity.this, "Error getting events", Toast.LENGTH_SHORT).show();
+        // Get all of the events a user has signed up for
+        FirebaseAccess userDatabase = new FirebaseAccess(FirestoreAccessType.USERS);
+        FirebaseAccess eventsDatabase = new FirebaseAccess(FirestoreAccessType.EVENTS);
+
+        // Future for data loading
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        // Get the list of signed up events
+        userDatabase.getAllDocuments(userId, FirebaseInnerCollection.checkedInEvents).thenAccept(eventList -> {
+            // If there are no signed up events, we are done
+            if (eventList == null) {
+                future.complete(null);
+                return;
             }
-        });*/
+
+            // Go through the list and add all the events
+            for (Map<String, Object> data : eventList) {
+                // Get the event details
+                eventsDatabase.getDataFromFirestore((String) data.get("UID")).thenAccept(eventDetails -> {
+                    // Create a new event
+                    Event newEvent = new Event();
+
+                    // Set the params
+                    newEvent.setEventId((String) eventDetails.get("UID"));
+                    newEvent.setTitle((String) eventDetails.get("title"));
+
+                    // Add the event to the list
+                    eventDataList.add(newEvent);
+
+                    // If this is the last event, complete the future
+                    if (data.equals(eventList.get(eventList.size() - 1))) {
+                        // Complete the future
+                        future.complete(null);
+                    }
+                });
+            }
+        });
+
+        // When data loading is complete, notify
+        future.thenAccept(value -> {
+            runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
+        });
+    }
+
+    public void getAllCreatedEvents() {
+        // Clear the event list
+        eventDataList.clear();
+
+        // Get all of the events in the database
+        firebaseAccess.getAllDocuments().thenAccept(dataList -> {
+            // Go through the list and create a new event for each one
+            for (Map<String, Object> eventData : dataList) {
+
+                // Check if the event is created by the current logged in user
+                if (Objects.equals((String) eventData.get("creatorId"), userId)){
+                    // Create a new event
+                    Event newEvent = new Event();
+
+                    // Assign all the parameters to the event
+                    newEvent.setEventId(eventData.get("UID").toString());
+                    newEvent.setTitle(eventData.get("title").toString());
+                    try {
+                        newEvent.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
+                    } catch (Exception e) {
+                        newEvent.setStartTime(new Date());
+                    }
+                    try {
+                        newEvent.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
+                    } catch (Exception e) {
+                        newEvent.setEndTime(new Date());
+                    }
+
+                    newEvent.setDescription(eventData.get("description").toString());
+
+//                newEvent.setLocation(eventData.get("location").toString());
+
+                    newEvent.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
+                    newEvent.setCreatorId(eventData.get("creatorId").toString());
+
+                    // Add the event to the list
+                    eventDataList.add(newEvent);
+                }
+            }
+
+            // Data is completely loaded, notify
+            runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
+        });
+
     }
 
     private void fetchEvents() {
@@ -208,6 +378,8 @@ public class EventListActivity extends AppCompatActivity {
         });*/
         firebaseAccess.getAllDocuments().thenAccept(events -> {
             eventDataList.clear();
+
+
             eventDataList.addAll(events.stream().map(Event::new).collect(Collectors.toList()));
             runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
         }).exceptionally(e -> {
@@ -237,35 +409,33 @@ public class EventListActivity extends AppCompatActivity {
 
     private void fetchSignedUpEvents(String userId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events").whereArrayContains("signedUpAttendees", userId)
-                .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        eventDataList.clear();
-                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
-                            Event event = documentSnapshot.toObject(Event.class);
-                            eventDataList.add(event);
-                        }
-                        eventAdapter.notifyDataSetChanged();
-                    } else {
-                        Log.e("EventListActivity", "Error getting signed up events", task.getException());
-                    }
-                });
+        db.collection("events").whereArrayContains("signedUpAttendees", userId).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                eventDataList.clear();
+                for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                    Event event = documentSnapshot.toObject(Event.class);
+                    eventDataList.add(event);
+                }
+                eventAdapter.notifyDataSetChanged();
+            } else {
+                Log.e("EventListActivity", "Error getting signed up events", task.getException());
+            }
+        });
     }
 
     private void fetchUserCreatedEvents(String userId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events").whereEqualTo("creatorId", userId)
-                .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        eventDataList.clear();
-                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
-                            Event event = documentSnapshot.toObject(Event.class);
-                            eventDataList.add(event);
-                        }
-                        eventAdapter.notifyDataSetChanged();
-                    } else {
-                        Log.e("EventListActivity", "Error getting user created events", task.getException());
-                    }
-                });
+        db.collection("events").whereEqualTo("creatorId", userId).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                eventDataList.clear();
+                for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                    Event event = documentSnapshot.toObject(Event.class);
+                    eventDataList.add(event);
+                }
+                eventAdapter.notifyDataSetChanged();
+            } else {
+                Log.e("EventListActivity", "Error getting user created events", task.getException());
+            }
+        });
     }
 }

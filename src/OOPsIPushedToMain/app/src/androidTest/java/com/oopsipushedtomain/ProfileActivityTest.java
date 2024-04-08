@@ -1,10 +1,13 @@
 package com.oopsipushedtomain;
 
+import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.espresso.intent.matcher.IntentMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.espresso.Espresso;
+import androidx.test.rule.GrantPermissionRule;
+
 import static androidx.test.espresso.intent.Intents.intended;
 
 
@@ -21,11 +24,22 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 
+import android.Manifest;
 import android.content.Intent;
 import android.provider.MediaStore;
 
 @RunWith(AndroidJUnit4.class)
 public class ProfileActivityTest {
+
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
+    @Rule
+    public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
+    @Rule
+    public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+    @Rule
+    public GrantPermissionRule permissionNotifications = GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS);
 
     @Rule
     public ActivityScenarioRule<ProfileActivity> activityRule =
@@ -37,8 +51,7 @@ public class ProfileActivityTest {
         onView(withId(R.id.nameTextView)).perform(click());
 
         // Clear any existing text in the dialog's EditText, then type the new name
-        onView(withId(R.id.editTextFieldValue))
-                .perform(clearText(), typeText("New Name"));
+        onView(withId(R.id.editTextFieldValue)).perform(ViewActions.typeText("New Name"));
         Espresso.closeSoftKeyboard(); // Ensure the keyboard is closed before clicking the save button
 
         // Click the "Save" button in the dialog to save the new name
@@ -102,7 +115,7 @@ public class ProfileActivityTest {
         onView(withId(R.id.emailValueTextView)).check(matches(withText("newemail@example.com")));
     }
     // Testing for camera and gallery functionality to allow a user to take or upload a picture
-    @Rule
+//    @Rule
 //    public ActivityScenarioRule<ProfileActivity> activityRule =
 //            new ActivityScenarioRule<>(ProfileActivity.class);
 
