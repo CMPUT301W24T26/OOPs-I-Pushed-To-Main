@@ -433,29 +433,5 @@ public class Event implements Serializable {
     }
 
 
-    // ChatGPT: Now i want to do the reverse and load the image and convert it back to a bitmap
-
-    /**
-     * Gets the event poster from the database
-     * @param listener The listener for determining when the event is complete
-     */
-    public void getEventImage(OnBitmapReceivedListener listener) {
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.d("Event", "No imageUID available for event: " + eventId);
-            // Call the listener with a null or default bitmap
-            listener.onBitmapReceived(null); // or pass a default Bitmap
-            return;
-        }
-
-        StorageReference eventImageRef = storageRef.child(imageUID);
-        final long ONE_MEGABYTE = 1024 * 1024;
-        eventImageRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(bytes -> {
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            listener.onBitmapReceived(bitmap);
-        }).addOnFailureListener(e -> {
-            Log.e("Event", "Failed to load image for event: " + eventId, e);
-            listener.onBitmapReceived(null); // or pass a default Bitmap on failure
-        });
-    }
 
 }
