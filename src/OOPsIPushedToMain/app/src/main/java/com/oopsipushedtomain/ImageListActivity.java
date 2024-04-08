@@ -96,7 +96,6 @@ public class ImageListActivity extends AppCompatActivity {
                             imageInfos.add(imageInfo);
                         }
 
-                        // This ensures the UI is updated on the main thread.
                         runOnUiThread(() -> adapter.notifyDataSetChanged());
                     }
                 }).exceptionally(exception -> {
@@ -151,7 +150,7 @@ public class ImageListActivity extends AppCompatActivity {
             Log.e("ImageListActivity", "accessed Events");
         } else {
             Log.e("ImageListActivity", "Unknown ImageType");
-            return; // or handle as appropriate
+            return;
         }
 
         FirebaseAccess firebaseAccess = new FirebaseAccess(firestoreAccessType);

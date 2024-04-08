@@ -6,9 +6,12 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import android.view.View;
+import android.widget.ListView;
 
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.espresso.NoMatchingViewException;
@@ -30,19 +33,30 @@ public class AdminActivityTest {
 
     // Test for browsing events
     @Test
-    public void testNavigateToBrowseEvents() {
+    public void testNavigateToEventListAndVerifyNotEmpty() throws InterruptedException {
+        // Navigate to the EventListActivity by clicking a button
         onView(withId(R.id.btnBrowseEvents)).perform(click());
-        onView(withId(R.id.EventListView)).check(matches(isDisplayed()));
-                //.check(new RecyclerViewNotEmptyAssertion());
+
+        // Wait for a few seconds to allow the list to populate
+        Thread.sleep(3000);
+
+        // Check if the ListView is populated
+        onView(withId(R.id.EventListView)).check(new ViewAssertion() {
+            @Override
+            public void check(View view, NoMatchingViewException noViewFoundException) {
+                ListView listView = (ListView) view;
+                assertTrue("ListView is not populated", listView.getAdapter().getCount() > 0);
+            }
+        });
     }
+
 
     // Test for browsing profiles
     @Test
     public void testNavigateToBrowseProfiles() {
         onView(withId(R.id.btnBrowseProfiles)).perform(click());
-        // Introduce a delay to wait for data to load
         try {
-            Thread.sleep(2000); // wait for 2 seconds
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -52,15 +66,33 @@ public class AdminActivityTest {
 
     // Test for browsing images and making a choice in ImageSelectionFragment
     @Test
-    public void testNavigateToBrowseImagesAndChoose() {
+    public void testNavigateToBrowseImagesAndChooseProfile() throws InterruptedException {
         onView(withId(R.id.btnBrowseImages)).perform(click());
         onView(withId(R.id.imageSelectionFragmentRoot)).check(matches(isDisplayed()));
 
         // Simulate choosing to browse event pictures
         onView(withId(R.id.btnProfilePictures)).perform(click());
+
+        Thread.sleep(2000);
+
         onView(withId(R.id.imagesRecyclerView)).check(matches(isDisplayed()))
                 .check(new RecyclerViewNotEmptyAssertion());
     }
+
+    @Test
+    public void testNavigateToBrowseImagesAndChooseEvents() throws InterruptedException {
+        onView(withId(R.id.btnBrowseImages)).perform(click());
+        onView(withId(R.id.imageSelectionFragmentRoot)).check(matches(isDisplayed()));
+
+        // Simulate choosing to browse event pictures
+        onView(withId(R.id.btnEventPictures)).perform(click());
+
+        Thread.sleep(2000);
+
+        onView(withId(R.id.imagesRecyclerView)).check(matches(isDisplayed()))
+                .check(new RecyclerViewNotEmptyAssertion());
+    }
+
 
     public class RecyclerViewNotEmptyAssertion implements ViewAssertion {
         @Override
