@@ -19,17 +19,14 @@ import java.util.List;
  * This class is responsible for providing the views that represent each item in the image list.
  */
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> {
-    // List holding the image information objects.
     /**
      * The list to store the info for each image
      */
     private List<ImageInfo> imageInfos;
-    // Context in which the adapter is operating.
     /**
      * The context the adapter was called from
      */
     private Context context;
-    // Listener for handling click events on items.
     /**
      * The click listener for the item in the list
      */
@@ -84,7 +81,6 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ImageAdapter.ViewHolder holder, int position) {
         ImageInfo imageInfo = imageInfos.get(position);
         holder.imageView.setImageBitmap(imageInfo.getImage());
-        // Note: If switching to use URLs with Glide for image loading, the loading mechanism here needs to be updated accordingly.
     }
 
     /**
@@ -101,7 +97,6 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
      * A ViewHolder describes an item view and metadata about its place within the RecyclerView.
      */
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        // ImageView for displaying the image.
         /**
          * The view for the image
          */
@@ -115,7 +110,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
          */
         public ViewHolder(@NonNull View itemView, OnItemClickListener listener) {
             super(itemView);
-            imageView = itemView.findViewById(R.id.imageView); // Ensure this ID matches your layout xml
+            imageView = itemView.findViewById(R.id.imageView);
             itemView.setOnClickListener(v -> {
                 if (listener != null) {
                     int position = getAdapterPosition();

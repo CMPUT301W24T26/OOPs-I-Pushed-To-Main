@@ -64,100 +64,12 @@ public class UserListActivity extends AppCompatActivity {
             this.uid = uid;
         }
 
-        public String getAddress() {
-            return address;
-        }
-
-        public void setAddress(String address) {
-            this.address = address;
-        }
-
-        public Date getBirthday() {
-            return birthday;
-        }
-
-        public void setBirthday(Date birthday) {
-            this.birthday = birthday;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getHomepage() {
-            return homepage;
-        }
-
-        public void setHomepage(String homepage) {
-            this.homepage = homepage;
-        }
-
         public String getName() {
             return name;
         }
 
         public void setName(String name) {
             this.name = name;
-        }
-
-        public String getNickname() {
-            return nickname;
-        }
-
-        public void setNickname(String nickname) {
-            this.nickname = nickname;
-        }
-
-        public String getPhone() {
-            return phone;
-        }
-
-        public void setPhone(String phone) {
-            this.phone = phone;
-        }
-
-        public String getProfileImageUID() {
-            return profileImageUID;
-        }
-
-        public void setProfileImageUID(String profileImageUID) {
-            this.profileImageUID = profileImageUID;
-        }
-
-        public Bitmap getProfileImage() {
-            return profileImage;
-        }
-
-        public void setProfileImage(Bitmap profileImage) {
-            this.profileImage = profileImage;
-        }
-
-        public String getFid() {
-            return fid;
-        }
-
-        public void setFid(String fid) {
-            this.fid = fid;
-        }
-
-        public boolean isDataIsCurrent() {
-            return dataIsCurrent;
-        }
-
-        public void setDataIsCurrent(boolean dataIsCurrent) {
-            this.dataIsCurrent = dataIsCurrent;
-        }
-
-        public boolean isGeolocation() {
-            return geolocation;
-        }
-
-        public void setGeolocation(boolean geolocation) {
-            this.geolocation = geolocation;
         }
 
         public String getUID() {
@@ -229,23 +141,19 @@ public class UserListActivity extends AppCompatActivity {
      * @param profile The profile to delete
      */
     public void deleteProfile(Profile profile) {
-        // Assuming FirebaseAccess class is equipped to handle deletion and user.getUid() is accessible directly
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.USERS);
-        String userId = profile.getUID(); // Ensure getUid() method exists and retrieves the user's ID
+        String userId = profile.getUID();
 
-        // Assuming FirebaseAccess has a method deleteDataFromFirestore that returns CompletableFuture<Void>
         firebaseAccess.deleteDataFromFirestore(userId)
                 .thenRun(() -> {
-                    // This block is executed upon successful deletion
                     runOnUiThread(() -> {
-                        fetchProfiles(); // Refresh the list after deletion
+                        fetchProfiles();
                         Toast.makeText(UserListActivity.this, "User deleted successfully", Toast.LENGTH_SHORT).show();
                     });
                 })
                 .exceptionally(e -> {
-                    // This block is executed upon failure to delete
                     runOnUiThread(() -> Toast.makeText(UserListActivity.this, "Error deleting user", Toast.LENGTH_SHORT).show());
-                    return null; // CompletableFutures expect a return, return null for void methods
+                    return null;
                 });
     }
 

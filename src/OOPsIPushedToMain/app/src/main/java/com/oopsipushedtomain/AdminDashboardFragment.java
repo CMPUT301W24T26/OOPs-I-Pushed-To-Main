@@ -44,7 +44,6 @@ public class AdminDashboardFragment extends Fragment {
         Button btnBrowseProfiles = view.findViewById(R.id.btnBrowseProfiles);
         Button btnBrowseImages = view.findViewById(R.id.btnBrowseImages);
 
-        // Set up button click listeners
 
         // Click listener for browsing events
         btnBrowseEvents.setOnClickListener(new View.OnClickListener() {

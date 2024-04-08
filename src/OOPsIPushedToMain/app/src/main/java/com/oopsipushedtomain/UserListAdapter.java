@@ -43,7 +43,7 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserVi
          */
         public UserViewHolder(View itemView) {
             super(itemView);
-            nameTextView = itemView.findViewById(R.id.nameTextView); // Ensure your layout has a TextView with this ID
+            nameTextView = itemView.findViewById(R.id.nameTextView);
 
             itemView.setOnClickListener(view -> {
                 int position = getAdapterPosition();
@@ -82,7 +82,6 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserVi
     }
 
     public interface OnItemClickListener {
-        void onItemClick(UserListActivity.Profile profile); // Ensure Profile is correctly imported or referenced
+        void onItemClick(UserListActivity.Profile profile);
     }
-
 }
