@@ -108,13 +108,15 @@ public class QRCodeIntentTest {
         onData(anything()).inAdapterView(withId(R.id.EventListView)).atPosition(0).perform(click());
 
         // Use a custom wait method or Espresso Idling Resources to wait for EventDetailsActivity
-        onView(isRoot()).perform(waitForView(withId(R.id.btnViewPromoQRCode), 5000));
+        //onView(isRoot()).perform(waitForView(withId(R.id.btnViewPromoQRCode), 5000));
+        Thread.sleep(500);
 
         // Click on "Event Check-In Code" to view the QR Code for the selected event
         onView(withId(R.id.btnViewPromoQRCode)).perform(click());
 
         // Again, wait for the QR code to be fully displayed if needed
-        onView(isRoot()).perform(waitForView(withId(R.id.image_view), 5000));
+        //onView(isRoot()).perform(waitForView(withId(R.id.image_view), 5000));
+        Thread.sleep(500);
 
         // Click on the "Share" button
         onView(withId(R.id.share_button)).perform(click());
@@ -149,63 +151,63 @@ public class QRCodeIntentTest {
         intended(hasComponent(EventDetailsActivity.class.getName()));
     }
 
-    public static ViewAction waitForView(final Matcher<View> viewMatcher, final long timeout) {
-        return new ViewAction() {
-            @Override
-            public Matcher<View> getConstraints() {
-                return isRoot();
-            }
+//    public static ViewAction waitForView(final Matcher<View> viewMatcher, final long timeout) {
+//        return new ViewAction() {
+//            @Override
+//            public Matcher<View> getConstraints() {
+//                return isRoot();
+//            }
+//
+//            @Override
+//            public String getDescription() {
+//                return "wait up to " + timeout + " milliseconds for the view";
+//            }
 
-            @Override
-            public String getDescription() {
-                return "wait up to " + timeout + " milliseconds for the view";
-            }
-
-            @Override
-            public void perform(UiController uiController, View view) {
-                long startTime = System.currentTimeMillis();
-                final long endTime = startTime + timeout;
-                final Matcher<View> conditionMatcher = allOf(viewMatcher, isDisplayed());
-
-                do {
-                    for (View child : TreeIterables.breadthFirstViewTraversal(view)) {
-                        // Check if the condition is met
-                        if (conditionMatcher.matches(child)) {
-                            return;
-                        }
-                    }
-
-                    uiController.loopMainThreadForAtLeast(50);
-                    startTime = System.currentTimeMillis();
-                } while (startTime < endTime);
-
-                // View not displayed within the timeout
-                throw new PerformException.Builder()
-                        .withCause(new TimeoutException())
-                        .build();
-
-            }
-        };
-    }
-
-    // Utility method for adding delays
-    private static ViewAction waitFor(final long millis) {
-        return new ViewAction() {
-            @Override
-            public Matcher<View> getConstraints() {
-                return isRoot();
-            }
-
-            @Override
-            public String getDescription() {
-                return "wait for " + millis + " milliseconds";
-            }
-
-            @Override
-            public void perform(UiController uiController, View view) {
-                uiController.loopMainThreadForAtLeast(millis);
-            }
-        };
-    }
+//            @Override
+//            public void perform(UiController uiController, View view) {
+//                long startTime = System.currentTimeMillis();
+//                final long endTime = startTime + timeout;
+//                final Matcher<View> conditionMatcher = allOf(viewMatcher, isDisplayed());
+//
+//                do {
+//                    for (View child : TreeIterables.breadthFirstViewTraversal(view)) {
+//                        // Check if the condition is met
+//                        if (conditionMatcher.matches(child)) {
+//                            return;
+//                        }
+//                    }
+//
+//                    uiController.loopMainThreadForAtLeast(50);
+//                    startTime = System.currentTimeMillis();
+//                } while (startTime < endTime);
+//
+//                // View not displayed within the timeout
+//                throw new PerformException.Builder()
+//                        .withCause(new TimeoutException())
+//                        .build();
+//
+//            }
+//        };
+//    }
+//
+//    // Utility method for adding delays
+//    private static ViewAction waitFor(final long millis) {
+//        return new ViewAction() {
+//            @Override
+//            public Matcher<View> getConstraints() {
+//                return isRoot();
+//            }
+//
+//            @Override
+//            public String getDescription() {
+//                return "wait for " + millis + " milliseconds";
+//            }
+//
+//            @Override
+//            public void perform(UiController uiController, View view) {
+//                uiController.loopMainThreadForAtLeast(millis);
+//            }
+//        };
+//    }
 }
 
