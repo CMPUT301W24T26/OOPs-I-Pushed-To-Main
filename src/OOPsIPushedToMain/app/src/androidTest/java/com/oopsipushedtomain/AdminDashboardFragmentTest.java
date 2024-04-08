@@ -16,16 +16,25 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import com.oopsipushedtomain.AdminDashboardFragment;
 import com.oopsipushedtomain.R;
 
+/**
+ * Test admin dashboard
+ */
 @RunWith(AndroidJUnit4.class)
 @MediumTest
 public class AdminDashboardFragmentTest {
 
+    /**
+     * Set up the test
+     */
     @Before
     public void setUp() {
         // Launch the fragment in the testing environment
         FragmentScenario.launchInContainer(AdminDashboardFragment.class, null);
     }
 
+    /**
+     * Click the browse button
+     */
     @Test
     public void testBrowseEventsButtonClick() {
         // Perform a click on the browse events button
@@ -34,6 +43,9 @@ public class AdminDashboardFragmentTest {
         // Verify the action, add appropriate assertions or mock behaviors
     }
 
+    /**
+     * Test browse profiles
+     */
     @Test
     public void testBrowseProfilesButtonClick() {
         // Perform a click on the browse profiles button
@@ -42,6 +54,9 @@ public class AdminDashboardFragmentTest {
         // Verify the action, add appropriate assertions or mock behaviors
     }
 
+    /**
+     * Click browse images
+     */
     @Test
     public void testBrowseImagesButtonClick() {
         // Perform a click on the browse images button

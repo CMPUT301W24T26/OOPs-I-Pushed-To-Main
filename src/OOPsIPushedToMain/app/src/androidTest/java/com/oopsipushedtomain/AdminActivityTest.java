@@ -21,22 +21,32 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/**
+ * Test admin activity
+ */
 @RunWith(AndroidJUnit4.class)
 public class AdminActivityTest {
 
+    /**
+     * Create the activity
+     */
     @Rule
     public ActivityTestRule<AdminActivity> activityRule =
             new ActivityTestRule<>(AdminActivity.class, true, true);
 
-    // Test for browsing events
+    /**
+     * Test for browsing events
+     */
     @Test
     public void testNavigateToBrowseEvents() {
         onView(withId(R.id.btnBrowseEvents)).perform(click());
         onView(withId(R.id.EventListView)).check(matches(isDisplayed()));
-                //.check(new RecyclerViewNotEmptyAssertion());
+        //.check(new RecyclerViewNotEmptyAssertion());
     }
 
-    // Test for browsing profiles
+    /**
+     * Test for browsing profiles
+     */
     @Test
     public void testNavigateToBrowseProfiles() {
         onView(withId(R.id.btnBrowseProfiles)).perform(click());
@@ -50,7 +60,9 @@ public class AdminActivityTest {
                 .check(new RecyclerViewNotEmptyAssertion());
     }
 
-    // Test for browsing images and making a choice in ImageSelectionFragment
+    /**
+     * Test for browsing images and making a choice in ImageSelectionFragment
+     */
     @Test
     public void testNavigateToBrowseImagesAndChoose() {
         onView(withId(R.id.btnBrowseImages)).perform(click());
@@ -62,6 +74,9 @@ public class AdminActivityTest {
                 .check(new RecyclerViewNotEmptyAssertion());
     }
 
+    /**
+     * Test not empty
+     */
     public class RecyclerViewNotEmptyAssertion implements ViewAssertion {
         @Override
         public void check(View view, NoMatchingViewException noViewException) {

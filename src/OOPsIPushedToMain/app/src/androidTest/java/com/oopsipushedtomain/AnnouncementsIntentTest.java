@@ -49,8 +49,17 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class AnnouncementsIntentTest {
+    /**
+     * The user
+     */
     private User user;
+    /**
+     * The event id
+     */
     private String eventId;
+    /**
+     * The event database
+     */
     private FirebaseAccess eventDB;
 
     /**
@@ -58,10 +67,19 @@ public class AnnouncementsIntentTest {
      */
     @Rule
     public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
     @Rule
     public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
     @Rule
     public GrantPermissionRule permissionNotifications = GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS);
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
     @Rule
     public GrantPermissionRule permissionCamera = GrantPermissionRule.grant(Manifest.permission.CAMERA);
 
