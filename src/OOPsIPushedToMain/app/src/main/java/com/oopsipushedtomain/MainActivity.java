@@ -109,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
                     Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
                     intent.putExtra("userID", newUser.getUID());
                     startActivity(intent);
+                    runOnUiThread(this::finish);
                 });
             } else {
                 // User already exists, open their page
@@ -121,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
                 intent.putExtra("userID", (String) data.get("UID"));
                 startActivity(intent);
+                runOnUiThread(this::finish);
             }
         });
     }
@@ -205,6 +207,7 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
         intent.putExtra("userID", user.getUID());
         startActivity(intent);
+        runOnUiThread(this::finish);
     }
 
     /**
