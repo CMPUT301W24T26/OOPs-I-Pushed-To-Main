@@ -1,2 +1,6 @@
 com.oopsipushedtomain
 com.oopsipushedtomain.Announcements
+com.oopsipushedtomain.CheckInList
+com.oopsipushedtomain.Database
+com.oopsipushedtomain.DialogInputListeners
+com.oopsipushedtomain.Geolocation

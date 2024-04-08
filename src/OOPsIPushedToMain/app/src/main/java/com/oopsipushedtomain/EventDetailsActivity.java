@@ -705,12 +705,8 @@ public class EventDetailsActivity extends AppCompatActivity {
     }
 
     /**
-<<<<<<< HEAD
      * Returns the current event ID. Used for Intent testing (Announcements, MapActivity)
-=======
-     * Returns the current event ID. Used for Intent testing (MapActivity)
-     *
->>>>>>> 65194be54505083c6410aed20fc0f4109b5f1de6
+
      * @return The event ID
      */
     public String getEventID() {

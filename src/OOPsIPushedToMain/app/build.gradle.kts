@@ -44,7 +44,7 @@ dependencies {
 //    implementation(libs.glide)
 
 
-//    implementation(files("C:/Users/matte/AppData/Local/Android/Sdk/platforms/android-34/android.jar"))
+    implementation(files("/Users/matteofalsetti/Library/Android/sdk/platforms/android-34/android.jar"))
     implementation(libs.fragment.testing)
     implementation(libs.androidx.preference)
     implementation(libs.play.services.location)
