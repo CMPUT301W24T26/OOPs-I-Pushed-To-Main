@@ -76,15 +76,21 @@ import java.util.concurrent.CompletableFuture;
  */
 public class EventDetailsActivity extends AppCompatActivity {
     /**
+     * Event poster image
+     */
+    Bitmap eventPoster = null;
+    /**
+     * UID for event poster
+     */
+    String eventPosterUID = null;
+    /**
      * Text views for event details
      */
     private TextView eventTitle, eventStartTime, eventEndTime, eventDescription;
-
     /**
      * Buttons for editing the event details
      */
     private Button eventTitleButton, eventStartTimeButton, eventEndTimeButton, eventDescriptionButton;
-
     /**
      * The view for the event image poster
      */
@@ -93,39 +99,50 @@ public class EventDetailsActivity extends AppCompatActivity {
      * The references to the buttons
      */
     private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton, viewSignedUpButton, viewCheckedInButton, getViewSignedUpButton;
-
     /**
      * The UID of the user
      */
     private String userId;
-
     /**
      * The UID of the event
      */
     private String eventID;
-
     /**
      * Event
      */
     private Event event;
-
     private FirebaseAccess database;
+    /**
+     * The result launcher for getting the photo from the gallery
+     */
+    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), result -> {
+        if (result != null) {
+            // Handle the selected image URI
+            InputStream inputStream = null;
+            try {
+                inputStream = getContentResolver().openInputStream(result);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            // Get the bitmap image
+            InputStream finalInputStream = inputStream;
+            Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
 
-    private SimpleDateFormat formatter =  new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+            if (result != null) {
+                // Set in view
+                eventPosterEdit.setImageURI(result);
+                // Set event image in the database
+                database.storeImageInFirestore(event.getEventId(), null, ImageType.eventPosters, picture);
+            }
+        }
+    });
+    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm a");
     private User user;
     private boolean userIsOrganizer = false;
-    /**
-     * Event poster image
-     */
-    Bitmap eventPoster = null;
     /**
      * Boolean to check if the event poster is the default image
      */
     private boolean isDefaultPoster = true;
-    /**
-     * UID for event poster
-     */
-    String eventPosterUID = null;
 
     /**
      * Initializes the class with all parameters
@@ -159,7 +176,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         // Using the event ID, get the data from Firestore
         database.getDataFromFirestore(eventID).thenAccept(eventData -> {
             // If the event does not exists, throw an error
-            if (eventData == null){
+            if (eventData == null) {
                 Log.e("EventDetails", "The event does not exist!");
             }
             // Assign all the parameters to the event
@@ -248,7 +265,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         userFuture.thenAccept(userVal -> {
             eventFuture.thenAccept(eventVal -> {
                 // Compare event organizer and the current user
-                if (Objects.equals(user.getUID(), event.getCreatorId())){
+                if (Objects.equals(user.getUID(), event.getCreatorId())) {
                     // They are the organizer, show relevant buttons
                     userIsOrganizer = true;
 
@@ -270,6 +287,8 @@ public class EventDetailsActivity extends AppCompatActivity {
                         viewMapButton.setVisibility(View.VISIBLE);
                     });
                 }
+
+
             });
         });
 
@@ -362,7 +381,7 @@ public class EventDetailsActivity extends AppCompatActivity {
             Map<String, Object> eventMap = new HashMap<>();
 
             // Set the event title
-            if (eventTitle.getText() != null){
+            if (eventTitle.getText() != null) {
                 event.setTitle(eventTitle.getText().toString());
                 eventMap.put("title", eventTitle.getText().toString());
             }
@@ -414,7 +433,7 @@ public class EventDetailsActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // User can only change the event poster if they are an Organizer
-                if(!userIsOrganizer) {
+                if (!userIsOrganizer) {
                     return;
                 }
                 // Build a new alert dialog
@@ -459,49 +478,99 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         // Sign up button
         signUpButton.setOnClickListener(v -> {
-            // Sign the user up for notifications
-            FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
+            // Check if the event has room to sign up
+            database.getDataFromFirestore(eventID).thenAccept(data -> {
+                int signedUpUsers;
+                int attendeeLimit = Integer.MAX_VALUE;
 
-            // Sign in the user to the event
-            user.signUp(eventID);
-
-            // Fetch the event details to check the attendee limit and current signed-up attendees
-            FirebaseAccess eventAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-            eventAccess.getDataFromFirestore(eventID).thenAccept(eventData -> {
-                if (eventData != null) {
-                    int attendeeLimit = eventData.containsKey("attendeeLimit") ? ((Number) eventData.get("attendeeLimit")).intValue() : Integer.MAX_VALUE;
-                    List<String> signedUpAttendees = eventData.containsKey("signedUpAttendees") ? (List<String>) eventData.get("signedUpAttendees") : new ArrayList<>();
-
-                    // Check if the user is already signed up
-                    if (signedUpAttendees.contains(userId)) {
-                        // User is already signed up, show confirmation
-                        runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You are already signed up for this event!", Toast.LENGTH_SHORT).show());
-                    } else {
-                        // Check if the attendee limit has been reached
-                        if (signedUpAttendees.size() < attendeeLimit) {
-                            // The limit has not been reached, proceed to sign up the user
-                            signedUpAttendees.add(userId);
-
-                            // Update the event with the new list of signed-up attendees
-                            Map<String, Object> update = new HashMap<>();
-                            update.put("signedUpAttendees", signedUpAttendees);
-                            eventAccess.storeDataInFirestore(eventID, update);
-
-                            // Show confirmation
-                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You have successfully signed up for the event!", Toast.LENGTH_SHORT).show());
-                        } else {
-                            // The attendee limit has been reached
-                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Cannot sign up for event: Attendee limit reached.", Toast.LENGTH_SHORT).show());
-                        }
-                    }
+                // Check the number of signed up users
+                if (data.get("signedUp") != null) {
+                    signedUpUsers =  data.get("signedUp") instanceof Number ? ((Number) data.get("signedUp")).intValue() : 0;
                 } else {
-                    Log.e("EventDetailsActivity", "Event not found: " + eventID);
+                    signedUpUsers = 0;
                 }
-            }).exceptionally(e -> {
-                Log.e("EventDetailsActivity", "Error signing up for event: " + eventID, e);
-                return null;
+
+                // Check the number of signed up users
+                if (data.get("attendeeLimit") != null) {
+                    attendeeLimit = data.get("attendeeLimit") instanceof Number ? ((Number) data.get("attendeeLimit")).intValue() : 0;
+                }
+
+                // Check if the user can be signed up
+                if (signedUpUsers < attendeeLimit) {
+                    // The user can be signed up
+                    user.signUp(eventID).thenAccept(isNew -> {
+                        // If it is a new sign up, increment the counter
+                        if (isNew) {
+                            Map<String, Object> newData = new HashMap<>();
+                            newData.put("signedUp", signedUpUsers + 1);
+
+                            // Store in database
+                            runOnUiThread(() -> {
+                                database.storeDataInFirestore(eventID, newData);
+                            });
+
+                            // Sign the user up for notifications
+                            FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+
+                            // Notify the user
+                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Signed up to attend this event!", Toast.LENGTH_SHORT).show());
+
+                        }
+                    });
+
+                } else {
+                    runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Cannot sign up for event: Attendee limit reached.", Toast.LENGTH_SHORT).show());
+                }
+
+
             });
         });
+
+
+//
+//            // Sign the user up for notifications
+//            FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
+//
+//            // Sign in the user to the event
+//            user.signUp(eventID);
+//
+//            // Fetch the event details to check the attendee limit and current signed-up attendees
+//            FirebaseAccess eventAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+//            eventAccess.getDataFromFirestore(eventID).thenAccept(eventData -> {
+//                if (eventData != null) {
+//                    int attendeeLimit = eventData.containsKey("attendeeLimit") ? ((Number) eventData.get("attendeeLimit")).intValue() : Integer.MAX_VALUE;
+//                    List<String> signedUpAttendees = eventData.containsKey("signedUpAttendees") ? (List<String>) eventData.get("signedUpAttendees") : new ArrayList<>();
+//
+//                    // Check if the user is already signed up
+//                    if (signedUpAttendees.contains(userId)) {
+//                        // User is already signed up, show confirmation
+//                        runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You are already signed up for this event!", Toast.LENGTH_SHORT).show());
+//                    } else {
+//                        // Check if the attendee limit has been reached
+//                        if (signedUpAttendees.size() < attendeeLimit) {
+//                            // The limit has not been reached, proceed to sign up the user
+//                            signedUpAttendees.add(userId);
+//
+//                            // Update the event with the new list of signed-up attendees
+//                            Map<String, Object> update = new HashMap<>();
+//                            update.put("signedUpAttendees", signedUpAttendees);
+//                            eventAccess.storeDataInFirestore(eventID, update);
+//
+//                            // Show confirmation
+//                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You have successfully signed up for the event!", Toast.LENGTH_SHORT).show());
+//                        } else {
+//                            // The attendee limit has been reached
+//                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Cannot sign up for event: Attendee limit reached.", Toast.LENGTH_SHORT).show());
+//                        }
+//                    }
+//                } else {
+//                    Log.e("EventDetailsActivity", "Event not found: " + eventID);
+//                }
+//            }).exceptionally(e -> {
+//                Log.e("EventDetailsActivity", "Error signing up for event: " + eventID, e);
+//                return null;
+//            });
+
 
         // Send notification button
         sendNotificationButton.setOnClickListener(v -> {
@@ -636,32 +705,8 @@ public class EventDetailsActivity extends AppCompatActivity {
     }
 
     /**
-     * The result launcher for getting the photo from the gallery
-     */
-    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), result -> {
-        if (result != null) {
-            // Handle the selected image URI
-            InputStream inputStream = null;
-            try {
-                inputStream = getContentResolver().openInputStream(result);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            // Get the bitmap image
-            InputStream finalInputStream = inputStream;
-            Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
-
-            if (result != null) {
-                // Set in view
-                eventPosterEdit.setImageURI(result);
-                // Set event image in the database
-                database.storeImageInFirestore(event.getEventId(), null, ImageType.eventPosters, picture);
-            }
-        }
-    });
-
-    /**
      * Returns the current event ID. Used for Intent testing (MapActivity)
+     *
      * @return The event ID
      */
     public String getEventID() {

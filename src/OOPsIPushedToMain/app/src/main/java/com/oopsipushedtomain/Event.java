@@ -67,12 +67,6 @@ public class Event implements Serializable {
     private int attendeeLimit; // Optional
 
     /**
-     * The list of attendees who have signed up
-     */
-    private List<String> signedUpAttendees;
-
-
-    /**
      * The UID of user who created the event
      */
     private String creatorId; // New attribute for the creator's ID
@@ -107,6 +101,8 @@ public class Event implements Serializable {
     private FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
     Timestamp tempTimestamp = null;
+
+    private int signedUpUsers = 0;
 
 
     /**
@@ -180,13 +176,8 @@ public class Event implements Serializable {
         this.location = (String) properties.get("location");
         this.attendeeLimit = properties.get("attendeeLimit") instanceof Number ? ((Number) properties.get("attendeeLimit")).intValue() : 0;
         this.creatorId = (String) properties.get("creatorId");
-        // Ensure signedUpAttendees is properly initialized from the properties map.
-        // This requires handling the case where signedUpAttendees might not be present or is a List<String>.
-        Object signedUpAttendeesObj = properties.get("signedUpAttendees");
-        if (signedUpAttendeesObj instanceof List) {
-            this.signedUpAttendees = (List<String>) signedUpAttendeesObj;
-        } else {
-            this.signedUpAttendees = new ArrayList<>();
+        if (properties.get("signedUp") != null) {
+            this.signedUpUsers = properties.get("signedUp") instanceof Number ? ((Number) properties.get("attendeeLimit")).intValue() : 0;
         }
     }
 
@@ -245,14 +236,8 @@ public class Event implements Serializable {
         event.put("location", location);
         event.put("attendeeLimit", attendeeLimit);
         event.put("creatorId", creatorId);
+        event.put("signedUp", signedUpUsers);
         return event;
-    }
-
-    /**
-     * Generates a QR Code for this event
-     */
-    private void generateQRcodeData(ImageType imageType) {
-        QRCode qrCode = QRCode.createNewQRCodeObject(eventId, imageType);
     }
 
     /**
@@ -400,22 +385,6 @@ public class Event implements Serializable {
     }
 
     /**
-     * Gets the arrayList of signedUpAttendees ID for the event.
-     * @return the signedUpAttendees arrayList
-     */
-    public List<String> getSignedUpAttendees() {
-        return signedUpAttendees;
-    }
-
-    /**
-     * Sets the arrayList of signedUpAttendees ID for the event.
-     * @param signedUpAttendees the signedUpAttendees arrayList to set
-     */
-    public void setSignedUpAttendees(List<String> signedUpAttendees) {
-        this.signedUpAttendees = signedUpAttendees;
-    }
-
-    /**
      * Gets the creatorId for the event.
      * @return the creatorId
      */
@@ -432,6 +401,11 @@ public class Event implements Serializable {
         this.creatorId = creatorId;
     }
 
+    public int getSignedUpUsers() {
+        return signedUpUsers;
+    }
 
-
+    public void setSignedUpUsers(int signedUpUsers) {
+        this.signedUpUsers = signedUpUsers;
+    }
 }
