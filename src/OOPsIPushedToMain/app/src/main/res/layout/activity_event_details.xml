@@ -8,13 +8,21 @@
 
     <TextView
         android:id="@+id/EventDetailsOrganizer"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10sp"
         android:text="Event Details"
+        android:textAlignment="center"
+        android:textStyle="bold"
         android:textSize="36sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5sp"
+        android:background="?attr/colorAccent"
+        app:layout_constraintTop_toBottomOf="@id/EventDetailsOrganizer"/>
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/eventPosterImageViewEdit"
@@ -24,7 +32,6 @@
         android:scaleType="fitCenter"
         android:src="@drawable/default_event_poser"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/EventDetailsOrganizer"
         app:layout_constraintTop_toBottomOf="@id/EventDetailsOrganizer"
         app:strokeColor="?attr/colorAccent"
         app:strokeWidth="5dp" />

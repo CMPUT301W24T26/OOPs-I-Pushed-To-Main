@@ -70,6 +70,8 @@ public class EventListActivity extends AppCompatActivity {
 
     private Button eventCreateButton, eventSortButton;
 
+    private boolean isAdmin;
+
     /**
      * Initializes the parameters of the class
      *
@@ -94,6 +96,7 @@ public class EventListActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null) {
             userId = intent.getStringExtra("userId");
+            isAdmin = getIntent().getBooleanExtra("isAdmin", false);
         }
 
         // Set up the click listeners
@@ -170,6 +173,7 @@ public class EventListActivity extends AppCompatActivity {
                     Intent intent = new Intent(EventListActivity.this, EventDetailsActivity.class);
                     intent.putExtra("selectedEventId", selectedEvent.getEventId());
                     intent.putExtra("userId", userId); // Assuming userId is the ID of the current user
+                    intent.putExtra("isAdmin", isAdmin);
                     startActivity(intent);
                 } else {
                     Log.e("EventListActivity", "The event or event ID is null.");

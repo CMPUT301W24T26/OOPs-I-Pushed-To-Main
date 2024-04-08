@@ -1,17 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="10dp">
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="10sp"
         android:text="@string/map_header"
-        android:textSize="30sp"
-        android:paddingBottom="8sp"/>
-    <org.osmdroid.views.MapView android:id="@+id/map"
+        android:textAlignment="center"
+        android:textSize="36sp"
+        android:textStyle="bold" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5sp"
+        android:background="?attr/colorAccent" />
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/map"
+        android:layout_marginTop="20sp"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 </LinearLayout>
