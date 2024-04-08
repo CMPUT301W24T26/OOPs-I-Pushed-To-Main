@@ -264,6 +264,11 @@ public class EventDetailsActivity extends AppCompatActivity {
         eventEndTimeButton = findViewById(R.id.edit_event_end_button);
         eventDescriptionButton = findViewById(R.id.edit_event_description_button);
 
+        // Admin Check
+        if (isAdmin) {
+            deleteButton.setVisibility(View.VISIBLE);
+        }
+
         // If we have both the event and the user, check to see if the user is the organizer of this event
         userFuture.thenAccept(userVal -> {
             eventFuture.thenAccept(eventVal -> {
@@ -289,10 +294,6 @@ public class EventDetailsActivity extends AppCompatActivity {
                         viewEventQRCodeButton.setVisibility(View.VISIBLE);
                         viewMapButton.setVisibility(View.VISIBLE);
                     });
-                }
-                if (isAdmin) {
-                    // Show delete button
-                    deleteButton.setVisibility(View.VISIBLE);
                 }
 
             });
