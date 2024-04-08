@@ -176,6 +176,7 @@ public class CheckInListActivity extends AppCompatActivity {
                 if (checkInData != null) {
                     // Data exists = user is checked into this event, set the params
                     if (Objects.equals(checkInData.get("UID"), eventId)) {
+                        Log.d(TAG, "Found one! " + user.get("UID"));
                         Map<String, Object> newAttendee = new HashMap<>();
                         newAttendee.put("name", user.get("name"));
                         newAttendee.put("count", checkInData.get("count"));

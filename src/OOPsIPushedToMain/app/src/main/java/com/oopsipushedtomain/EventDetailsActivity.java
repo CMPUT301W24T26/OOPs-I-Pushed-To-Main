@@ -1,7 +1,11 @@
 package com.oopsipushedtomain;
 
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +15,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
@@ -27,11 +33,20 @@ import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.Geolocation.MapActivity;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -56,15 +71,21 @@ import java.util.concurrent.CompletableFuture;
  */
 public class EventDetailsActivity extends AppCompatActivity {
     /**
+     * Event poster image
+     */
+    Bitmap eventPoster = null;
+    /**
+     * UID for event poster
+     */
+    String eventPosterUID = null;
+    /**
      * Text views for event details
      */
     private TextView eventTitle, eventStartTime, eventEndTime, eventDescription;
-
     /**
      * Buttons for editing the event details
      */
     private Button eventTitleButton, eventStartTimeButton, eventEndTimeButton, eventDescriptionButton;
-
     /**
      * The view for the event image poster
      */
@@ -73,27 +94,50 @@ public class EventDetailsActivity extends AppCompatActivity {
      * The references to the buttons
      */
     private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton, viewSignedUpButton, viewCheckedInButton, getViewSignedUpButton;
-
     /**
      * The UID of the user
      */
     private String userId;
-
     /**
      * The UID of the event
      */
     private String eventID;
-
     /**
      * Event
      */
     private Event event;
-
     private FirebaseAccess database;
+    /**
+     * The result launcher for getting the photo from the gallery
+     */
+    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), result -> {
+        if (result != null) {
+            // Handle the selected image URI
+            InputStream inputStream = null;
+            try {
+                inputStream = getContentResolver().openInputStream(result);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            // Get the bitmap image
+            InputStream finalInputStream = inputStream;
+            Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
 
-    private SimpleDateFormat formatter =  new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+            if (result != null) {
+                // Set in view
+                eventPosterEdit.setImageURI(result);
+                // Set event image in the database
+                database.storeImageInFirestore(event.getEventId(), null, ImageType.eventPosters, picture);
+            }
+        }
+    });
+    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm a");
     private User user;
     private boolean userIsOrganizer = false;
+    /**
+     * Boolean to check if the event poster is the default image
+     */
+    private boolean isDefaultPoster = true;
 
     /**
      * Initializes the class with all parameters
@@ -124,12 +168,30 @@ public class EventDetailsActivity extends AppCompatActivity {
         // Create a new empty event
         event = new Event();
 
-        if (eventID != null) {
-            // Using the event ID, get the data from Firestore
-            database.getDataFromFirestore(eventID).thenAccept(eventData -> {
-                // If the event does not exists, throw an error
-                if (eventData == null){
-                    Log.e("EventDetails", "The event does not exist!");
+
+        // Using the event ID, get the data from Firestore
+        database.getDataFromFirestore(eventID).thenAccept(eventData -> {
+            // If the event does not exists, throw an error
+            if (eventData == null) {
+                Log.e("EventDetails", "The event does not exist!");
+            }
+            // Assign all the parameters to the event
+            event.setEventId(eventData.get("UID").toString());
+            event.setTitle(eventData.get("title").toString());
+            event.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
+            event.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
+            event.setDescription(eventData.get("description").toString());
+            event.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
+            event.setCreatorId(eventData.get("creatorId").toString());
+
+            // Set the details on the screen
+            runOnUiThread(() -> {
+                eventTitle.setText(eventData.get("title").toString());
+                if (eventData.get("startTime") != null) {
+                    eventStartTime.setText(formatter.format(((Timestamp) eventData.get("startTime")).toDate()));
+                }
+                if (eventData.get("endTime") != null) {
+                    eventEndTime.setText(formatter.format(((Timestamp) eventData.get("endTime")).toDate()));
                 }
                 // Assign all the parameters to the event
                 event.setEventId(eventData.get("UID").toString());
@@ -156,14 +218,36 @@ public class EventDetailsActivity extends AppCompatActivity {
                 eventFuture.complete(null);
             });
 
-            // Create a new user from the UserID
-            User.createNewObject(userId).thenAccept(newUser -> {
-                user = newUser;
-
-                // Finished getting the user
-                userFuture.complete(null);
+            database.getAllRelatedImagesFromFirestore(event.getEventId(), ImageType.eventPosters).thenAccept(dataList -> {
+                if (dataList == null) {
+                    // If the datalist is empty, there is no profile picture
+                    this.eventPoster = null;
+                    // Set default image to true
+                    isDefaultPoster = true;
+                } else {
+                    // Set the UID and profile image if there's an existing image
+                    this.eventPoster = (Bitmap) dataList.get(0).get("image");
+                    this.eventPosterUID = (String) dataList.get(0).get("UID");
+                    // Custom poster exists
+                    isDefaultPoster = false;
+                    // Set the image
+                    runOnUiThread(() -> {
+                        eventPosterEdit.setImageBitmap(this.eventPoster);
+                    });
+                }
             });
-        }
+
+
+            // Finished getting the event details
+            eventFuture.complete(null);
+        });
+
+        // Create a new user from the UserID
+        User.createNewObject(userId).thenAccept(newUser -> {
+            user = newUser;
+            // Finished getting the user
+            userFuture.complete(null);
+            });
 
 
         // Find the texts for the event details
@@ -198,7 +282,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         userFuture.thenAccept(userVal -> {
             eventFuture.thenAccept(eventVal -> {
                 // Compare event organizer and the current user
-                if (Objects.equals(user.getUID(), event.getCreatorId())){
+                if (Objects.equals(user.getUID(), event.getCreatorId())) {
                     // They are the organizer, show relevant buttons
                     userIsOrganizer = true;
 
@@ -220,6 +304,8 @@ public class EventDetailsActivity extends AppCompatActivity {
                         viewMapButton.setVisibility(View.VISIBLE);
                     });
                 }
+
+
             });
         });
 
@@ -312,7 +398,7 @@ public class EventDetailsActivity extends AppCompatActivity {
             Map<String, Object> eventMap = new HashMap<>();
 
             // Set the event title
-            if (eventTitle.getText() != null){
+            if (eventTitle.getText() != null) {
                 event.setTitle(eventTitle.getText().toString());
                 eventMap.put("title", eventTitle.getText().toString());
             }
@@ -359,29 +445,149 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         });
 
-
-
-        // Event poster
+        // Custom event poster upload/deletion handling
         eventPosterEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Intent to start a new activity
-                //Intent intent = new Intent(EventDetailsActivity.this, ImageDetailsActivity.class);
-                //startActivity(intent);
+                // User can only change the event poster if they are an Organizer
+                if (!userIsOrganizer) {
+                    return;
+                }
+                // Build a new alert dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(EventDetailsActivity.this);
+                builder.setTitle("Update Event Poster");
+                if (isDefaultPoster) {
+                    // If the current image is the default image, don't show the delete option
+                    builder.setItems(new CharSequence[]{"Choose from Gallery"},
+                            (dialog, which) -> {
+                                if (which == 0) {
+                                    galleryResultLauncher.launch("image/*");
+                                    // Event poster is no longer default image
+                                    isDefaultPoster = false;
+                                }
+                            });
+                } else {
+                    // If the image isn't the default image, give option to delete
+                    builder.setItems(new CharSequence[]{"Choose from Gallery", "Delete Poster"},
+                            (dialog, which) -> {
+                                switch (which) {
+                                    case 0: // Choose from Gallery
+                                        galleryResultLauncher.launch("image/*");
+                                        Log.d("Gallery", "Poster image selected from the gallery");
+                                        // Event poster is not default
+                                        isDefaultPoster = false;
+                                        break;
+
+                                    case 1: // Delete Poster
+                                        // If poster is deleted, set back to default poster image
+                                        eventPosterEdit.setImageResource(R.drawable.default_event_poser);
+                                        // Update image to null in the database
+                                        database.deleteImageFromFirestore(event.getEventId(), eventPosterUID, ImageType.eventPosters);
+                                        // Event poster is set to default
+                                        isDefaultPoster = true;
+                                        break;
+                                }
+                            });
+                }
+                builder.show();
             }
         });
 
         // Sign up button
         signUpButton.setOnClickListener(v -> {
-            // Sign the user up for notifications
-            FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
+            // Check if the event has room to sign up
+            database.getDataFromFirestore(eventID).thenAccept(data -> {
+                int signedUpUsers;
+                int attendeeLimit = Integer.MAX_VALUE;
 
-            // Sign in the user to the event
-            user.signUp(eventID);
+                // Check the number of signed up users
+                if (data.get("signedUp") != null) {
+                    signedUpUsers =  data.get("signedUp") instanceof Number ? ((Number) data.get("signedUp")).intValue() : 0;
+                } else {
+                    signedUpUsers = 0;
+                }
 
-            // Show confirmation
-            Toast.makeText(EventDetailsActivity.this, "Signed up to attend this event!", Toast.LENGTH_SHORT).show();
+                // Check the number of signed up users
+                if (data.get("attendeeLimit") != null) {
+                    attendeeLimit = data.get("attendeeLimit") instanceof Number ? ((Number) data.get("attendeeLimit")).intValue() : 0;
+                }
+
+                // Check if the user can be signed up
+                if (signedUpUsers < attendeeLimit) {
+                    // The user can be signed up
+                    user.signUp(eventID).thenAccept(isNew -> {
+                        // If it is a new sign up, increment the counter
+                        if (isNew) {
+                            Map<String, Object> newData = new HashMap<>();
+                            newData.put("signedUp", signedUpUsers + 1);
+
+                            // Store in database
+                            runOnUiThread(() -> {
+                                database.storeDataInFirestore(eventID, newData);
+                            });
+
+                            // Sign the user up for notifications
+                            FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+
+                            // Notify the user
+                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Signed up to attend this event!", Toast.LENGTH_SHORT).show());
+
+                        }
+                    });
+
+                } else {
+                    runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Cannot sign up for event: Attendee limit reached.", Toast.LENGTH_SHORT).show());
+                }
+
+
+            });
         });
+
+
+//
+//            // Sign the user up for notifications
+//            FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
+//
+//            // Sign in the user to the event
+//            user.signUp(eventID);
+//
+//            // Fetch the event details to check the attendee limit and current signed-up attendees
+//            FirebaseAccess eventAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+//            eventAccess.getDataFromFirestore(eventID).thenAccept(eventData -> {
+//                if (eventData != null) {
+//                    int attendeeLimit = eventData.containsKey("attendeeLimit") ? ((Number) eventData.get("attendeeLimit")).intValue() : Integer.MAX_VALUE;
+//                    List<String> signedUpAttendees = eventData.containsKey("signedUpAttendees") ? (List<String>) eventData.get("signedUpAttendees") : new ArrayList<>();
+//
+//                    // Check if the user is already signed up
+//                    if (signedUpAttendees.contains(userId)) {
+//                        // User is already signed up, show confirmation
+//                        runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You are already signed up for this event!", Toast.LENGTH_SHORT).show());
+//                    } else {
+//                        // Check if the attendee limit has been reached
+//                        if (signedUpAttendees.size() < attendeeLimit) {
+//                            // The limit has not been reached, proceed to sign up the user
+//                            signedUpAttendees.add(userId);
+//
+//                            // Update the event with the new list of signed-up attendees
+//                            Map<String, Object> update = new HashMap<>();
+//                            update.put("signedUpAttendees", signedUpAttendees);
+//                            eventAccess.storeDataInFirestore(eventID, update);
+//
+//                            // Show confirmation
+//                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You have successfully signed up for the event!", Toast.LENGTH_SHORT).show());
+//                        } else {
+//                            // The attendee limit has been reached
+//                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Cannot sign up for event: Attendee limit reached.", Toast.LENGTH_SHORT).show());
+//                        }
+//                    }
+//                } else {
+//                    Log.e("EventDetailsActivity", "Event not found: " + eventID);
+//                }
+//            }).exceptionally(e -> {
+//                Log.e("EventDetailsActivity", "Error signing up for event: " + eventID, e);
+//                return null;
+//            });
+
 
         // Send notification button
         sendNotificationButton.setOnClickListener(v -> {
@@ -399,7 +605,6 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         // List of attendees who have checked in
         viewCheckedInButton.setOnClickListener(v -> {
-//            user.checkIn(eventID, EventDetailsActivity.this);
             Intent intent = new Intent(EventDetailsActivity.this, CheckInListActivity.class);
             intent.putExtra("eventId", event.getEventId());
             startActivity(intent);
@@ -525,9 +730,13 @@ public class EventDetailsActivity extends AppCompatActivity {
         database.deleteDataFromFirestore(eventId);
     }
 
-
     /**
+<<<<<<< HEAD
      * Returns the current event ID. Used for Intent testing (Announcements, MapActivity)
+=======
+     * Returns the current event ID. Used for Intent testing (MapActivity)
+     *
+>>>>>>> 65194be54505083c6410aed20fc0f4109b5f1de6
      * @return The event ID
      */
     public String getEventID() {

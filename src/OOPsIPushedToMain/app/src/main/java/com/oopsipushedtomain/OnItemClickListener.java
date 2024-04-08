@@ -8,5 +8,5 @@ public interface OnItemClickListener {
      * When the profile is clicked
      * @param profile The prifile that was clicked on
      */
-    void onItemClick(Profile profile);
+    void onItemClick(User profile);
 }

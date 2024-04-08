@@ -1,26 +1,21 @@
 package com.oopsipushedtomain;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,12 +62,6 @@ public class Event implements Serializable {
     private int attendeeLimit; // Optional
 
     /**
-     * The list of attendees who have signed up
-     */
-    private List<String> signedUpAttendees;
-
-
-    /**
      * The UID of user who created the event
      */
     private String creatorId; // New attribute for the creator's ID
@@ -107,6 +96,13 @@ public class Event implements Serializable {
     private FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
     Timestamp tempTimestamp = null;
+
+    private int signedUpUsers = 0;
+
+    /**
+     * Count that keeps track of how many unique check-ins there have been
+     */
+    private int checkIns = 0;
 
 
     /**
@@ -180,14 +176,10 @@ public class Event implements Serializable {
         this.location = (String) properties.get("location");
         this.attendeeLimit = properties.get("attendeeLimit") instanceof Number ? ((Number) properties.get("attendeeLimit")).intValue() : 0;
         this.creatorId = (String) properties.get("creatorId");
-        // Ensure signedUpAttendees is properly initialized from the properties map.
-        // This requires handling the case where signedUpAttendees might not be present or is a List<String>.
-        Object signedUpAttendeesObj = properties.get("signedUpAttendees");
-        if (signedUpAttendeesObj instanceof List) {
-            this.signedUpAttendees = (List<String>) signedUpAttendeesObj;
-        } else {
-            this.signedUpAttendees = new ArrayList<>();
+        if (properties.get("signedUp") != null) {
+            this.signedUpUsers = properties.get("signedUp") instanceof Number ? ((Number) properties.get("attendeeLimit")).intValue() : 0;
         }
+        this.checkIns = properties.get("checkIns") instanceof Number ? ((Number) properties.get("checkIns")).intValue() : 0;
     }
 
 
@@ -230,6 +222,9 @@ public class Event implements Serializable {
             QRCode.createNewQRCodeObject(eventId, ImageType.promoQRCodes);
             QRCode.createNewQRCodeObject(eventId, ImageType.eventQRCodes);
 
+            // Sign organizer up for milestone notifications
+            FirebaseMessaging.getInstance().subscribeToTopic(eventId + "-ORGANIZER");
+
         } catch (Exception e) {
             Log.e("Event", "Error adding/updating event", e);
         }
@@ -245,14 +240,9 @@ public class Event implements Serializable {
         event.put("location", location);
         event.put("attendeeLimit", attendeeLimit);
         event.put("creatorId", creatorId);
+        event.put("signedUp", signedUpUsers);
+        event.put("checkIns", checkIns);
         return event;
-    }
-
-    /**
-     * Generates a QR Code for this event
-     */
-    private void generateQRcodeData(ImageType imageType) {
-        QRCode qrCode = QRCode.createNewQRCodeObject(eventId, imageType);
     }
 
     /**
@@ -400,22 +390,6 @@ public class Event implements Serializable {
     }
 
     /**
-     * Gets the arrayList of signedUpAttendees ID for the event.
-     * @return the signedUpAttendees arrayList
-     */
-    public List<String> getSignedUpAttendees() {
-        return signedUpAttendees;
-    }
-
-    /**
-     * Sets the arrayList of signedUpAttendees ID for the event.
-     * @param signedUpAttendees the signedUpAttendees arrayList to set
-     */
-    public void setSignedUpAttendees(List<String> signedUpAttendees) {
-        this.signedUpAttendees = signedUpAttendees;
-    }
-
-    /**
      * Gets the creatorId for the event.
      * @return the creatorId
      */
@@ -432,30 +406,19 @@ public class Event implements Serializable {
         this.creatorId = creatorId;
     }
 
-
-    // ChatGPT: Now i want to do the reverse and load the image and convert it back to a bitmap
-
-    /**
-     * Gets the event poster from the database
-     * @param listener The listener for determining when the event is complete
-     */
-    public void getEventImage(OnBitmapReceivedListener listener) {
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.d("Event", "No imageUID available for event: " + eventId);
-            // Call the listener with a null or default bitmap
-            listener.onBitmapReceived(null); // or pass a default Bitmap
-            return;
-        }
-
-        StorageReference eventImageRef = storageRef.child(imageUID);
-        final long ONE_MEGABYTE = 1024 * 1024;
-        eventImageRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(bytes -> {
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            listener.onBitmapReceived(bitmap);
-        }).addOnFailureListener(e -> {
-            Log.e("Event", "Failed to load image for event: " + eventId, e);
-            listener.onBitmapReceived(null); // or pass a default Bitmap on failure
-        });
+    public int getSignedUpUsers() {
+        return signedUpUsers;
     }
 
+    public void setSignedUpUsers(int signedUpUsers) {
+        this.signedUpUsers = signedUpUsers;
+    }
+
+    public int getCheckIns() {
+        return checkIns;
+    }
+
+    public void setCheckIns(int checkIns) {
+        this.checkIns = checkIns;
+    }
 }

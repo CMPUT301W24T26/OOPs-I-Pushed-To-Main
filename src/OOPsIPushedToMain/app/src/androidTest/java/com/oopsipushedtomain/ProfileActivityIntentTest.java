@@ -43,6 +43,17 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * Intent test for the ProfileActivity. Covers the following user stories:
+ * US 02.02.01 - Upload profile picture
+ * US 02.02.02 - Option to remove profile pictures
+ * US 02.02.03 - Update personal profile information (name)
+ * US 02.05.01 - Automatic profile picture generation
+ * US 02.06.01 - No login requirement for app access
+ *
+ * @author Aidan Gironella
+ * @see ProfileActivity
+ */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class ProfileActivityIntentTest {

@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.DialogInputListeners.CustomDateTimePickerDialog;
@@ -181,7 +182,7 @@ public class NewEventActivity extends AppCompatActivity {
 
             // Attendee limit
             if (newEventAttendeeLimitEdit.getText().toString().isEmpty() || newEventAttendeeLimitEdit.getText() == null){
-                newEvent.setAttendeeLimit(0);
+                newEvent.setAttendeeLimit(Integer.MAX_VALUE);
             } else {
                 newEvent.setAttendeeLimit(Integer.parseInt(newEventAttendeeLimitEdit.getText().toString()));
             }

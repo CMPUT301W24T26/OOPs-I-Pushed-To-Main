@@ -2,28 +2,20 @@ package com.oopsipushedtomain;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.pressKey;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import android.Manifest;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
+import android.content.Intent;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.widget.EditText;
-import android.widget.ImageView;
 
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.action.ViewActions;
-import androidx.test.espresso.matcher.ViewMatchers;
+import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -31,10 +23,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.UiDevice;
-import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiObject2;
-import androidx.test.uiautomator.UiObjectNotFoundException;
-import androidx.test.uiautomator.UiSelector;
 import androidx.test.uiautomator.Until;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
@@ -46,18 +35,23 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
+import java.util.List;
 
+/**
+ * Intent test for Announcements. Covers the following user stories:
+ * US 01.03.01 - Send notifications to attendees.
+ * US 02.03.01 - Receive push notifications from event organizers.
+ * US 02.04.01 - View events details and announcements.
+ *
+ * @author Aidan Gironella
+ * @see com.oopsipushedtomain.Announcements
+ */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class AnnouncementsIntentTest {
     private User user;
     private String eventId;
     private FirebaseAccess eventDB;
-    private final int startupDelay = 1000;
 
     /**
      * Manually request all permissions so that the dialogs don't appear
@@ -72,18 +66,11 @@ public class AnnouncementsIntentTest {
     public GrantPermissionRule permissionCamera = GrantPermissionRule.grant(Manifest.permission.CAMERA);
 
     /**
-     * Used to access the currently running EventDetailsActivity
+     * Used to access the currently running ProfileActivity
      */
-//    @Rule
-//    public ActivityScenarioRule<EventDetailsActivity> eventDetailsActivityRule =
-//            new ActivityScenarioRule<>(EventDetailsActivity.class);
-
-    /**
-     * Used to launch EventListActivity
-     */
-    @Rule(order = 1)
-    public ActivityScenarioRule<EventListActivity> eventListActivityRule =
-            new ActivityScenarioRule<>(EventListActivity.class);
+    @Rule
+    public ActivityScenarioRule<ProfileActivity> activityRule =
+            new ActivityScenarioRule<>(ProfileActivity.class);
 
     /**
      * Initialize the databases.
@@ -92,6 +79,7 @@ public class AnnouncementsIntentTest {
     public void setup() {
         // Initialize the database
         try {
+            Intents.init();
             eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
         } catch (Exception e) {
             // There was an error, the test failed
@@ -101,9 +89,9 @@ public class AnnouncementsIntentTest {
     }
 
     /**
-     * US 01.03.01 - Send notifications to attendees
-     * US 02.03.01 - Receive push notifications from event organizers
-     * US 02.04.01 - View events details and announcements
+     * US 01.03.01 - Send notifications to attendees.
+     * US 02.03.01 - Receive push notifications from event organizers.
+     * US 02.04.01 - View events details and announcements.
      * Creates a test event, signs up for the event, sends an announcement, checks that it appears
      * in the AnnouncementListActivity, and checks that the push notification was probably sent and
      * received.
@@ -112,7 +100,11 @@ public class AnnouncementsIntentTest {
      */
     @Test
     public void testAnnouncements() throws InterruptedException {
-        Thread.sleep(startupDelay);
+        int startupDelay = 1000;
+        Thread.sleep(startupDelay); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> user = activity.getUser());
+        onView(withId(R.id.eventsButton)).perform(click());
+
         // Create new test event
         // Set title
         String titleToType = "Announcements test event " + (Math.random() * 10 + 1);
@@ -128,7 +120,7 @@ public class AnnouncementsIntentTest {
         onView(withText("OK")).perform(click());
         onView(withText("OK")).perform(click());
         // Set description
-        String descToType = "Announcements test description " + (Math.random() * 10 + 1);
+        String descToType = "Announcements intent test event";
         onView(withId(R.id.new_event_description_e)).perform(ViewActions.typeText(descToType));
         Espresso.closeSoftKeyboard();
         // Limit attendees to 10
@@ -136,19 +128,18 @@ public class AnnouncementsIntentTest {
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.btnCreateNewEvent)).perform(click());
 
-        // Open new test event
-//        Thread.sleep(2000);
-//        onView(withId(R.id.sort_events_button)).perform(click());
-//        onView(withText("Created Events")).perform(click());
-//        onView(withText(titleToType)).perform(click());
-
         // Sign up for event
-        Thread.sleep(startupDelay); // Wait for EventDetailsActivity to open
-//        eventDetailsActivityRule.getScenario().onActivity(activity -> {
-//            user = activity.getUser();
-//            eventId = activity.getEventID();
-//        });
         onView(withId(R.id.btnSignUpEvent)).perform(click());
+
+        // Intercept the event ID intent extra so that we can delete the event in cleanUp()
+        Thread.sleep(2000);
+        List<Intent> intents = Intents.getIntents();
+        for (Intent intent : intents)
+            // Get the extra data from the intent
+            eventId = intent.getStringExtra("selectedEventId");
+
+        // Release Intents
+        Intents.release();
 
         // Send an announcement
         titleToType = "UI Test Notification " + (Math.random() * 10 + 1);
