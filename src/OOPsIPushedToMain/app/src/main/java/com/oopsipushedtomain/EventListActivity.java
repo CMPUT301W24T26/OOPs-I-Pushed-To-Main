@@ -13,6 +13,7 @@ import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.OnNewIntentProvider;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -227,44 +229,45 @@ public class EventListActivity extends AppCompatActivity {
         FirebaseAccess userDatabase = new FirebaseAccess(FirestoreAccessType.USERS);
         FirebaseAccess eventsDatabase = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
-        // Future for data loading
-        CompletableFuture<Void> future = new CompletableFuture<>();
+        // Create a callable
+        Callable<Void> getDataTask = () -> {
+            // Get the list of checked in events
+            ArrayList<Map<String, Object>> eventList =  userDatabase.getAllDocuments(userId, FirebaseInnerCollection.signedUpEvents).get();
 
-        // Get the list of signed up events
-        userDatabase.getAllDocuments(userId, FirebaseInnerCollection.signedUpEvents).thenAccept(eventList -> {
-            // If there are no signed up events, we are done
-            if (eventList == null) {
-                future.complete(null);
-                return;
+            // Check if this is null
+            if (eventList == null){
+                return null;
             }
 
-            // Go through the list and add all the events
-            for (Map<String, Object> data : eventList) {
-                // Get the event details
-                eventsDatabase.getDataFromFirestore((String) data.get("UID")).thenAccept(eventDetails -> {
-                    // Create a new event
-                    Event newEvent = new Event();
+            // Iterate through the events
+            Event newEvent;
+            for (Map<String, Object> data : eventList){
+                // Create a new event
+                newEvent = new Event();
 
-                    // Set the params
-                    newEvent.setEventId((String) eventDetails.get("UID"));
-                    newEvent.setTitle((String) eventDetails.get("title"));
+                // Get the event details from the database
+                Map<String, Object> eventData = eventsDatabase.getDataFromFirestore((String) data.get("UID")).get();
 
-                    // Add the event to the list
-                    eventDataList.add(newEvent);
+                // Set the params
+                newEvent.setEventId((String) eventData.get("UID"));
+                newEvent.setTitle((String) eventData.get("title"));
 
-                    // If this is the last event, complete the future
-                    if (data.equals(eventList.get(eventList.size() - 1))) {
-                        // Complete the future
-                        future.complete(null);
-                    }
-                });
+                // Add the event to the list
+                EventListActivity.this.eventDataList.add(newEvent);
+
             }
-        });
 
-        // When data loading is complete, notify
-        future.thenAccept(value -> {
-            runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
-        });
+            // All done, notify that dataset has changed
+            runOnUiThread(() -> {
+                EventListActivity.this.eventAdapter.notifyDataSetChanged();
+            });
+
+            return null;
+
+        };
+
+        // Run the task
+        eventsDatabase.callableToCompletableFuture(getDataTask);
 
     }
 
@@ -276,44 +279,46 @@ public class EventListActivity extends AppCompatActivity {
         FirebaseAccess userDatabase = new FirebaseAccess(FirestoreAccessType.USERS);
         FirebaseAccess eventsDatabase = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
-        // Future for data loading
-        CompletableFuture<Void> future = new CompletableFuture<>();
+        // Create a callable
+        Callable<Void> getDataTask = () -> {
+            // Get the list of checked in events
+            ArrayList<Map<String, Object>> eventList =  userDatabase.getAllDocuments(userId, FirebaseInnerCollection.checkedInEvents).get();
 
-        // Get the list of signed up events
-        userDatabase.getAllDocuments(userId, FirebaseInnerCollection.checkedInEvents).thenAccept(eventList -> {
-            // If there are no signed up events, we are done
-            if (eventList == null) {
-                future.complete(null);
-                return;
+            // Check if this is null
+            if (eventList == null){
+                return null;
             }
 
-            // Go through the list and add all the events
-            for (Map<String, Object> data : eventList) {
-                // Get the event details
-                eventsDatabase.getDataFromFirestore((String) data.get("UID")).thenAccept(eventDetails -> {
-                    // Create a new event
-                    Event newEvent = new Event();
+            // Iterate through the events
+            Event newEvent;
+            for (Map<String, Object> data : eventList){
+                // Create a new event
+                newEvent = new Event();
 
-                    // Set the params
-                    newEvent.setEventId((String) eventDetails.get("UID"));
-                    newEvent.setTitle((String) eventDetails.get("title"));
+                // Get the event details from the database
+                Map<String, Object> eventData = eventsDatabase.getDataFromFirestore((String) data.get("UID")).get();
 
-                    // Add the event to the list
-                    eventDataList.add(newEvent);
+                // Set the params
+                newEvent.setEventId((String) eventData.get("UID"));
+                newEvent.setTitle((String) eventData.get("title"));
 
-                    // If this is the last event, complete the future
-                    if (data.equals(eventList.get(eventList.size() - 1))) {
-                        // Complete the future
-                        future.complete(null);
-                    }
-                });
+                // Add the event to the list
+                EventListActivity.this.eventDataList.add(newEvent);
+
             }
-        });
 
-        // When data loading is complete, notify
-        future.thenAccept(value -> {
-            runOnUiThread(() -> eventAdapter.notifyDataSetChanged());
-        });
+            // All done, notify that dataset has changed
+            runOnUiThread(() -> {
+                EventListActivity.this.eventAdapter.notifyDataSetChanged();
+            });
+
+            return null;
+
+        };
+
+        // Run the task
+        eventsDatabase.callableToCompletableFuture(getDataTask);
+
     }
 
     public void getAllCreatedEvents() {
@@ -326,7 +331,7 @@ public class EventListActivity extends AppCompatActivity {
             for (Map<String, Object> eventData : dataList) {
 
                 // Check if the event is created by the current logged in user
-                if (Objects.equals((String) eventData.get("creatorId"), userId)){
+                if (Objects.equals((String) eventData.get("creatorId"), userId)) {
                     // Create a new event
                     Event newEvent = new Event();
 

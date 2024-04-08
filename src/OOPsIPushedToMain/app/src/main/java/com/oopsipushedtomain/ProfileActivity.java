@@ -252,6 +252,7 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             }
         }
+
     });
 
     /**
@@ -289,6 +290,7 @@ public class ProfileActivity extends AppCompatActivity {
                         });
                     }
                 });
+
 
                 // Set the toggle switch based of the loaded value
                 user.getGeolocation().thenAccept(value -> {
@@ -530,6 +532,7 @@ public class ProfileActivity extends AppCompatActivity {
                     textDialog.show("Edit Email", data);
                 });
             });
+
 
         });
 
