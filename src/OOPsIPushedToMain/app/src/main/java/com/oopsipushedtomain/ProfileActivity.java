@@ -1,29 +1,17 @@
 package com.oopsipushedtomain;
 
 import android.Manifest;
-
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
-import android.media.MediaScannerConnection;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,12 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.DialogFragment;
 
-import com.google.firebase.Firebase;
-import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
@@ -49,17 +32,10 @@ import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.DialogInputListeners.PhonePickerDialog;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Activity for displaying and editing an attendee's profile.
@@ -164,7 +140,7 @@ public class ProfileActivity extends AppCompatActivity {
             // Get the bitmap image
             InputStream finalInputStream = inputStream;
             Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
-
+          
             // Set in the view
             profileImageView.setImageURI(result);
 
@@ -401,13 +377,15 @@ public class ProfileActivity extends AppCompatActivity {
             });
 
             // Get the name of the user
-            user.getName().thenAccept(data -> {
-                runOnUiThread(() -> {
-                    // Show the dialog
-                    textDialog.show("Edit Name", data);
-                    profileUserName = data;
+            if (user != null) {
+                user.getName().thenAccept(data -> {
+                    runOnUiThread(() -> {
+                        // Show the dialog
+                        textDialog.show("Edit Name", data);
+                        profileUserName = data;
+                    });
                 });
-            });
+            }
 
         });
 
@@ -744,10 +722,13 @@ public class ProfileActivity extends AppCompatActivity {
                                // Delete the image from the user
                                 user.deleteProfileImage();
 
-                                // Generate a new one based off the name
-                                if (profileUserName != null){
+                                // Generate a new one based off the name, or clear the ImageView
+                                if (profileUserName != null && !profileUserName.isEmpty()){
                                     CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(profileUserName);
                                     profileImageView.setImageBitmap(generator.createInitialBitmap());
+                                }
+                                else {
+                                    profileImageView.setImageBitmap(null);
                                 }
                             }
                             break;
