@@ -131,8 +131,18 @@ public class EventDetailsActivity extends AppCompatActivity {
             }
         }
     });
+
+    /**
+     * The date formatter
+     */
     private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+    /**
+     * The currently signed in user
+     */
     private User user;
+    /**
+     * Whether the current user is the organizer for this event
+     */
     private boolean userIsOrganizer = false;
     /**
      * Boolean to check if the event poster is the default image

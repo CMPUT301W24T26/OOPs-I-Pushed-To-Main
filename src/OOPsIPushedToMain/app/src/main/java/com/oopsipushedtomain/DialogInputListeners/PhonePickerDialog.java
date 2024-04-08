@@ -11,16 +11,36 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
+/**
+ * A dialog for entering a phone number
+ * Handles formatting
+ */
 public class PhonePickerDialog {
 
+    /**
+     * The conetxt to create the dialog in
+     */
     private Context context;
+    /**
+     * The listener to output to
+     */
     private DialogInputListener listener;
 
+    /**
+     * Creates the class
+     * @param context The context
+     * @param listener The listener to output to
+     */
     public PhonePickerDialog(Context context, DialogInputListener listener) {
         this.context = context;
         this.listener = listener;
     }
 
+    /**
+     * Shows the dialog
+     * @param title The title of the dialog
+     * @param defaultValue The default value of the dialog
+     */
     public void show(String title, String defaultValue) {
         // Create an edit text
         EditText editText = new EditText(context);
@@ -61,6 +81,11 @@ public class PhonePickerDialog {
         editText.requestFocus();
     }
 
+    /**
+     * Formats the phone number
+     * @param phoneNumber The number to format
+     * @return The formatted number
+     */
     public static String formatPhoneNumber(String phoneNumber) {
         if (phoneNumber == null || phoneNumber.length() != 10) {
             return null; // or throw an exception

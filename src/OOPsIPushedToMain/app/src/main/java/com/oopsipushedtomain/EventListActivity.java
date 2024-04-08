@@ -66,10 +66,19 @@ public class EventListActivity extends AppCompatActivity {
      */
     private String userId;
 
+    /**
+     * Access to the event database
+     */
     private FirebaseAccess firebaseAccess;
 
+    /**
+     * The buttons on the layout
+     */
     private Button eventCreateButton, eventSortButton;
 
+    /**
+     * Whether the user is an admin
+     */
     private boolean isAdmin;
 
     /**
@@ -111,6 +120,9 @@ public class EventListActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * When the activity is resumed
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -182,7 +194,9 @@ public class EventListActivity extends AppCompatActivity {
         });
     }
 
-
+    /**
+     * Gets all events from the database
+     */
     private void getAllEvents() {
         // Clear the event list
         eventDataList.clear();
@@ -232,6 +246,9 @@ public class EventListActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Gets all event a user has signed up for
+     */
     private void getAllSignedUpEvents() {
         // Clear the list
         eventDataList.clear();
@@ -287,6 +304,9 @@ public class EventListActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * Get all events the user has checked in to
+     */
     public void getAllCheckedInEvents() {
         // Clear the list
         eventDataList.clear();
@@ -340,6 +360,9 @@ public class EventListActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * Get all the events this user has created
+     */
     public void getAllCreatedEvents() {
         // Clear the event list
         eventDataList.clear();
@@ -386,6 +409,9 @@ public class EventListActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * Get all events (DEPRECIATED)
+     */
     private void fetchEvents() {
         /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").get().addOnCompleteListener(task -> {
@@ -414,6 +440,9 @@ public class EventListActivity extends AppCompatActivity {
     }
 
 
+    /**
+     * Sort all events by date (DEPRECIATED)
+     */
     private void fetchEventsSortedByDate() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").orderBy("startTime", Query.Direction.ASCENDING).get().addOnCompleteListener(task -> {
@@ -431,6 +460,10 @@ public class EventListActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * All events a user has signed up for (DEPRECIATED)
+     * @param userId The user id
+     */
     private void fetchSignedUpEvents(String userId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").whereArrayContains("signedUpAttendees", userId).get().addOnCompleteListener(task -> {
@@ -447,6 +480,10 @@ public class EventListActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Fetches the user events (DEPRECIATED)
+     * @param userId The user id
+     */
     private void fetchUserCreatedEvents(String userId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("events").whereEqualTo("creatorId", userId).get().addOnCompleteListener(task -> {

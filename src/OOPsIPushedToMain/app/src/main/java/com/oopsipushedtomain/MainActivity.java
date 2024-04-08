@@ -47,6 +47,9 @@ public class MainActivity extends AppCompatActivity {
      */
     private User user;
 
+    /**
+     * Access to the database
+     */
     private FirebaseAccess database;
 
     /**
@@ -96,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
 //        getUserFID();
     }
 
+    /**
+     * Finds the user with the given FID
+     * @param fid The fid to find
+     */
     public void findUser(String fid){
         // Check if there are any documents matching the FID
         database.getDataWithFieldEqualTo("fid", fid).thenAccept(dataList -> {

@@ -69,7 +69,14 @@ public class NewEventActivity extends AppCompatActivity {
      */
     private Button newEventCreateButton;
 
+    /**
+     * The date formatter
+     */
     private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+
+    /**
+     * Reference to the events database
+     */
     private FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
     /**
@@ -219,6 +226,10 @@ public class NewEventActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * Checks if the entered details are valid
+     * @return
+     */
     public Boolean checkForValidEvent() {
         // Make sure none of the fields are null
         boolean isReady = true;

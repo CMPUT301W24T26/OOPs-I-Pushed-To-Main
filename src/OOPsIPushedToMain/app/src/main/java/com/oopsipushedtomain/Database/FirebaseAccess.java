@@ -62,6 +62,9 @@ public class FirebaseAccess {
      */
     private FirestoreAccessType databaseType;
 
+    /**
+     * The executor service to run the database calls on
+     */
     private ExecutorService executorService = Executors.newFixedThreadPool(4);
 
 
@@ -501,7 +504,7 @@ public class FirebaseAccess {
         boolean newImage = false;
         if (imageUID == null) {
             // Generate the correct UID for the image
-            switch (imageType){
+            switch (imageType) {
                 case profilePictures:
                 case eventPosters:
                     imageUID = generateNewUID(FirestoreAccessType.IMAGES, null);
@@ -925,8 +928,10 @@ public class FirebaseAccess {
      * The reference to the image is also removed from its origin
      * The image link is also deleted
      *
-     * @param imageUID  The UID of the image to delete
-     * @param imageType The type of image (Ex. promoQRCCode)
+     * @param imageUID     The UID of the image to delete
+     * @param imageType    The type of image (Ex. promoQRCCode)
+     * @param outerDocName The outer document name
+     * @return A future for the delete
      */
     public CompletableFuture<Void> deleteImageFromFirestore(String outerDocName, String imageUID, ImageType imageType) {
         // Check if the database is valid to delete images
@@ -1161,6 +1166,7 @@ public class FirebaseAccess {
     /**
      * This function is callable from any access
      * DELETES ALL DOCUMENTS ACROSS ALL COLLECTIONS
+     * @return A future for the delete
      */
     public CompletableFuture<Void> deleteAllDataInFirestore() {
         // Create an array list of all collections

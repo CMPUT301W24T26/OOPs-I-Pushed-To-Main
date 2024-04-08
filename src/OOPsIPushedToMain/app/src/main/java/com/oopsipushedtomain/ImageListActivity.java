@@ -38,8 +38,14 @@ public class ImageListActivity extends AppCompatActivity {
      */
     private List<ImageInfo> imageInfos = new ArrayList<>();
 
+    /**
+     * The type of the image
+     */
     private ImageType imageType; // Add this field to store the ImageType
 
+    /**
+     * The origin document for the image
+     */
     private String imageOrigin;
 
     /**

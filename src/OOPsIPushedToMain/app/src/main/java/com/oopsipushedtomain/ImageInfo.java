@@ -22,6 +22,9 @@ public class ImageInfo {
      */
     private String firestoreDocumentId;
 
+    /**
+     * The origin document
+     */
     private String origin;
 
     /**
@@ -29,6 +32,7 @@ public class ImageInfo {
      *
      * @param image               The Bitmap representation of the image.
      * @param firestoreDocumentId The Firestore document ID associated with the image. This parameter is optional and can be null.
+     * @param origin The origin document
      */
     public ImageInfo(Bitmap image, String firestoreDocumentId, String origin) {
         this.image = image;

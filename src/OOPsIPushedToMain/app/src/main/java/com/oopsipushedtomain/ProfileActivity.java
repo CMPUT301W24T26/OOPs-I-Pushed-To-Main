@@ -815,6 +815,9 @@ public class ProfileActivity extends AppCompatActivity {
         return this.user;
     }
 
+    /**
+     * Requests notification permissions
+     */
     private void requestNotificationPermission() {
         // Check if they're already enabled, if not, request them
         if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

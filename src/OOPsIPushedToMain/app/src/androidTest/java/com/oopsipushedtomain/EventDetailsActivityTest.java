@@ -22,6 +22,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/**
+ * Tests the event details activity
+ */
 @RunWith(AndroidJUnit4.class)
 public class EventDetailsActivityTest {
 

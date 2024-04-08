@@ -6,16 +6,34 @@ import android.content.DialogInterface;
 import android.view.WindowManager;
 import android.widget.EditText;
 
+/**
+ * Creates a input text dialog and handles the output
+ */
 public class InputTextDialog {
-
+    /**
+     * The context to create the dialog in
+     */
     private Context context;
+    /**
+     * The listener to output the data to
+     */
     private DialogInputListener listener;
 
+    /**
+     * Creates the class
+     * @param context The context
+     * @param listener The listener for output
+     */
     public InputTextDialog(Context context, DialogInputListener listener) {
         this.context = context;
         this.listener = listener;
     }
 
+    /**
+     * Shows the dialog
+     * @param title The title for the dialog
+     * @param defaultValue The default value the dialog starts with
+     */
     public void show(String title, String defaultValue) {
         // Create an edit text
         EditText editText = new EditText(context);

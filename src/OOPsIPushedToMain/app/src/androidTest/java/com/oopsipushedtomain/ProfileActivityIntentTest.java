@@ -57,7 +57,13 @@ import java.util.Locale;
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class ProfileActivityIntentTest {
+    /**
+     * A user reference
+     */
     private User user;
+    /**
+     * The start up delay for the intent
+     */
     private final int startupDelay = 1000;
 
     /**
@@ -65,10 +71,19 @@ public class ProfileActivityIntentTest {
      */
     @Rule
     public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
     @Rule
     public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
     @Rule
     public GrantPermissionRule permissionNotifications = GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS);
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
     @Rule
     public GrantPermissionRule permissionCamera = GrantPermissionRule.grant(Manifest.permission.CAMERA);
 

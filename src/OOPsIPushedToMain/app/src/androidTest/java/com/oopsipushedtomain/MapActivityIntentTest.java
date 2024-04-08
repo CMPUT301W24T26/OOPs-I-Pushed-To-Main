@@ -44,8 +44,17 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class MapActivityIntentTest {
+    /**
+     * A user reference
+     */
     private User user;
+    /**
+     * The eventID reference
+     */
     private String eventId;
+    /**
+     * Firebasee access
+     */
     private FirebaseAccess db;
 
     /**

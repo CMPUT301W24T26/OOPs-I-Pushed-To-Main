@@ -152,6 +152,9 @@ public class FirebaseAccessUnitTest {
     }
 
 
+    /**
+     * Get data from firestore
+     */
     @Test
     public void testGetDataFromFirestore() {
         // Get the outer collection data from Firestore
@@ -183,7 +186,9 @@ public class FirebaseAccessUnitTest {
 
     }
 
-
+    /**
+     * Gets an image from firestore
+     */
     @Test
     public void testGetImageFromFirestore() {
         try {
@@ -209,6 +214,9 @@ public class FirebaseAccessUnitTest {
     }
 
 
+    /**
+     * Deletes data from firestore
+     */
     @Test
     public void testDeleteDataFromFirestore() {
         try {
@@ -366,7 +374,9 @@ public class FirebaseAccessUnitTest {
         }
     }
 
-
+    /**
+     * Deletes all documents from firestore
+     */
     @Test
     public void testDeleteAllDocumentsFromFirestore() {
         try {
@@ -539,6 +549,9 @@ public class FirebaseAccessUnitTest {
         }
     }
 
+    /**
+     * Cleans up the database after testing
+     */
     @After
     public void cleanUpDatabase() {
         try {

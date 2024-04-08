@@ -28,6 +28,9 @@ import android.Manifest;
 import android.content.Intent;
 import android.provider.MediaStore;
 
+/**
+ * Tests profile activity
+ */
 @RunWith(AndroidJUnit4.class)
 public class ProfileActivityTest {
 
@@ -36,15 +39,26 @@ public class ProfileActivityTest {
      */
     @Rule
     public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
     @Rule
     public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+    /**
+     * Manually request all permissions so that the dialogs don't appear
+     */
     @Rule
     public GrantPermissionRule permissionNotifications = GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS);
-
+    /**
+     * Start the activity
+     */
     @Rule
     public ActivityScenarioRule<ProfileActivity> activityRule =
             new ActivityScenarioRule<>(ProfileActivity.class);
 
+    /**
+     * Test updating the name
+     */
     @Test
     public void testUpdateName() {
         // Simulate a user clicking on the name field to bring up the edit dialog
@@ -61,6 +75,9 @@ public class ProfileActivityTest {
         onView(withId(R.id.nameTextView)).check(matches(withText("New Name")));
     }
 
+    /**
+     * Test updating the nickname
+     */
     @Test
     public void testUpdateNickname() {
         onView(withId(R.id.nicknameTextView)).perform(click());
@@ -70,6 +87,9 @@ public class ProfileActivityTest {
         onView(withId(R.id.nicknameTextView)).check(matches(withText("New Nickname")));
     }
 
+    /**
+     * Test updating the birthday
+     */
     @Test
     public void testUpdateBirthday() {
         onView(withId(R.id.birthdayValueTextView)).perform(click());
@@ -79,6 +99,9 @@ public class ProfileActivityTest {
         onView(withId(R.id.birthdayValueTextView)).check(matches(withText("01/01/2000")));
     }
 
+    /**
+     * Test updating the addres
+     */
     @Test
     public void testUpdateAddress() {
         onView(withId(R.id.addressValueTextView)).perform(click());
@@ -88,6 +111,9 @@ public class ProfileActivityTest {
         onView(withId(R.id.addressValueTextView)).check(matches(withText("123 New Address")));
     }
 
+    /**
+     * Test update hompage
+     */
     @Test
     public void testUpdateHomepage() {
         onView(withId(R.id.homepageValueTextView)).perform(click());
@@ -97,6 +123,9 @@ public class ProfileActivityTest {
         onView(withId(R.id.homepageValueTextView)).check(matches(withText("https://newhomepage.com")));
     }
 
+    /**
+     * Test update phone number
+     */
     @Test
     public void testUpdatePhoneNumber() {
         onView(withId(R.id.phoneNumberValueTextView)).perform(click());
@@ -106,6 +135,9 @@ public class ProfileActivityTest {
         onView(withId(R.id.phoneNumberValueTextView)).check(matches(withText("9876543210")));
     }
 
+    /**
+     * Test update email
+     */
     @Test
     public void testUpdateEmail() {
         onView(withId(R.id.emailValueTextView)).perform(click());
@@ -119,6 +151,9 @@ public class ProfileActivityTest {
 //    public ActivityScenarioRule<ProfileActivity> activityRule =
 //            new ActivityScenarioRule<>(ProfileActivity.class);
 
+    /**
+     * Test launching camera
+     */
     @Test
     public void testCameraIntentIsLaunched() {
         Intents.init();
@@ -127,6 +162,9 @@ public class ProfileActivityTest {
         Intents.release();
     }
 
+    /**
+     * Test launching gallery
+     */
     @Test
     public void testGalleryIntentIsLaunched() {
         Intents.init();
