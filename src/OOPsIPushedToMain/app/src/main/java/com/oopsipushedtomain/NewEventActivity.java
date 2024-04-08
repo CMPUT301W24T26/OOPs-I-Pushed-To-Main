@@ -8,17 +8,24 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.DialogInputListeners.CustomDateTimePickerDialog;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 
 /**
  * NewEventActivity facilitates the creation of new events by organizers. It provides a form
@@ -36,37 +43,33 @@ import java.util.Map;
 public class NewEventActivity extends AppCompatActivity {
 
     /**
-     * The view of the event title
+     * The edit texts for the title, description and attendee limit
      */
-    private EditText newEventTitleEdit;
+    private EditText newEventTitleEdit, newEventDescriptionEdit, newEventAttendeeLimitEdit;
+
     /**
-     * The view of the event start time
+     * The Text view for the start and end times
      */
-    private EditText newEventStartTimeEdit;
+    private TextView newEventStartTimeEdit, newEventEndTimeEdit;
+
     /**
-     * The view of the event end time
+     * The buttons for editing the start and end time
      */
-    private EditText newEventEndTimeEdit;
-    /**
-     * The view of the event end time
-     */
-    private EditText newEventDescriptionEdit;
-    /**
-     * The view of the event poster
-     */
-    private ImageView newEventPosterEdit;
-    /**
-     * The view of the attendee limit for the event
-     */
-    private EditText newEventAttendeeLimitEdit;
+    private Button startTimeButton, endTimeButton;
+
+
     /**
      * The UID of the creator
      */
     private String creatorId;
+
     /**
      * The reference to the create event button
      */
     private Button newEventCreateButton;
+
+    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm a");
+    private FirebaseAccess database = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
     /**
      * Initializes all parameters of this class including the click listeners and database
@@ -80,9 +83,133 @@ public class NewEventActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_event);
 
-        initializeViews();
+        // Set the database
 
-        setupListeners();
+
+        // The event details
+        newEventTitleEdit = findViewById(R.id.new_event_title_e);
+        newEventStartTimeEdit = findViewById(R.id.new_event_start_time_e);
+        newEventEndTimeEdit = findViewById(R.id.new_event_end_time_e);
+        newEventDescriptionEdit = findViewById(R.id.new_event_description_e);
+        newEventAttendeeLimitEdit = findViewById(R.id.new_event_attendee_limit_e);
+
+        // The time edit buttons
+        startTimeButton = findViewById(R.id.edit_event_start_button);
+        endTimeButton = findViewById(R.id.edit_event_end_button);
+
+        // The create new event button
+        newEventCreateButton = findViewById(R.id.btnCreateNewEvent);
+
+        /*
+            Click listeners
+         */
+        // Start time button
+        startTimeButton.setOnClickListener(v -> {
+            // This should be a date picker
+            CustomDateTimePickerDialog datePickerDialog = new CustomDateTimePickerDialog(this, input -> {
+                // Convert the input to a date
+                Date inputDate = (Date) input;
+
+                // Format the given date, ChatGPT: How do i format a string into date
+                String startDateString = formatter.format(inputDate);
+
+                // Print the date to the screen
+                newEventStartTimeEdit.setText(startDateString);
+
+            });
+            datePickerDialog.show("Edit Start Date/Time", new Date());
+
+        });
+
+        // End time button
+        endTimeButton.setOnClickListener(v -> {
+            // This should be a date picker
+            CustomDateTimePickerDialog datePickerDialog = new CustomDateTimePickerDialog(this, input -> {
+                // Convert the input to a date
+                Date inputDate = (Date) input;
+
+                // Format the given date, ChatGPT: How do i format a string into date
+                String startDateString = formatter.format(inputDate);
+
+                // Print the date to the screen
+                newEventEndTimeEdit.setText(startDateString);
+
+
+            });
+            datePickerDialog.show("Edit Start Date/Time", new Date());
+
+        });
+
+        // Create button
+        newEventCreateButton.setOnClickListener(v -> {
+            // Check for valid event details
+            if (!checkForValidEvent()) {
+                // Do not create a new event yet
+                Toast.makeText(NewEventActivity.this, "Some event details are missing", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // Date storage
+            Date date = null;
+
+            // Create a new event
+            Event newEvent = new Event();
+
+            // Title
+            newEvent.setTitle(newEventTitleEdit.getText().toString());
+
+            // Start time
+            try {
+                date = formatter.parse(newEventStartTimeEdit.getText().toString());
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+            newEvent.setStartTime(date);
+
+            // End time
+            date = null;
+            try {
+                date = formatter.parse(newEventEndTimeEdit.getText().toString());
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+            newEvent.setEndTime(date);
+
+
+            // Set the description
+            newEvent.setDescription(newEventDescriptionEdit.getText().toString());
+
+            // Attendee limit
+            if (newEventAttendeeLimitEdit.getText().toString().isEmpty() || newEventAttendeeLimitEdit.getText() == null){
+                newEvent.setAttendeeLimit(0);
+            } else {
+                newEvent.setAttendeeLimit(Integer.parseInt(newEventAttendeeLimitEdit.getText().toString()));
+            }
+
+            // User ID
+            newEvent.setCreatorId(creatorId);
+
+
+            // Update the event in the database
+            newEvent.addEventToDatabase();
+
+            // Show confirmation
+            Toast.makeText(NewEventActivity.this, "Event has been created", Toast.LENGTH_SHORT).show();
+
+            // Move to the event details page
+            Intent intent = new Intent(NewEventActivity.this, EventDetailsActivity.class);
+            intent.putExtra("userId", creatorId);
+            intent.putExtra("selectedEventId", newEvent.getEventId());
+
+            // Start the activity
+            startActivity(intent);
+
+            // Close this page
+            finish();
+
+        });
+
+
         // Retrieve the userId passed from EventListActivity
         Intent intent = getIntent();
         if (intent != null) {
@@ -91,70 +218,52 @@ public class NewEventActivity extends AppCompatActivity {
 
     }
 
-    /**
-     * Sets all of the references to views in the class
-     */
-    private void initializeViews() {
-        newEventTitleEdit = findViewById(R.id.new_event_title_e);
-        newEventStartTimeEdit = findViewById(R.id.new_event_start_time_e);
-        newEventEndTimeEdit = findViewById(R.id.new_event_end_time_e);
-        newEventDescriptionEdit = findViewById(R.id.new_event_description_e);
-        newEventPosterEdit = findViewById(R.id.newEventPosterImageViewEdit);
-        newEventAttendeeLimitEdit = findViewById(R.id.new_event_attendee_limit_e);
-        newEventCreateButton = findViewById(R.id.btnCreateNewEvent);
+    public Boolean checkForValidEvent() {
+        // Make sure none of the fields are null
+        boolean isReady = true;
 
-        newEventStartTimeEdit.setOnClickListener(v -> showDateTimePicker(newEventStartTimeEdit));
-        newEventEndTimeEdit.setOnClickListener(v -> showDateTimePicker(newEventEndTimeEdit));
-    }
 
-    /**
-     * Sets all of the on click listeners for the class
-     */
-    private void setupListeners() {
-        newEventPosterEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // Intent to start a new activity
-                //Intent intent = new Intent(EventDetailsActivityOrganizer.this, ImageDetailsActivity.class);
-                //startActivity(intent);
+        // Title
+        if (newEventTitleEdit.getText() == null){
+            isReady = false;
+        };
+
+        // Start time
+        if (newEventStartTimeEdit.getText() == null){
+            isReady = false;
+        } else {
+            try {
+                formatter.parse(newEventStartTimeEdit.getText().toString());
+            } catch (ParseException e) {
+                isReady = false;
             }
-        });
+        }
 
-        newEventCreateButton.setOnClickListener(v -> {
-            // Capture input from user
-            String title = newEventTitleEdit.getText().toString();
-            String startTime = newEventStartTimeEdit.getText().toString();
-            String endTime = newEventEndTimeEdit.getText().toString();
-            String description = newEventDescriptionEdit.getText().toString();
-            String attendeeLimitStr = newEventAttendeeLimitEdit.getText().toString();
-            int attendeeLimit = attendeeLimitStr.isEmpty() ? 0 : Integer.parseInt(attendeeLimitStr);
-            // TODO: Add functionality for location, posterURL
-            Event newEvent = new Event(title, startTime, endTime, description, "testlocation", "testURL", attendeeLimit, creatorId);
-            newEvent.addEventToDatabase();
-            finish();
-            //Intent intent = new Intent(NewEventActivity.this, EventDetailsActivity.class);
-            //startActivity(intent);
-        });
+        // End time
+        if (newEventEndTimeEdit.getText() == null){
+            isReady = false;
+        } else {
+            try {
+                formatter.parse(newEventEndTimeEdit.getText().toString());
+            } catch (ParseException e) {
+                isReady = false;
+            }
+        }
+
+        // Set the description
+       if (newEventDescriptionEdit.getText() == null){
+           isReady = false;
+       };
+
+
+        // Return the correct result
+        if (isReady){
+            // Event is ready
+            return true;
+        } else {
+            // Event is not ready
+            return false;
+        }
     }
 
-    /**
-     * Shows a date time picker
-     *
-     * @param editText The edit text you are editing
-     */
-    private void showDateTimePicker(final EditText editText) {
-        Calendar currentDate = Calendar.getInstance();
-        new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-            Calendar time = Calendar.getInstance();
-            new TimePickerDialog(this, (view1, hourOfDay, minute) -> {
-                time.set(Calendar.YEAR, year);
-                time.set(Calendar.MONTH, month);
-                time.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                time.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                time.set(Calendar.MINUTE, minute);
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                editText.setText(dateFormat.format(time.getTime()));
-            }, currentDate.get(Calendar.HOUR_OF_DAY), currentDate.get(Calendar.MINUTE), false).show();
-        }, currentDate.get(Calendar.YEAR), currentDate.get(Calendar.MONTH), currentDate.get(Calendar.DATE)).show();
-    }
 }

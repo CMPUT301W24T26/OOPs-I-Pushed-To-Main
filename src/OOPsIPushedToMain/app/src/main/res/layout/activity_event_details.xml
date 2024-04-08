@@ -10,40 +10,60 @@
         android:id="@+id/EventDetailsOrganizer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="10sp"
         android:text="Event Details"
         android:textSize="36sp"
-        android:layout_margin="10sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/eventPosterImageViewEdit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="20sp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_margin="20dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/default_event_poser"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@tools:sample/avatars" />
+        app:layout_constraintStart_toEndOf="@id/EventDetailsOrganizer"
+        app:layout_constraintTop_toBottomOf="@id/EventDetailsOrganizer"
+        app:strokeColor="?attr/colorAccent"
+        app:strokeWidth="5dp" />
 
     <TextView
         android:id="@+id/event_details_organizer_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32sp"
         android:layout_marginStart="15sp"
+        android:layout_marginTop="32sp"
         android:text="Event Title"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/EventDetailsOrganizer" />
 
-    <EditText
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/edit_event_title_button"
+        android:layout_width="45dp"
+        android:layout_height="0sp"
+        android:layout_marginStart="10sp"
+        android:padding="0sp"
+        android:text="Edit"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/event_details_organizer_title"
+        app:layout_constraintStart_toEndOf="@id/event_details_organizer_title"
+        app:layout_constraintTop_toTopOf="@id/event_details_organizer_title" />
+
+    <TextView
         android:id="@+id/event_details_organizer_title_e"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="5sp"
+        android:layout_marginEnd="10sp"
         android:hint="Event Title"
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
-        app:layout_constraintTop_toBottomOf="@id/event_details_organizer_title" />
+        app:layout_constraintTop_toBottomOf="@id/event_details_organizer_title"
+        app:layout_constraintEnd_toStartOf="@id/eventPosterImageViewEdit"/>
 
     <TextView
         android:id="@+id/event_details_organizer_start_time"
@@ -55,11 +75,26 @@
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
         app:layout_constraintTop_toBottomOf="@id/event_details_organizer_title_e" />
 
-    <EditText
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/edit_event_start_button"
+        android:layout_width="45dp"
+        android:layout_height="0sp"
+        android:layout_marginStart="10sp"
+        android:padding="0sp"
+        android:text="Edit"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/event_details_organizer_start_time"
+        app:layout_constraintStart_toEndOf="@id/event_details_organizer_start_time"
+        app:layout_constraintTop_toTopOf="@id/event_details_organizer_start_time" />
+
+    <TextView
         android:id="@+id/event_details_organizer_start_time_e"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="5sp"
         android:hint="Start Date/Time"
+        android:inputType="none"
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
         app:layout_constraintTop_toBottomOf="@id/event_details_organizer_start_time" />
@@ -74,11 +109,26 @@
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
         app:layout_constraintTop_toBottomOf="@id/event_details_organizer_start_time_e" />
 
-    <EditText
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/edit_event_end_button"
+        android:layout_width="45dp"
+        android:layout_height="0sp"
+        android:layout_marginStart="10sp"
+        android:padding="0sp"
+        android:text="Edit"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/event_details_organizer_end_time"
+        app:layout_constraintStart_toEndOf="@id/event_details_organizer_end_time"
+        app:layout_constraintTop_toTopOf="@id/event_details_organizer_end_time" />
+
+    <TextView
         android:id="@+id/event_details_organizer_end_time_e"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="5sp"
         android:hint="End Date/Time"
+        android:inputType="datetime"
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
         app:layout_constraintTop_toBottomOf="@+id/event_details_organizer_end_time" />
@@ -88,88 +138,118 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="18sp"
+        android:inputType="datetime"
         android:text="Description"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
         app:layout_constraintTop_toBottomOf="@+id/event_details_organizer_end_time_e" />
 
-    <EditText
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/edit_event_description_button"
+        android:layout_width="45dp"
+        android:layout_height="0sp"
+        android:layout_marginStart="10sp"
+        android:padding="0sp"
+        android:text="Edit"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/event_details_organizer_description"
+        app:layout_constraintStart_toEndOf="@id/event_details_organizer_description"
+        app:layout_constraintTop_toTopOf="@id/event_details_organizer_description" />
+
+    <TextView
         android:id="@+id/event_details_organizer_description_e"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="5sp"
         android:hint="Description"
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
         app:layout_constraintTop_toBottomOf="@id/event_details_organizer_description" />
 
-    <Button
-        android:id="@+id/btnSaveEventDetails"
+    <LinearLayout
+        android:id="@+id/save_delete_buttons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:backgroundTint="#009688"
-        android:text="Save"
-        android:textSize="18sp"
-        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/event_details_organizer_description_e" />
+        app:layout_constraintTop_toBottomOf="@id/event_details_organizer_description_e">
+
+        <Button
+            android:id="@+id/btnSaveEventDetails"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="20sp"
+            android:backgroundTint="?attr/colorAccent"
+            android:text="Save"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnDeleteEvent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/red"
+            android:text="Delete Event"
+            android:textSize="18sp"
+            android:visibility="gone" />
+
+    </LinearLayout>
 
 
     <TextView
         android:id="@+id/event_details_organizer_event_stats"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Event Statistics"
-        android:textSize="18sp"
+        android:layout_marginTop="50dp"
+        android:text="Event Options"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
-        app:layout_constraintTop_toBottomOf="@+id/btnSaveEventDetails" />
+        app:layout_constraintTop_toBottomOf="@+id/save_delete_buttons" />
 
     <LinearLayout
         android:id="@+id/announcementButtonLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="8sp"
+        android:orientation="horizontal"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:layout_marginTop="8sp"
-        app:layout_constraintTop_toBottomOf="@+id/event_details_organizer_event_stats"
-        android:orientation="horizontal">
+        app:layout_constraintTop_toBottomOf="@+id/event_details_organizer_event_stats">
+
         <Button
             android:id="@+id/btnSendNotification"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="4sp"
-            android:backgroundTint="#3F51B5"
+            android:layout_marginEnd="20sp"
             android:text="Send Announcement"
+            android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/event_details_organizer_event_stats" />
 
         <Button
             android:id="@+id/btnViewAnnouncements"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="4sp"
-            android:backgroundTint="#3F51B5"
             android:text="View Announcements"
-            app:layout_constraintTop_toBottomOf="@id/btnSendNotification"/>
+            app:layout_constraintTop_toBottomOf="@id/btnSendNotification" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/eventButtons1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="8sp"
+        android:orientation="horizontal"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-
-        app:layout_constraintTop_toBottomOf="@+id/announcementButtonLayout"
-        android:orientation="horizontal">
+        app:layout_constraintTop_toBottomOf="@+id/announcementButtonLayout">
 
         <Button
             android:id="@+id/btnViewPromoQRCode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="#3F51B5"
-            android:layout_marginStart="4sp"
             android:text="Event Promo Code"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -179,70 +259,63 @@
             android:id="@+id/btnViewEventQRCode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4sp"
-            android:backgroundTint="#3F51B5"
+            android:layout_marginStart="20sp"
             android:text="Event Check-In Code"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnViewLimitAttendees" />
-
+            app:layout_constraintStart_toStartOf="parent"/>
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/eventButtons2"
+    <Button
+        android:id="@+id/btnViewMap"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="8sp"
+        android:backgroundTint="?attr/colorAccent"
+        android:text="Check-In Map"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/eventButtons1" />
+
+    <LinearLayout
+        android:id="@+id/attendees_buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/eventButtons1"
-        android:orientation="horizontal">
-        <Button
-            android:id="@+id/btnViewMap"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#673AB7"
-            android:text="Check-In Map"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/eventButtons1" />
+        app:layout_constraintTop_toBottomOf="@+id/btnViewMap">
 
         <Button
-            android:id="@+id/btnDeleteEvent"
+            android:id="@+id/btnViewCheckedIn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4sp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#673AB7"
-            android:text="Delete Event"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnViewMap" />
+            android:layout_marginTop="8sp"
+            android:layout_marginBottom="8sp"
+            android:visibility="gone"
+            android:text="View Checked In" />
+
+        <Button
+            android:id="@+id/btnViewSignedUp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20sp"
+            android:layout_marginTop="8sp"
+            android:layout_marginBottom="8sp"
+            android:visibility="gone"
+            android:text="View Signed Up" />
     </LinearLayout>
 
     <Button
         android:id="@+id/btnSignUpEvent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:backgroundTint="#3F51B5"
+        android:layout_margin="8sp"
+        android:backgroundTint="?attr/colorAccent"
         android:text="Sign Up"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnViewLimitAttendees" />
-
-    <Button
-        android:id="@+id/btnViewLimitAttendees"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="#3F51B5"
-        android:layout_marginStart="4sp"
-        android:text="View/Limit Attendees"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/eventButtons2" />
-
-
-
-
+        app:layout_constraintTop_toBottomOf="@id/attendees_buttons" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

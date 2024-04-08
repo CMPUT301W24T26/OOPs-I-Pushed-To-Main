@@ -1,29 +1,17 @@
 package com.oopsipushedtomain;
 
 import android.Manifest;
-
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
-import android.media.MediaScannerConnection;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,12 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.DialogFragment;
 
-import com.google.firebase.Firebase;
-import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
@@ -49,17 +32,10 @@ import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.DialogInputListeners.PhonePickerDialog;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Activity for displaying and editing an attendee's profile.
@@ -126,7 +102,7 @@ public class ProfileActivity extends AppCompatActivity {
      */
     private String profileUserName;
     /**
-     * Get the image from the camera
+     * The result launcher for getting the photo taken with the camera
      */
     private final ActivityResultLauncher<Intent> cameraResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -150,48 +126,39 @@ public class ProfileActivity extends AppCompatActivity {
     );
 
     /**
-     * Getting the result from the photo gallery for image upload
+     * The result launcher for getting the photo from the gallery
      */
-    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(
-            new ActivityResultContracts.GetContent(),
-            result -> {
-                if (result != null) {
-                    // Handle the selected image URI
-                    InputStream inputStream = null;
-                    try {
-                        inputStream = getContentResolver().openInputStream(result);
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                    // Get the bitmap image
-                    InputStream finalInputStream = inputStream;
-                    Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
-
-                    // Set in the view
-                    profileImageView.setImageURI(result);
-
-                    // Update the user
-                    if (user != null) {
-                        // Set the new profile image
-                        user.setProfileImage(picture);
-                    } else {
-                        Log.d("ProfileActivity", "User object is null");
-                    }
-
-                }
+    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), result -> {
+        if (result != null) {
+            // Handle the selected image URI
+            InputStream inputStream = null;
+            try {
+                inputStream = getContentResolver().openInputStream(result);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
             }
-    );
+            // Get the bitmap image
+            InputStream finalInputStream = inputStream;
+            Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
+          
+            // Set in the view
+            profileImageView.setImageURI(result);
 
-    /**
-     * The reference to the image drawable
-     */
-    private Drawable defaultImage;
+            // Update the user
+            if (user != null) {
+                // Set the new profile image
+                user.setProfileImage(picture);
+            } else {
+                Log.d("ProfileActivity", "User object is null");
+            }
+
+        }
+    });
 
     /**
      * The UID of the user
      */
     private String userId; // Get from bundle
-
     /**
      * Activity result launcher for getting the result of the QRCodeScan
      * Performs the correct action depending on the type of QR code scanned.
@@ -267,13 +234,16 @@ public class ProfileActivity extends AppCompatActivity {
                                 break;
                             case "adminQRCode":
                                 runOnUiThread(() -> {
-                                    Log.d("QRScanner","The User is now an admin!!");
+                                    // Show confirmation
+                                    Toast.makeText(getApplicationContext(), "Congratulations! You are now an Admin!", Toast.LENGTH_LONG).show();
+
+                                    // Make the user an admin
+                                    user.makeAdmin();
+
+                                    // Show the admin button
+                                    adminButton.setVisibility(View.VISIBLE);
                                 });
-
-                                // Make the user an admin
-                                // TODO: Update user to support account types
                                 break;
-
                         }
                     });
                 } else {
@@ -282,6 +252,7 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             }
         }
+
     });
 
     /**
@@ -309,8 +280,17 @@ public class ProfileActivity extends AppCompatActivity {
                 // Update the views on the new data
                 updateUIElements();
 
-                // TODO: Implement a proper sign in feature
-                CustomFirebaseAuth.getInstance().signIn(userId);  // a mock-up sign in feature
+
+                // Check if the user has admin access
+                user.isAdmin().thenAccept(admin -> {
+                    if (!admin) {
+                        runOnUiThread(() -> {
+                            // Hide the admin button if they are not an Admin
+                            adminButton.setVisibility(View.GONE);
+                        });
+                    }
+                });
+
 
                 // Set the toggle switch based of the loaded value
                 user.getGeolocation().thenAccept(value -> {
@@ -318,12 +298,10 @@ public class ProfileActivity extends AppCompatActivity {
                         toggleGeolocationSwitch.setChecked(value);
 
                         // Request location permissions
-                        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                                ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
                             // At least one of the permissions are not granted, request them
-                            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+                            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
 
                         } else {
                             requestNotificationPermission();
@@ -372,10 +350,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Profile pictures
         profileImageView = findViewById(R.id.profileImageView);
-        // Get the default profile picture
-        defaultImage = profileImageView.getDrawable();
-        // TODO: set default profile picture to the generated picture and compare with current
-        // TODO: OR just get rid of the logic altogether. Just have a 3-option menu
         // if you don't like your colour, it'll generate a new one
 
         /*
@@ -391,6 +365,7 @@ public class ProfileActivity extends AppCompatActivity {
                     user.setName((String) input);
                     profileUserName = (String) input;
 
+                    // If the user does not have an uploaded profile picture, generate a new one
                     user.getProfileImage().thenAccept(image -> {
                         if (image == null){
                             // Generate a new image
@@ -402,13 +377,15 @@ public class ProfileActivity extends AppCompatActivity {
             });
 
             // Get the name of the user
-            user.getName().thenAccept(data -> {
-                runOnUiThread(() -> {
-                    // Show the dialog
-                    textDialog.show("Edit Name", data);
-                    profileUserName = data;
+            if (user != null) {
+                user.getName().thenAccept(data -> {
+                    runOnUiThread(() -> {
+                        // Show the dialog
+                        textDialog.show("Edit Name", data);
+                        profileUserName = data;
+                    });
                 });
-            });
+            }
 
         });
 
@@ -456,8 +433,7 @@ public class ProfileActivity extends AppCompatActivity {
                     Date defaultDate;
                     if (data == null) {
                         defaultDate = new Date();
-                    } else
-                        defaultDate = data;
+                    } else defaultDate = data;
 
                     // Show the dialog
                     datePickerDialog.show("Edit Birthday", defaultDate);
@@ -557,11 +533,17 @@ public class ProfileActivity extends AppCompatActivity {
                 });
             });
 
+
         });
 
 
         // Set up click listeners for the buttons
         eventsButton.setOnClickListener(view -> {
+//            Intent intent = new Intent(ProfileActivity.this, EventDetailsActivity.class);
+//            intent.putExtra("selectedEventId", "EVNT-B8W8HSRH2JESXEQ8URR9");
+//            intent.putExtra("userId", userId); // Assuming userId is the ID of the current user
+//            startActivity(intent);
+
             Intent intent = new Intent(ProfileActivity.this, EventListActivity.class);
             intent.putExtra("userId", user.getUID()); // Assuming userId is the ID of the current user
             startActivity(intent);
@@ -586,6 +568,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     /**
      * Updates the user elements on the UI
+     * Only called when the user is first loaded
      */
     private void updateUIElements() {
 
@@ -594,6 +577,7 @@ public class ProfileActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 // Update the fields
                 if (name != null) {
+                    this.profileUserName = name;
                     nameValue.setText(name);
                 }
             });
@@ -693,23 +677,15 @@ public class ProfileActivity extends AppCompatActivity {
      * Handles updating the profile picture when the profile image is clicked
      */
     public void handleProfileImageClick() {
-        // Get the current profile image
-//        Drawable currentImage = profileImageView.getDrawable();
-//        boolean isDefaultImage = currentImage.equals(defaultImage);
-
         // Build a new alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
         builder.setTitle("Update Profile Image");
-
-        // If the current image is the default image, don't show the delete option
-//        if (isDefaultImage) {
-            // Set the items in the dialog
+        // Show possible options for user image customization
         builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
                 // Set the listener for the selection on the dialog
                 (dialog, which) -> {
                     switch (which) {
-                        // Take a photo using the camera
-                        case 0: // Take Photo
+                        case 0: // Take a photo using the camera
                             // Check for camera permissions
                             if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                                 // Permission is not granted, request permissions
@@ -719,7 +695,7 @@ public class ProfileActivity extends AppCompatActivity {
                                 cameraEnabled = true;
                             }
 
-                            // Perform the proper action
+                            // Perform the camera operation
                             if (cameraEnabled) {
                                 // Open the camera
                                 Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -740,42 +716,22 @@ public class ProfileActivity extends AppCompatActivity {
 
                         case 2: // Delete Photo
                             if (user != null) {
+                               // Delete the image from the user
                                 user.deleteProfileImage();
 
-                                // Generate a new one based off the name
-                                if (profileUserName != null){
+                                // Generate a new one based off the name, or clear the ImageView
+                                if (profileUserName != null && !profileUserName.isEmpty()){
                                     CustomProfilePictureGenerator generator = new CustomProfilePictureGenerator(profileUserName);
                                     profileImageView.setImageBitmap(generator.createInitialBitmap());
+                                }
+                                else {
+                                    profileImageView.setImageBitmap(null);
                                 }
                             }
                             break;
                     }
                 });
         builder.show();
-//        } else {
-//            builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
-//                    new DialogInterface.OnClickListener() {
-//                        @Override
-//                        public void onClick(DialogInterface dialog, int which) {
-//                            switch (which) {
-//                                case 0: // Take Photo
-//                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//                                    cameraResultLauncher.launch(cameraIntent);
-//                                    break;
-//                                case 1: // Choose from Gallery
-//                                    galleryResultLauncher.launch("image/*");
-//                                    break;
-//                                case 2: // Delete Photo
-//                                    if (user != null) {
-//                                        user.deleteProfileImage();
-//                                        // TODO: Set default image back to generator picture
-////                                        profileImageView.setImageDrawable(defaultImage);
-//                                        setAvatarInitial(profileUserName);
-//                                    }
-//                                    break;
-//                            }
-//                        }
-//                    });
     }
 
     // ChatGPT: How do I request location permission in android?
@@ -785,12 +741,10 @@ public class ProfileActivity extends AppCompatActivity {
      */
     private void handleGeolocationToggled() {
         // Check for geolocation permissions
-        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             // At least one of the permissions are not granted, request them
-            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+            ActivityCompat.requestPermissions(ProfileActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
 
         } else {
             locationEnabled = true;
@@ -839,9 +793,7 @@ public class ProfileActivity extends AppCompatActivity {
                 return;
             }
             case MY_PERMISSIONS_REQUEST_LOCATION: {
-                if (grantResults.length > 0
-                        && (grantResults[0] == PackageManager.PERMISSION_GRANTED
-                        || grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
+                if (grantResults.length > 0 && (grantResults[0] == PackageManager.PERMISSION_GRANTED || grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
                     // At least one was granted
                     locationEnabled = true;
                 } else {
@@ -854,20 +806,6 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Shows the edit field dialog for a field on the page using its current value
-     *
-     * @param fieldName  The field we are editing
-     * @param fieldValue The value of the field
-     */
-    public void showEditFieldDialog(String fieldName, String fieldValue) {
-        DialogFragment dialog = new EditFieldDialogFragment();
-        Bundle args = new Bundle();
-        args.putString("fieldName", fieldName);
-        args.putString("fieldValue", fieldValue);
-        dialog.setArguments(args);
-        dialog.show(getSupportFragmentManager(), "EditFieldDialogFragment");
-    }
 
     /**
      * Gets the current user. Used for intent testing (Announcements)

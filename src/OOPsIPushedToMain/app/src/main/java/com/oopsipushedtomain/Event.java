@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -17,6 +18,7 @@ import com.oopsipushedtomain.Database.ImageType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,7 @@ public class Event implements Serializable {
     /**
      * The UID of the event
      */
-    private String eventId;
+    private String eventId = null;
     /**
      * The title of the event
      */
@@ -41,11 +43,11 @@ public class Event implements Serializable {
     /**
      * The start time of the event
      */
-    private String startTime;
+    private Date startTime;
     /**
      * The end time of the event
      */
-    private String endTime;
+    private Date endTime;
     /**
      * The event description
      */
@@ -104,6 +106,8 @@ public class Event implements Serializable {
 
     private FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
 
+    Timestamp tempTimestamp = null;
+
 
     /**
      * Constructs a new Event instance.
@@ -113,18 +117,15 @@ public class Event implements Serializable {
      * @param endTime       The end time of the event.
      * @param description   A description of the event.
      * @param location      The location of the event.
-     * @param posterUrl     The URL to an image for the event.
      * @param attendeeLimit The maximum number of attendees for the event. Use 0 or a negative number to indicate no limit.
      */
-    public Event(String title, String startTime, String endTime, String description, String location, String posterUrl, int attendeeLimit, String creatorId) {
+    public Event(String title, Date startTime, Date endTime, String description, String location,  int attendeeLimit, String creatorId) {
         this.title = title;
         this.startTime = startTime;
         this.endTime = endTime;
         this.description = description;
         this.location = location; // Optional
-        this.posterUrl = posterUrl;
         this.attendeeLimit = attendeeLimit; // Optional
-        this.signedUpAttendees = new ArrayList<>(); // Initialize attendees list
         this.creatorId = creatorId;
     }
 
@@ -138,19 +139,16 @@ public class Event implements Serializable {
      * @param endTime       The end time of the event.
      * @param description   A description of the event.
      * @param location      The location of the event.
-     * @param posterUrl     The URL to an image for the event.
      * @param attendeeLimit The maximum number of attendees for the event. Use 0 or a negative number to indicate no limit.
      */
-    public Event(String eventId, String title, String startTime, String endTime, String description, String location, String posterUrl, int attendeeLimit, String creatorId) {
+    public Event(String eventId, String title, Date startTime, Date endTime, String description, String location, int attendeeLimit, String creatorId) {
         this.eventId = eventId;
         this.title = title;
         this.startTime = startTime;
         this.endTime = endTime;
         this.description = description;
         this.location = location; // Optional
-        this.posterUrl = posterUrl;
         this.attendeeLimit = attendeeLimit; // Optional
-        this.signedUpAttendees = new ArrayList<>(); // Initialize attendees list
         this.creatorId = creatorId;
     }
 
@@ -163,11 +161,23 @@ public class Event implements Serializable {
     public Event(Map<String, Object> properties) {
         this.eventId = (String) properties.get("eventId");
         this.title = (String) properties.get("title");
-        this.startTime = (String) properties.get("startTime");
-        this.endTime = (String) properties.get("endTime");
+
+
+        if (properties.get("startTime") != null) {
+            this.startTime = ((Timestamp) properties.get("startTime")).toDate();
+        } else {
+            this.startTime = new Date();
+        }
+
+        if (properties.get("endTime") != null) {
+            this.endTime = ((Timestamp) properties.get("endTime")).toDate();
+        } else {
+            this.endTime = new Date();
+        }
+
+
         this.description = (String) properties.get("description");
         this.location = (String) properties.get("location");
-        this.posterUrl = (String) properties.get("posterUrl");
         this.attendeeLimit = properties.get("attendeeLimit") instanceof Number ? ((Number) properties.get("attendeeLimit")).intValue() : 0;
         this.creatorId = (String) properties.get("creatorId");
         // Ensure signedUpAttendees is properly initialized from the properties map.
@@ -199,61 +209,31 @@ public class Event implements Serializable {
         void onBitmapReceived(Bitmap bitmap);
     }
 
-    /**
-     * Initializes the firebase parameters
-     */
-    private void InitDatabase() {
-        db = FirebaseFirestore.getInstance();
-        eventRef = db.collection("events");
-        storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference();
-        eventId = eventRef.document().getId().toUpperCase();
-        eventId = "EVNT-" + eventId;
-    }
 
     /**
      * Adds the current object to the database
      */
     public void addEventToDatabase() {
-        InitDatabase();
-        // TODO: Change to correct handling for event vs promo QR Code
-        generateQRcodeData(ImageType.eventQRCodes);
-        generateQRcodeData(ImageType.promoQRCodes);
+        // Create the map to add the event to the database
+        Map<String, Object> eventData = prepareEventData();
 
-        // Get the UID for an image
-        imageUID = eventRef.document().getId().toUpperCase();
-        imageUID = "IMGE-" + imageUID;
-
-        /*Map<String, Object> event = new HashMap<>();
-        event.put("title", title);
-        event.put("startTime", startTime);
-        event.put("endTime", endTime);
-        event.put("description", description);
-        event.put("location", location);
-        event.put("posterUrl", posterUrl);
-        event.put("attendeeLimit", attendeeLimit);
-        event.put("eventImage", imageUID);
-        event.put("signedUpAttendees", signedUpAttendees); // Include the attendees list
-        event.put("creatorId", creatorId); // Include creatorId in the event map*/
-
-        // Prepare event data
-        Map<String, Object> event = prepareEventData();
-
+        // Create the event in the database
         try {
-            Map<String, Object> result = firebaseAccess.storeDataInFirestore(eventId, event);
+            // Store in database
+            Map<String, Object> result = firebaseAccess.storeDataInFirestore(null, eventData);
             Log.d("Event", "Event added/updated successfully: " + result);
+
+            // Get the created eventID
+            eventId = (String) result.get("outer");
+
+            // Generate the two QR codes
+            QRCode.createNewQRCodeObject(eventId, ImageType.promoQRCodes);
+            QRCode.createNewQRCodeObject(eventId, ImageType.eventQRCodes);
+
         } catch (Exception e) {
             Log.e("Event", "Error adding/updating event", e);
         }
 
-
-        /*db.collection("events").document(eventId).set(event).addOnSuccessListener(aVoid -> {
-            // Successfully added/updated event with specific ID
-            System.out.println("Event successfully added/updated with ID: " + eventId);
-        }).addOnFailureListener(e -> {
-            // Failed to add/update event
-            System.err.println("Error adding/updating event: " + e.getMessage());
-        });*/
     }
 
     private Map<String, Object> prepareEventData() {
@@ -263,10 +243,7 @@ public class Event implements Serializable {
         event.put("endTime", endTime);
         event.put("description", description);
         event.put("location", location);
-        event.put("posterUrl", posterUrl);
         event.put("attendeeLimit", attendeeLimit);
-        event.put("eventImage", imageUID);
-        event.put("signedUpAttendees", signedUpAttendees);
         event.put("creatorId", creatorId);
         return event;
     }
@@ -319,7 +296,7 @@ public class Event implements Serializable {
      *
      * @return the event's start time
      */
-    public String getStartTime() {
+    public Date getStartTime() {
         return startTime;
     }
 
@@ -328,7 +305,7 @@ public class Event implements Serializable {
      *
      * @param startTime the start time to set
      */
-    public void setStartTime(String startTime) {
+    public void setStartTime(Date startTime) {
         this.startTime = startTime;
     }
 
@@ -337,7 +314,7 @@ public class Event implements Serializable {
      *
      * @return the event's end time
      */
-    public String getEndTime() {
+    public Date getEndTime() {
         return endTime;
     }
 
@@ -346,7 +323,7 @@ public class Event implements Serializable {
      *
      * @param endTime the end time to set
      */
-    public void setEndTime(String endTime) {
+    public void setEndTime(Date endTime) {
         this.endTime = endTime;
     }
 
@@ -456,29 +433,5 @@ public class Event implements Serializable {
     }
 
 
-    // ChatGPT: Now i want to do the reverse and load the image and convert it back to a bitmap
-
-    /**
-     * Gets the event poster from the database
-     * @param listener The listener for determining when the event is complete
-     */
-    public void getEventImage(OnBitmapReceivedListener listener) {
-        if (imageUID == null || imageUID.isEmpty()) {
-            Log.d("Event", "No imageUID available for event: " + eventId);
-            // Call the listener with a null or default bitmap
-            listener.onBitmapReceived(null); // or pass a default Bitmap
-            return;
-        }
-
-        StorageReference eventImageRef = storageRef.child(imageUID);
-        final long ONE_MEGABYTE = 1024 * 1024;
-        eventImageRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(bytes -> {
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            listener.onBitmapReceived(bitmap);
-        }).addOnFailureListener(e -> {
-            Log.e("Event", "Failed to load image for event: " + eventId, e);
-            listener.onBitmapReceived(null); // or pass a default Bitmap on failure
-        });
-    }
 
 }
