@@ -5,10 +5,18 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 
+/**
+ * CustomProfilePictureGenerator automatically generates a user image based on their first name
+ * or the first letter of their name. Profile pictures are called for and generated from the
+ * ProfileActivity class, and then stored to the database through the returned bitmap
+ */
 public class CustomProfilePictureGenerator {
     String name;
     String initial;
-
+    /**
+     * Returns the bitmap of the generated image.
+     * @param name the name of the user for which an image needs to be generated
+     */
     public CustomProfilePictureGenerator(String name) {
         this.name = name;
 
@@ -16,7 +24,9 @@ public class CustomProfilePictureGenerator {
             this.initial = String.valueOf(name.charAt(0)).toUpperCase();
         }
     }
-
+    /**
+     * Array of different colours
+     */
     private static final int[] COLORS = {
             Color.parseColor("#f44336"), // Red
             Color.parseColor("#E91E63"), // Pink
@@ -38,13 +48,19 @@ public class CustomProfilePictureGenerator {
             Color.parseColor("#9E9E9E"), // Grey
             Color.parseColor("#607D8B")  // Blue Grey
     };
-
+    /**
+     * Extracts the first letter of the name
+     */
     private void setAvatarInitial() {
         if (name != null && !name.isEmpty()) {
             this.initial = String.valueOf(name.charAt(0)).toUpperCase();
         }
     }
-
+    /**
+     * Returns the bitmap of the generated image.
+     * @return The bitmap of the generated image
+     */
+    // Chat GPT: How can I use Canvas to generate an image based on the letter of the user's name?
     public Bitmap createInitialBitmap() {
         int size = 100; // Diameter of the circle
         Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);

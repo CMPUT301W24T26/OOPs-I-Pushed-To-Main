@@ -2,8 +2,10 @@ package com.oopsipushedtomain;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +16,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
@@ -34,7 +38,9 @@ import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.Geolocation.MapActivity;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.sql.Time;
 import java.text.ParseException;
 import java.text.ParsePosition;
@@ -106,6 +112,18 @@ public class EventDetailsActivity extends AppCompatActivity {
     private SimpleDateFormat formatter =  new SimpleDateFormat("yyyy-MM-dd hh:mm a");
     private User user;
     private boolean userIsOrganizer = false;
+    /**
+     * Event poster image
+     */
+    Bitmap eventPoster = null;
+    /**
+     * Boolean to check if the event poster is the default image
+     */
+    private boolean isDefaultPoster = true;
+    /**
+     * UID for event poster
+     */
+    String eventPosterUID = null;
 
     /**
      * Initializes the class with all parameters
@@ -162,6 +180,26 @@ public class EventDetailsActivity extends AppCompatActivity {
                 }
                 eventDescription.setText(eventData.get("description").toString());
             });
+
+            database.getAllRelatedImagesFromFirestore(event.getEventId(), ImageType.eventPosters).thenAccept(dataList -> {
+                if (dataList == null) {
+                    // If the datalist is empty, there is no profile picture
+                    this.eventPoster = null;
+                    // Set default image to true
+                    isDefaultPoster = true;
+                } else {
+                    // Set the UID and profile image if there's an existing image
+                    this.eventPoster = (Bitmap) dataList.get(0).get("image");
+                    this.eventPosterUID = (String) dataList.get(0).get("UID");
+                    // Custom poster exists
+                    isDefaultPoster = false;
+                    // Set the image
+                    runOnUiThread(() -> {
+                        eventPosterEdit.setImageBitmap(this.eventPoster);
+                    });
+                }
+            });
+
 
             // Finished getting the event details
             eventFuture.complete(null);
@@ -369,15 +407,51 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         });
 
-
-
-        // Event poster
+        // Custom event poster upload/deletion handling
         eventPosterEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Intent to start a new activity
-                //Intent intent = new Intent(EventDetailsActivity.this, ImageDetailsActivity.class);
-                //startActivity(intent);
+                // User can only change the event poster if they are an Organizer
+                if(!userIsOrganizer) {
+                    return;
+                }
+                // Build a new alert dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(EventDetailsActivity.this);
+                builder.setTitle("Update Event Poster");
+                if (isDefaultPoster) {
+                    // If the current image is the default image, don't show the delete option
+                    builder.setItems(new CharSequence[]{"Choose from Gallery"},
+                            (dialog, which) -> {
+                                if (which == 0) {
+                                    galleryResultLauncher.launch("image/*");
+                                    // Event poster is no longer default image
+                                    isDefaultPoster = false;
+                                }
+                            });
+                } else {
+                    // If the image isn't the default image, give option to delete
+                    builder.setItems(new CharSequence[]{"Choose from Gallery", "Delete Poster"},
+                            (dialog, which) -> {
+                                switch (which) {
+                                    case 0: // Choose from Gallery
+                                        galleryResultLauncher.launch("image/*");
+                                        Log.d("Gallery", "Poster image selected from the gallery");
+                                        // Event poster is not default
+                                        isDefaultPoster = false;
+                                        break;
+
+                                    case 1: // Delete Poster
+                                        // If poster is deleted, set back to default poster image
+                                        eventPosterEdit.setImageResource(R.drawable.default_event_poser);
+                                        // Update image to null in the database
+                                        database.deleteImageFromFirestore(event.getEventId(), eventPosterUID, ImageType.eventPosters);
+                                        // Event poster is set to default
+                                        isDefaultPoster = true;
+                                        break;
+                                }
+                            });
+                }
+                builder.show();
             }
         });
 
@@ -525,6 +599,30 @@ public class EventDetailsActivity extends AppCompatActivity {
         database.deleteDataFromFirestore(eventId);
     }
 
+    /**
+     * The result launcher for getting the photo from the gallery
+     */
+    private final ActivityResultLauncher<String> galleryResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), result -> {
+        if (result != null) {
+            // Handle the selected image URI
+            InputStream inputStream = null;
+            try {
+                inputStream = getContentResolver().openInputStream(result);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            // Get the bitmap image
+            InputStream finalInputStream = inputStream;
+            Bitmap picture = BitmapFactory.decodeStream(finalInputStream);
+
+            if (result != null) {
+                // Set in view
+                eventPosterEdit.setImageURI(result);
+                // Set event image in the database
+                database.storeImageInFirestore(event.getEventId(), null, ImageType.eventPosters, picture);
+            }
+        }
+    });
 
     /**
      * Returns the current event ID. Used for Intent testing (MapActivity)
