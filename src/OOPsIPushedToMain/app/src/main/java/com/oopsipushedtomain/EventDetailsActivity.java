@@ -359,7 +359,7 @@ public class EventDetailsActivity extends AppCompatActivity {
                 eventSaveButton.setVisibility(View.VISIBLE);
 
             });
-            datePickerDialog.show("Edit Start Date/Time", new Date());
+            datePickerDialog.show("Edit End Date/Time", new Date());
 
 
         });
@@ -378,7 +378,7 @@ public class EventDetailsActivity extends AppCompatActivity {
             });
 
             // Show the dialog with the old value
-            textDialog.show("Edit Nickname", eventTitle.getText().toString());
+            textDialog.show("Edit Title", eventTitle.getText().toString());
 
         });
 
@@ -396,7 +396,7 @@ public class EventDetailsActivity extends AppCompatActivity {
             });
 
             // Show the dialog with the old value
-            textDialog.show("Edit Nickname", eventDescription.getText().toString());
+            textDialog.show("Edit Description", eventDescription.getText().toString());
         });
 
         // Save button
@@ -551,51 +551,6 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
 
-//
-//            // Sign the user up for notifications
-//            FirebaseMessaging.getInstance().subscribeToTopic(event.getEventId());
-//
-//            // Sign in the user to the event
-//            user.signUp(eventID);
-//
-//            // Fetch the event details to check the attendee limit and current signed-up attendees
-//            FirebaseAccess eventAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
-//            eventAccess.getDataFromFirestore(eventID).thenAccept(eventData -> {
-//                if (eventData != null) {
-//                    int attendeeLimit = eventData.containsKey("attendeeLimit") ? ((Number) eventData.get("attendeeLimit")).intValue() : Integer.MAX_VALUE;
-//                    List<String> signedUpAttendees = eventData.containsKey("signedUpAttendees") ? (List<String>) eventData.get("signedUpAttendees") : new ArrayList<>();
-//
-//                    // Check if the user is already signed up
-//                    if (signedUpAttendees.contains(userId)) {
-//                        // User is already signed up, show confirmation
-//                        runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You are already signed up for this event!", Toast.LENGTH_SHORT).show());
-//                    } else {
-//                        // Check if the attendee limit has been reached
-//                        if (signedUpAttendees.size() < attendeeLimit) {
-//                            // The limit has not been reached, proceed to sign up the user
-//                            signedUpAttendees.add(userId);
-//
-//                            // Update the event with the new list of signed-up attendees
-//                            Map<String, Object> update = new HashMap<>();
-//                            update.put("signedUpAttendees", signedUpAttendees);
-//                            eventAccess.storeDataInFirestore(eventID, update);
-//
-//                            // Show confirmation
-//                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You have successfully signed up for the event!", Toast.LENGTH_SHORT).show());
-//                        } else {
-//                            // The attendee limit has been reached
-//                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Cannot sign up for event: Attendee limit reached.", Toast.LENGTH_SHORT).show());
-//                        }
-//                    }
-//                } else {
-//                    Log.e("EventDetailsActivity", "Event not found: " + eventID);
-//                }
-//            }).exceptionally(e -> {
-//                Log.e("EventDetailsActivity", "Error signing up for event: " + eventID, e);
-//                return null;
-//            });
-
-
         // Send notification button
         sendNotificationButton.setOnClickListener(v -> {
             Intent intent = new Intent(EventDetailsActivity.this, SendAnnouncementActivity.class);
@@ -702,10 +657,12 @@ public class EventDetailsActivity extends AppCompatActivity {
             if (eventId != null) {
                 deleteEvent(eventId);
                 Toast.makeText(this, "Event successfully deleted.", Toast.LENGTH_SHORT).show();
-                finish();
+                runOnUiThread(this::finish);
+
             } else {
                 Toast.makeText(this, "Event ID is not available.", Toast.LENGTH_SHORT).show();
             }
+            runOnUiThread(this::finish);
         });
 
     }

@@ -20,6 +20,8 @@
             android:layout_height="125dp"
             android:padding="3sp"
             android:scaleType="centerCrop"
+            app:strokeColor="?attr/colorAccent"
+            app:strokeWidth="3sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:shapeAppearanceOverlay="@style/CircularShape" />
