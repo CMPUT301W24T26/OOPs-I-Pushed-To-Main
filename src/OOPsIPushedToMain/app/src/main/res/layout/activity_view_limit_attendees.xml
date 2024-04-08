@@ -2,16 +2,53 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp">
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="36sp"
+        android:textAlignment="center"
+        android:layout_margin="8sp"
         android:text="Signed Up Attendees"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textColor="#009688"
         android:textStyle="bold" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5sp"
+        android:background="?attr/colorAccent"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10sp"
+        android:layout_marginBottom="10sp"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/limitEditText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Sign up limit"
+            android:inputType="number"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginEnd="50sp"
+            app:layout_constraintEnd_toStartOf="@id/setLimitButton"/>
+
+        <Button
+            android:id="@+id/setLimitButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="?attr/colorAccent"
+            android:text="Set Limit"
+            android:textSize="18sp"
+            android:layout_marginEnd="20sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ListView
         android:id="@+id/signedUpAttendeesListView"
@@ -19,21 +56,6 @@
         android:layout_height="547dp"
         android:layout_weight="1" />
 
-    <EditText
-        android:id="@+id/limitEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter attendee limit"
-        android:inputType="number"/>
 
-    <Button
-        android:id="@+id/setLimitButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:backgroundTint="#009688"
-        android:text="Set Limit"
-        android:textSize="18sp"
-        android:textStyle="bold" />
 
 </LinearLayout>

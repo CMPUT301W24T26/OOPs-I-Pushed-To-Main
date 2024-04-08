@@ -12,8 +12,16 @@
         android:layout_height="wrap_content"
         android:text="@string/announcements_header"
         android:textSize="30sp"
-        android:paddingBottom="8sp"/>
+        android:layout_margin="5sp"
+        android:textAlignment="center"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5sp"
+        android:background="?attr/colorAccent"/>
+
     <ListView
+        android:layout_margin="20sp"
         android:id="@+id/announcement_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
