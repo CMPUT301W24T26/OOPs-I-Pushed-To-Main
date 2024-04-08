@@ -243,12 +243,17 @@ public class EventListActivity extends AppCompatActivity {
 
             // Check if this is null
             if (eventList == null){
+                runOnUiThread(() -> {
+                    EventListActivity.this.eventAdapter.notifyDataSetChanged();
+                });
+
                 return null;
             }
 
             // Iterate through the events
             Event newEvent;
             for (Map<String, Object> data : eventList){
+
                 // Create a new event
                 newEvent = new Event();
 
@@ -293,6 +298,9 @@ public class EventListActivity extends AppCompatActivity {
 
             // Check if this is null
             if (eventList == null){
+                runOnUiThread(() -> {
+                    EventListActivity.this.eventAdapter.notifyDataSetChanged();
+                });
                 return null;
             }
 
