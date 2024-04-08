@@ -1,5 +1,7 @@
 package com.oopsipushedtomain;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.pressKey;
@@ -8,6 +10,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
+import static org.hamcrest.CoreMatchers.anything;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -53,7 +56,7 @@ import java.util.Locale;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
-public class AnnouncementsIntentTest {
+public class CheckInListIntentTest {
     private User user;
     private String eventId;
     private FirebaseAccess eventDB;
@@ -136,43 +139,29 @@ public class AnnouncementsIntentTest {
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.btnCreateNewEvent)).perform(click());
 
-        // Open new test event
-//        Thread.sleep(2000);
-//        onView(withId(R.id.sort_events_button)).perform(click());
-//        onView(withText("Created Events")).perform(click());
-//        onView(withText(titleToType)).perform(click());
-
-        // Sign up for event
+        // Check-in to event
         Thread.sleep(startupDelay); // Wait for EventDetailsActivity to open
 //        eventDetailsActivityRule.getScenario().onActivity(activity -> {
 //            user = activity.getUser();
 //            eventId = activity.getEventID();
 //        });
-        onView(withId(R.id.btnSignUpEvent)).perform(click());
+        user.checkIn(eventId, getApplicationContext());
 
-        // Send an announcement
-        titleToType = "UI Test Notification " + (Math.random() * 10 + 1);
-        String bodyToType = "This is a test notification";
-        onView(withId(R.id.btnSendNotification)).perform(click());
-        onView(withId(R.id.announcement_title_e)).perform(ViewActions.typeText(titleToType));
-        onView(withId(R.id.announcement_body_e)).perform(ViewActions.typeText(bodyToType));
-        Espresso.closeSoftKeyboard();
-        onView(withId(R.id.btnSendNotification)).perform(click());
+        // Verify that there is an attendee checked in
+        Thread.sleep(2000);
+        onView(withId(R.id.btnViewCheckedIn)).perform(click());
+        onData(anything()).inAdapterView(withId(R.id.attendee_list)).atPosition(0)
+                .onChildView(withId(R.id.checkInCount)).check(matches(withText("1")));
 
-        // Look for the announcement in the AnnouncementListActivity
-        onView(withId(R.id.btnViewAnnouncements)).perform(click());
-        Thread.sleep(3000);
-        onView(withText(titleToType)).check(matches(isDisplayed()));
+        // Check-in to event again
+        user.checkIn(eventId, getApplicationContext());
+        onView(withId(R.id.btnViewCheckedIn)).perform(click());
 
-        // Wait for the push notification to arrive
-        UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        device.openNotification();
-        device.wait(Until.hasObject(By.text(titleToType)), 60000);
-        UiObject2 title = device.findObject(By.text(titleToType));
-        UiObject2 text = device.findObject(By.text(bodyToType));
-        assertEquals(titleToType, title.getText());
-        assertEquals(bodyToType, text.getText());
-        device.pressBack();
+        // Verify that the count increased to 2
+        Thread.sleep(10000);
+        onData(anything()).inAdapterView(withId(R.id.attendee_list)).atPosition(0)
+                .onChildView(withId(R.id.checkInCount)).check(matches(withText("2")));
+
     }
 
     /**

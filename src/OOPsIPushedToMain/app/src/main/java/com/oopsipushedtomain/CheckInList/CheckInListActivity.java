@@ -1,14 +1,13 @@
 package com.oopsipushedtomain.CheckInList;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -17,22 +16,28 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
-import com.oopsipushedtomain.User;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
-import com.oopsipushedtomain.EventListActivity;
 import com.oopsipushedtomain.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 
+/**
+ * This activity obtains and displays a list of users that are checked into a given event. The
+ * eventId is passed to this activity through an Intent, which is then used to compare against
+ * the checked-in events of every user in the database.
+ *
+ * @author Aidan Gironella
+ * @see com.oopsipushedtomain.EventDetailsActivity
+ */
 public class CheckInListActivity extends AppCompatActivity {
 
     /**
-     * List to store attendees
+     * List to store attendees that have checked into the event
      */
     private ArrayList<Map<String, Object>> attendeeDataList;
 
@@ -51,9 +56,47 @@ public class CheckInListActivity extends AppCompatActivity {
      */
     private String eventId;
 
+    /**
+     * Used to store the user ID of every user that we check
+     */
     private String userId;
-    private final String TAG = "CheckInList";
 
+    /**
+     * Handler to periodically call getCheckedInAttendees()
+     */
+    private final Handler mHandler = new Handler();
+
+    /**
+     * Runnable task to be periodically called
+     */
+    private final Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            Log.d(TAG, "Running task");
+            if (eventId != null)
+                getCheckedInAttendees();
+            mHandler.postDelayed(this, DELAY_MS);
+        }
+    };
+
+    /**
+     * Delay between getCheckedInAttendees() calls
+     */
+    private static final long DELAY_MS = 10000;
+
+    /**
+     * Tag for logging messages
+     */
+    private static final String TAG = "CheckInList";
+
+
+    /**
+     * Creates and instantiates the activity
+     * @param savedInstanceState If the activity is being re-initialized after previously being
+     *                           shut down then this Bundle contains the data it most recently
+     *                           supplied in {@link #onSaveInstanceState}.
+     *                           <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,15 +112,14 @@ public class CheckInListActivity extends AppCompatActivity {
                     view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.item_checked_in_attendee, parent, false);
                 }
 
+                // Update UI elements based on attendee information
                 Map<String, Object> attendee = getItem(position);
                 if (attendee != null) {
-                    ImageView attendeeImageView = view.findViewById(R.id.userImageView);
                     TextView attendeeNameView = view.findViewById(R.id.nameTextView);
                     TextView checkInCountView = view.findViewById(R.id.checkInCount);
                     runOnUiThread(() -> {
                         attendeeNameView.setText((String) attendee.get("name"));
-                        attendeeImageView.setImageBitmap((Bitmap) attendee.get("image"));
-                        checkInCountView.setText(attendee.get("count").toString());
+                        checkInCountView.setText(Objects.requireNonNull(attendee.get("count")).toString());
                     });
                 }
 
@@ -85,6 +127,7 @@ public class CheckInListActivity extends AppCompatActivity {
             }
         };
 
+        // Initialize the list and adapter
         ListView attendeeListView = findViewById(R.id.attendee_list);
         if (attendeeAdapter != null) {
             attendeeListView.setAdapter(attendeeAdapter);
@@ -100,10 +143,14 @@ public class CheckInListActivity extends AppCompatActivity {
         db = new FirebaseAccess(FirestoreAccessType.USERS);
         if (eventId != null)
             getCheckedInAttendees();
+
+        mHandler.postDelayed(mRunnable, DELAY_MS);
     }
 
     /**
-     *
+     * Populates the attendeeDataList with all users who are checked into the given event
+     * First queries the database to get an ArrayList of all users, then checks the
+     * FirebaseInnerCollection.checkedInEvents of every user for the given eventId
      */
     public void getCheckedInAttendees() {
         // Clear the list
@@ -111,7 +158,7 @@ public class CheckInListActivity extends AppCompatActivity {
 
         // Create a callable
         Callable<ArrayList<Void>> getDataTask = () -> {
-            // Get the list of checked in events
+            // Get the list of all users in the database
             ArrayList<Map<String, Object>> users =  db.getAllDocuments().get();
 
             // Check if this is null
@@ -120,19 +167,17 @@ public class CheckInListActivity extends AppCompatActivity {
             }
 
             // Iterate through the users
-            String userId;
             for (Map<String, Object> user : users){
-                // Create a new event
+                // Get the user ID
                 userId = (String) user.get("UID");
 
-                // Get the event details from the database
+                // Get the check-in details from the database
                 Map<String, Object> checkInData = db.getDataFromFirestore(userId, FirebaseInnerCollection.checkedInEvents, eventId).get();
                 if (checkInData != null) {
-                    // Set the params
-                    if (checkInData.get("UID").equals(eventId)) {
+                    // Data exists = user is checked into this event, set the params
+                    if (Objects.equals(checkInData.get("UID"), eventId)) {
                         Map<String, Object> newAttendee = new HashMap<>();
                         newAttendee.put("name", user.get("name"));
-                        newAttendee.put("image", user.get("profileImage"));
                         newAttendee.put("count", checkInData.get("count"));
 
                         attendeeDataList.add(newAttendee);
@@ -141,47 +186,21 @@ public class CheckInListActivity extends AppCompatActivity {
             }
 
             // All done, notify that dataset has changed
-            runOnUiThread(() -> {
-                attendeeAdapter.notifyDataSetChanged();
-            });
-
+            runOnUiThread(() -> attendeeAdapter.notifyDataSetChanged());
             return null;
-
         };
 
         // Run the task
         db.callableToCompletableFuture(getDataTask);
+    }
 
-        // TODO OLD
-//        CompletableFuture<Void> future = new CompletableFuture<>();
-//
-//        db.getAllDocuments().thenAccept(users -> {
-//            if (users == null) {
-//                future.complete(null);
-//                return;
-//            }
-//            for (Map<String, Object> user : users) {
-////                Log.d(TAG, "asdfhjkl " + user.get("UID"));
-////                Log.d(TAG, "asdfhjkl " + eventId);
-//                userId = (String) user.get("UID");
-//                db.getDataFromFirestore(userId, FirebaseInnerCollection.checkedInEvents, eventId).thenAccept(checkIn -> {
-////                    checkIn.forEach((key, value) -> System.out.println(key + " asdfhjkl:??? " + value));
-//                    if (checkIn != null) {
-//                        Log.d(TAG, "asdfhjkl");
-//                        // Create a new attendee from the user's information
-//                        Map<String, Object> newAttendee = new HashMap<>();
-//                        newAttendee.put("name", user.get("name"));
-//                        newAttendee.put("image", user.get("profileImage"));
-//                        newAttendee.put("count", checkIn.get("count"));
-//
-//                        attendeeDataList.add(newAttendee);
-//                    }
-//                    if (user.equals(users.get(users.size() - 1))) {
-//                        future.complete(null);
-//                    }
-//                });
-//            }
-//            future.thenAccept(value -> runOnUiThread(() -> attendeeAdapter.notifyDataSetChanged()));
-//        });
+    /**
+     * Kill the runnable task that runs every DELAY_MS milliseconds
+     */
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "Destroying activity");
+        super.onDestroy();
+        mHandler.removeCallbacks(mRunnable);
     }
 }

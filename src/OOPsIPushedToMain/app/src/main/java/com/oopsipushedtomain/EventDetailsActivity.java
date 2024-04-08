@@ -124,44 +124,46 @@ public class EventDetailsActivity extends AppCompatActivity {
         // Create a new empty event
         event = new Event();
 
-        // Using the event ID, get the data from Firestore
-        database.getDataFromFirestore(eventID).thenAccept(eventData -> {
-            // If the event does not exists, throw an error
-            if (eventData == null){
-                Log.e("EventDetails", "The event does not exist!");
-            }
-            // Assign all the parameters to the event
-            event.setEventId(eventData.get("UID").toString());
-            event.setTitle(eventData.get("title").toString());
-            event.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
-            event.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
-            event.setDescription(eventData.get("description").toString());
-            event.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
-            event.setCreatorId(eventData.get("creatorId").toString());
+        if (eventID != null) {
+            // Using the event ID, get the data from Firestore
+            database.getDataFromFirestore(eventID).thenAccept(eventData -> {
+                // If the event does not exists, throw an error
+                if (eventData == null){
+                    Log.e("EventDetails", "The event does not exist!");
+                }
+                // Assign all the parameters to the event
+                event.setEventId(eventData.get("UID").toString());
+                event.setTitle(eventData.get("title").toString());
+                event.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
+                event.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
+                event.setDescription(eventData.get("description").toString());
+                event.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
+                event.setCreatorId(eventData.get("creatorId").toString());
 
-            // Set the details on the screen
-            runOnUiThread(() -> {
-                eventTitle.setText(eventData.get("title").toString());
-                if (eventData.get("startTime") != null) {
-                    eventStartTime.setText(formatter.format(((Timestamp) eventData.get("startTime")).toDate()));
-                }
-                if (eventData.get("endTime") != null) {
-                    eventEndTime.setText(formatter.format(((Timestamp) eventData.get("endTime")).toDate()));
-                }
-                eventDescription.setText(eventData.get("description").toString());
+                // Set the details on the screen
+                runOnUiThread(() -> {
+                    eventTitle.setText(eventData.get("title").toString());
+                    if (eventData.get("startTime") != null) {
+                        eventStartTime.setText(formatter.format(((Timestamp) eventData.get("startTime")).toDate()));
+                    }
+                    if (eventData.get("endTime") != null) {
+                        eventEndTime.setText(formatter.format(((Timestamp) eventData.get("endTime")).toDate()));
+                    }
+                    eventDescription.setText(eventData.get("description").toString());
+                });
+
+                // Finished getting the event details
+                eventFuture.complete(null);
             });
 
-            // Finished getting the event details
-            eventFuture.complete(null);
-        });
+            // Create a new user from the UserID
+            User.createNewObject(userId).thenAccept(newUser -> {
+                user = newUser;
 
-        // Create a new user from the UserID
-        User.createNewObject(userId).thenAccept(newUser -> {
-            user = newUser;
-
-            // Finished getting the user
-            userFuture.complete(null);
-        });
+                // Finished getting the user
+                userFuture.complete(null);
+            });
+        }
 
 
         // Find the texts for the event details
@@ -525,12 +527,18 @@ public class EventDetailsActivity extends AppCompatActivity {
 
 
     /**
-     * Returns the current event ID. Used for Intent testing (MapActivity)
+     * Returns the current event ID. Used for Intent testing (Announcements, MapActivity)
      * @return The event ID
      */
     public String getEventID() {
         return eventID;
     }
+
+    /**
+     * Returns the current User object. Used for intent testing (Announcements)
+     * @return User object for the currently active user
+     */
+    public User getUser() { return user; }
 
 
 }

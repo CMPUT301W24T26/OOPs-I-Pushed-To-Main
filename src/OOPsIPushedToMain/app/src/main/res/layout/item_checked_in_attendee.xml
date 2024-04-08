@@ -5,15 +5,6 @@
     android:layout_height="wrap_content"
     android:padding="8dp">
 
-    <ImageView
-        android:id="@+id/userImageView"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        app:srcCompat="@drawable/ic_launcher_background"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
-
     <TextView
         android:id="@+id/nameTextView"
         android:layout_width="0dp"
@@ -21,9 +12,9 @@
         android:text="Name"
         android:textSize="18sp"
         android:textColor="@color/black"
-        app:layout_constraintStart_toEndOf="@+id/userImageView"
-        app:layout_constraintTop_toTopOf="@+id/userImageView"
-        app:layout_constraintBottom_toBottomOf="@+id/userImageView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginStart="16dp"/>
 
     <TextView
@@ -33,9 +24,9 @@
         android:text="Count"
         android:textSize="18sp"
         android:textColor="@color/black"
-        app:layout_constraintTop_toTopOf="@+id/userImageView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="@+id/userImageView"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginEnd="16dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

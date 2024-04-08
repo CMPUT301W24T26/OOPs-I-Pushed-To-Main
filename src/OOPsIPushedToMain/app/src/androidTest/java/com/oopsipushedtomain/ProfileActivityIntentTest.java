@@ -69,6 +69,7 @@ public class ProfileActivityIntentTest {
             new ActivityScenarioRule<>(ProfileActivity.class);
 
     /**
+     * US 02.06.01 - No login requirement for app access
      * US 02.02.03 - Update personal profile information (name)
      * US 02.05.01 - Automatic profile picture generation
      *
