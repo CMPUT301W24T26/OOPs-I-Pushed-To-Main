@@ -770,6 +770,14 @@ public class User {
 
                     // Store the data into Firestore
                     database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, eventInfo);
+
+                    // Store the location in the event
+                    HashMap<String, Object> geoLocData = new HashMap<String, Object>();
+                    Log.d("UserCheckIn", String.valueOf(location));
+                    geoLocData.put("coordinates", location);
+                    geoLocData.put("userId", User.this.uid);
+                    geoLocData.put("timestamp", Timestamp.now());
+                    eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, geoLocData);
                 });
 
             } else {
