@@ -180,7 +180,7 @@ public class NewEventActivity extends AppCompatActivity {
             newEvent.setDescription(newEventDescriptionEdit.getText().toString());
 
             // Attendee limit
-            if (newEventAttendeeLimitEdit.getText() == null){
+            if (newEventAttendeeLimitEdit.getText().toString().isEmpty() || newEventAttendeeLimitEdit.getText() == null){
                 newEvent.setAttendeeLimit(0);
             } else {
                 newEvent.setAttendeeLimit(Integer.parseInt(newEventAttendeeLimitEdit.getText().toString()));

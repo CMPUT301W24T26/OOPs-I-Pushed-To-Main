@@ -55,13 +55,15 @@
 
     <TextView
         android:id="@+id/event_details_organizer_title_e"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="5sp"
+        android:layout_marginEnd="10sp"
         android:hint="Event Title"
         android:textSize="15sp"
         app:layout_constraintStart_toStartOf="@id/event_details_organizer_title"
-        app:layout_constraintTop_toBottomOf="@id/event_details_organizer_title" />
+        app:layout_constraintTop_toBottomOf="@id/event_details_organizer_title"
+        app:layout_constraintEnd_toStartOf="@id/eventPosterImageViewEdit"/>
 
     <TextView
         android:id="@+id/event_details_organizer_start_time"
@@ -261,8 +263,7 @@
             android:text="Event Check-In Code"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnViewLimitAttendees" />
+            app:layout_constraintStart_toStartOf="parent"/>
     </LinearLayout>
 
     <Button
@@ -281,17 +282,18 @@
         android:id="@+id/attendees_buttons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="8sp"
         android:orientation="horizontal"
-        android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnViewMap">
 
         <Button
-            android:id="@+id/btnViewLimitAttendees"
+            android:id="@+id/btnViewCheckedIn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8sp"
+            android:layout_marginBottom="8sp"
+            android:visibility="gone"
             android:text="View Checked In" />
 
         <Button
@@ -299,6 +301,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="20sp"
+            android:layout_marginTop="8sp"
+            android:layout_marginBottom="8sp"
+            android:visibility="gone"
             android:text="View Signed Up" />
     </LinearLayout>
 

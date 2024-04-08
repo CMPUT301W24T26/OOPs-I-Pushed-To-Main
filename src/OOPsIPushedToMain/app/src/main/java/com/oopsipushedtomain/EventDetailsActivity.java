@@ -84,7 +84,7 @@ public class EventDetailsActivity extends AppCompatActivity {
     /**
      * The references to the buttons
      */
-    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, viewLimitAttendeeButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton, viewSignedUpButton;
+    private Button eventSaveButton, sendNotificationButton, viewAnnouncementsButton, signUpButton, deleteButton, viewEventQRCodeButton, viewMapButton, viewEventPromoQRCodeButton, viewSignedUpButton, viewCheckedInButton, getViewSignedUpButton;
 
     /**
      * The UID of the user
@@ -175,30 +175,6 @@ public class EventDetailsActivity extends AppCompatActivity {
             userFuture.complete(null);
         });
 
-        // If we have both the event and the user, check to see if the user is the organizer of this event
-        userFuture.thenAccept(userVal -> {
-            eventFuture.thenAccept(eventVal -> {
-                // Compare event organizer and the current user
-                if (Objects.equals(user.getUID(), event.getCreatorId())){
-                    // They are the organizer, show relevant buttons
-                    userIsOrganizer = true;
-
-                    // Event details
-                    eventTitleButton.setVisibility(View.VISIBLE);
-                    eventStartTime.setVisibility(View.VISIBLE);
-                    eventEndTime.setVisibility(View.VISIBLE);
-                    eventDescription.setVisibility(View.VISIBLE);
-
-                    // Event options
-                    sendNotificationButton.setVisibility(View.VISIBLE);
-                    viewLimitAttendeeButton.setVisibility(View.VISIBLE);
-                    viewSignedUpButton.setVisibility(View.VISIBLE);
-                    viewEventQRCodeButton.setVisibility(View.VISIBLE);
-                    viewMapButton.setVisibility(View.VISIBLE);
-                }
-            });
-        });
-
 
         // Find the texts for the event details
         eventTitle = findViewById(R.id.event_details_organizer_title_e);
@@ -214,19 +190,50 @@ public class EventDetailsActivity extends AppCompatActivity {
         sendNotificationButton = findViewById(R.id.btnSendNotification);
         viewAnnouncementsButton = findViewById(R.id.btnViewAnnouncements);
         signUpButton = findViewById(R.id.btnSignUpEvent);
-        viewLimitAttendeeButton = findViewById(R.id.btnViewLimitAttendees);
-        viewSignedUpButton = findViewById(R.id.btnViewSignedUp);
         deleteButton = findViewById(R.id.btnDeleteEvent);
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
         viewEventPromoQRCodeButton = findViewById(R.id.btnViewPromoQRCode);
         viewMapButton = findViewById(R.id.btnViewMap);
+        viewSignedUpButton = findViewById(R.id.btnViewCheckedIn);
+        viewCheckedInButton = findViewById(R.id.btnViewSignedUp);
+
 
         // Edit event buttons
         eventTitleButton = findViewById(R.id.edit_event_title_button);
         eventStartTimeButton = findViewById(R.id.edit_event_start_button);
         eventEndTimeButton = findViewById(R.id.edit_event_end_button);
         eventDescriptionButton = findViewById(R.id.edit_event_description_button);
-                /*
+
+        // If we have both the event and the user, check to see if the user is the organizer of this event
+        userFuture.thenAccept(userVal -> {
+            eventFuture.thenAccept(eventVal -> {
+                // Compare event organizer and the current user
+                if (Objects.equals(user.getUID(), event.getCreatorId())){
+                    // They are the organizer, show relevant buttons
+                    userIsOrganizer = true;
+
+                    runOnUiThread(() -> {
+                        // Event details
+                        eventTitleButton.setVisibility(View.VISIBLE);
+                        eventStartTimeButton.setVisibility(View.VISIBLE);
+                        eventEndTimeButton.setVisibility(View.VISIBLE);
+                        eventDescriptionButton.setVisibility(View.VISIBLE);
+
+                        // Delete button
+                        deleteButton.setVisibility(View.VISIBLE);
+
+                        // Event options
+                        sendNotificationButton.setVisibility(View.VISIBLE);
+                        viewCheckedInButton.setVisibility(View.VISIBLE);
+                        viewSignedUpButton.setVisibility(View.VISIBLE);
+                        viewEventQRCodeButton.setVisibility(View.VISIBLE);
+                        viewMapButton.setVisibility(View.VISIBLE);
+                    });
+                }
+            });
+        });
+
+        /*
             Click Listeners
          */
 
@@ -401,7 +408,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         });
 
         // View and limit attendees button
-        viewLimitAttendeeButton.setOnClickListener(v -> {
+        viewSignedUpButton.setOnClickListener(v -> {
             Intent intent = new Intent(EventDetailsActivity.this, ViewLimitAttendeesActivity.class);
             intent.putExtra("eventId", event.getEventId()); // Pass the event ID to the new activity
             startActivity(intent);
