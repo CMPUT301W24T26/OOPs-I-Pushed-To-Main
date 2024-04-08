@@ -18,9 +18,9 @@
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/eventPosterImageViewEdit"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:layout_margin="20sp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_margin="20dp"
         android:scaleType="fitCenter"
         android:src="@drawable/default_event_poser"
         app:layout_constraintEnd_toEndOf="parent"
