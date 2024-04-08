@@ -22,15 +22,18 @@ public class ImageInfo {
      */
     private String firestoreDocumentId;
 
+    private String origin;
+
     /**
      * Constructs a new ImageInfo instance.
      *
      * @param image               The Bitmap representation of the image.
      * @param firestoreDocumentId The Firestore document ID associated with the image. This parameter is optional and can be null.
      */
-    public ImageInfo(Bitmap image, String firestoreDocumentId) {
+    public ImageInfo(Bitmap image, String firestoreDocumentId, String origin) {
         this.image = image;
         this.firestoreDocumentId = firestoreDocumentId;
+        this.origin = origin;
     }
 
     /**
@@ -85,5 +88,14 @@ public class ImageInfo {
      */
     public void setFirestoreDocumentId(String firestoreDocumentId) {
         this.firestoreDocumentId = firestoreDocumentId;
+    }
+
+    /**
+     * Sets the origin associated with the image.
+     *
+     * @return The origin path as a String.
+     */
+    public String getOrigin() {
+        return origin;
     }
 }

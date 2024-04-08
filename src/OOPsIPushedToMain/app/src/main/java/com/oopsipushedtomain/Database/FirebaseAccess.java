@@ -930,7 +930,7 @@ public class FirebaseAccess {
      */
     public CompletableFuture<Void> deleteImageFromFirestore(String outerDocName, String imageUID, ImageType imageType) {
         // Check if the database is valid to delete images
-        if (databaseType != FirestoreAccessType.IMAGES && databaseType != FirestoreAccessType.QRCODES) {
+        if (databaseType == FirestoreAccessType.IMAGES || databaseType == FirestoreAccessType.QRCODES) {
             // You shouldn't be calling this function on here
             Log.e("DeleteImage", "Incorrect database type");
             throw new IllegalArgumentException("Incorrect database type");
