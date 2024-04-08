@@ -181,7 +181,7 @@ public class NewEventActivity extends AppCompatActivity {
 
             // Attendee limit
             if (newEventAttendeeLimitEdit.getText().toString().isEmpty() || newEventAttendeeLimitEdit.getText() == null){
-                newEvent.setAttendeeLimit(0);
+                newEvent.setAttendeeLimit(Integer.MAX_VALUE);
             } else {
                 newEvent.setAttendeeLimit(Integer.parseInt(newEventAttendeeLimitEdit.getText().toString()));
             }

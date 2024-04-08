@@ -45,9 +45,11 @@ import java.sql.Time;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -232,8 +234,8 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
         viewEventPromoQRCodeButton = findViewById(R.id.btnViewPromoQRCode);
         viewMapButton = findViewById(R.id.btnViewMap);
-        viewSignedUpButton = findViewById(R.id.btnViewCheckedIn);
-        viewCheckedInButton = findViewById(R.id.btnViewSignedUp);
+        viewSignedUpButton = findViewById(R.id.btnViewSignedUp);
+        viewCheckedInButton = findViewById(R.id.btnViewCheckedIn);
 
 
         // Edit event buttons
@@ -463,8 +465,42 @@ public class EventDetailsActivity extends AppCompatActivity {
             // Sign in the user to the event
             user.signUp(eventID);
 
-            // Show confirmation
-            Toast.makeText(EventDetailsActivity.this, "Signed up to attend this event!", Toast.LENGTH_SHORT).show();
+            // Fetch the event details to check the attendee limit and current signed-up attendees
+            FirebaseAccess eventAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+            eventAccess.getDataFromFirestore(eventID).thenAccept(eventData -> {
+                if (eventData != null) {
+                    int attendeeLimit = eventData.containsKey("attendeeLimit") ? ((Number) eventData.get("attendeeLimit")).intValue() : Integer.MAX_VALUE;
+                    List<String> signedUpAttendees = eventData.containsKey("signedUpAttendees") ? (List<String>) eventData.get("signedUpAttendees") : new ArrayList<>();
+
+                    // Check if the user is already signed up
+                    if (signedUpAttendees.contains(userId)) {
+                        // User is already signed up, show confirmation
+                        runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You are already signed up for this event!", Toast.LENGTH_SHORT).show());
+                    } else {
+                        // Check if the attendee limit has been reached
+                        if (signedUpAttendees.size() < attendeeLimit) {
+                            // The limit has not been reached, proceed to sign up the user
+                            signedUpAttendees.add(userId);
+
+                            // Update the event with the new list of signed-up attendees
+                            Map<String, Object> update = new HashMap<>();
+                            update.put("signedUpAttendees", signedUpAttendees);
+                            eventAccess.storeDataInFirestore(eventID, update);
+
+                            // Show confirmation
+                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "You have successfully signed up for the event!", Toast.LENGTH_SHORT).show());
+                        } else {
+                            // The attendee limit has been reached
+                            runOnUiThread(() -> Toast.makeText(EventDetailsActivity.this, "Cannot sign up for event: Attendee limit reached.", Toast.LENGTH_SHORT).show());
+                        }
+                    }
+                } else {
+                    Log.e("EventDetailsActivity", "Event not found: " + eventID);
+                }
+            }).exceptionally(e -> {
+                Log.e("EventDetailsActivity", "Error signing up for event: " + eventID, e);
+                return null;
+            });
         });
 
         // Send notification button
