@@ -37,6 +37,7 @@ import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
+import java.sql.Time;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -749,6 +750,7 @@ public class User {
      * @param eventID The UID of the event
      */
     public void checkIn(String eventID, Context context) {
+        FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
         // Check to see if the user has checked in already
         database.getDataFromFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID).thenAccept(data -> {
             // If there is no data create a new one
@@ -785,6 +787,14 @@ public class User {
 
                     // Store the data into Firestore
                     database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+
+                    // Store the location in the event
+                    HashMap<String, Object> geoLocData = new HashMap<String, Object>();
+                    Log.d("UserCheckIn", String.valueOf(location));
+                    geoLocData.put("coordinates", location);
+                    geoLocData.put("userId", User.this.uid);
+                    geoLocData.put("timestamp", Timestamp.now());
+                    eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, geoLocData);
                 });
             }
 
@@ -792,36 +802,11 @@ public class User {
             FirebaseMessaging.getInstance().subscribeToTopic(eventID);
 
             // Increment event check-in count
-            FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
             eventDB.getDataFromFirestore(eventID).thenAccept(event -> {
                 event.put("checkIns", (long) event.get("checkIns") + 1);
                 eventDB.storeDataInFirestore(eventID, null, null, event);
             });
-
-            // Save the check-in location IF the user has enabled geolocation tracking
-            if (this.geolocation) {
-                FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
-                if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    Log.e("UserCheckIn", "User has location app permissions disabled");
-                    return;
-                }
-                fusedLocationClient.getLastLocation()
-                    .addOnSuccessListener(new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-                            // Got last known location. In some rare situations this can be null.
-                            if (location != null) {
-                                GeoPoint point = new GeoPoint(location.getLatitude(), location.getLongitude());
-                                HashMap<String, Object> geoLocData = new HashMap<String, Object>();
-                                Log.d("UserCheckIn", String.valueOf(point));
-                                geoLocData.put("coordinates", point);
-                                geoLocData.put("userId", getUID());
-                                geoLocData.put("timestamp", new java.sql.Timestamp(System.currentTimeMillis()));
-                                eventDB.storeDataInFirestore(eventID, FirebaseInnerCollection.checkInCoords, null, geoLocData);
-                            }
-                        }
-                    });
-            }
+            
         });
     }
 
