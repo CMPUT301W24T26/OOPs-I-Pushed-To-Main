@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -87,48 +88,54 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
      * This method now iterates through all users and checks if the event ID is present in their signedUpEvents inner collection.
      */
     public void fetchSignedUpAttendees() {
-        FirebaseAccess userAccess = new FirebaseAccess(FirestoreAccessType.USERS);
-
-        // Clear the current list of signed-up attendees
+        // Clear the list
         signedUpAttendees.clear();
 
-        // Fetch all users
-        userAccess.getAllDocuments().thenAccept(usersData -> {
-            if (usersData != null) {
-                // Counter to keep track of completed async tasks
-                AtomicInteger counter = new AtomicInteger(usersData.size());
 
-                for (Map<String, Object> userData : usersData) {
-                    String userId = (String) userData.get("UID");
+        // Get the firebase access
+        FirebaseAccess db = new FirebaseAccess(FirestoreAccessType.USERS);
 
-                    // For each user, check if they have signed up for the current event
-                    userAccess.getDataFromFirestore(userId, FirebaseInnerCollection.signedUpEvents, eventId).thenAccept(eventData -> {
-                        if (eventData != null) {
-                            // This user has signed up for the event, add their name to the list
-                            String userName = (String) userData.get("name");
-                            signedUpAttendees.add(userName);
-                        }
+        // Create a callable
+        Callable<ArrayList<Void>> getDataTask = () -> {
+            // Get the list of checked in events
+            ArrayList<Map<String, Object>> users = db.getAllDocuments().get();
 
-                        // Check if all async tasks are completed
-                        if (counter.decrementAndGet() == 0) {
-                            runOnUiThread(() -> signedUpAttendeesAdapter.notifyDataSetChanged());
+            // Check if this is null
+            if (users == null) {
+                return null;
+            }
 
-                        }
-                    }).exceptionally(e -> {
-                        Log.e("ViewLimitAttendeesActivity", "Error fetching user details", e);
-                        if (counter.decrementAndGet() == 0) {
-                            runOnUiThread(() -> signedUpAttendeesAdapter.notifyDataSetChanged());
+            // Iterate through the users
+            String userId;
+            for (Map<String, Object> user : users) {
+                // Create a new event
+                userId = (String) user.get("UID");
 
-                        }
+                // Get the event details from the database
+                Map<String, Object> checkInData = db.getDataFromFirestore(userId, FirebaseInnerCollection.signedUpEvents, eventId).get();
+                if (checkInData != null) {
+                    // Set the params
+                    if (checkInData.get("UID").equals(eventId)) {
+//                        Map<String, Object> newAttendee = new HashMap<>();
+//                        newAttendee.put("name", user.get("name"));
+//                        newAttendee.put("image", user.get("profileImage"));
+//                        newAttendee.put("count", checkInData.get("count"));
 
-                        return null;
-                    });
+                        signedUpAttendees.add((String) user.get("name"));
+                    }
                 }
             }
-        }).exceptionally(e -> {
-            Log.e("ViewLimitAttendeesActivity", "Error fetching users", e);
+
+            // All done, notify that dataset has changed
+            runOnUiThread(() -> {
+                signedUpAttendeesAdapter.notifyDataSetChanged();
+            });
+
             return null;
-        });
+        };
+
+        // Run the task
+        db.callableToCompletableFuture(getDataTask);
     }
 
     /**
