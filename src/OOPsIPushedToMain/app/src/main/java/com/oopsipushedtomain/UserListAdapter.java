@@ -69,16 +69,6 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserVi
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
         UserListActivity.Profile profile = profileList.get(position);
         holder.nameTextView.setText(profile.getName() != null ? profile.getName() : "Name not available");
-
-        // Convert the ByteString to a Bitmap
-        byte[] byteArray = profile.getImageByteArray();
-        if (byteArray != null && byteArray.length > 0) {
-            Bitmap bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-            holder.profileImageView.setImageBitmap(bitmap);
-        }// else {
-            // Set a default image if the image is not available
-            //holder.profileImageView.setImageResource(R.drawable.default_profile_image);
-        //}
     }
 
     @Override

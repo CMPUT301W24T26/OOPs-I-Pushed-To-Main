@@ -163,9 +163,6 @@ public class UserListActivity extends AppCompatActivity {
         public String getUID() {
             return uid;
         }
-
-        public byte[] getImageByteArray() {
-        }
     }
 
     /**
