@@ -782,10 +782,10 @@ public class User {
                 // If the user has geolocation on, store their current location
                 getUserGeolocation(context).thenAccept(location -> {
                     // Add to the map
-                    data.put("location", location);
+                    eventInfo.put("location", location);
 
                     // Store the data into Firestore
-                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
+                    database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, eventInfo);
                 });
 
             } else {
@@ -797,6 +797,9 @@ public class User {
                 getUserGeolocation(context).thenAccept(location -> {
                     // Add to the map
                     data.put("location", location);
+
+                    // Remove the eventid
+                    data.remove("UID");
 
                     // Store the data into Firestore
                     database.storeDataInFirestore(this.uid, FirebaseInnerCollection.checkedInEvents, eventID, data);
@@ -854,12 +857,15 @@ public class User {
                 eventInfo.put("date-time", new Date());
 
                 // Store the data into Firestore
-                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, data);
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, eventInfo);
 
             } else {
                 // Just update the count
                 long count = (long) data.get("count");
                 data.put("count", count + 1);
+
+                // Remove the UID
+                data.remove("UID");
 
                 // Store the data into Firestore
                 database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, data);
