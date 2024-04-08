@@ -310,7 +310,7 @@ public class FirebaseAccessUnitTest {
         try {
             // Store an image in Firestore
             String storeUID = database.storeImageInFirestore(outerUID, imageUID, ImageType.eventPosters, testImage);
-
+            Thread.sleep(5000);
             // Retrieve the image
             Map<String, Object> image = database.getImageFromFirestore(imageUID, ImageType.eventPosters).get();
 
@@ -325,6 +325,7 @@ public class FirebaseAccessUnitTest {
 
             // Store an image with data in firestore
             storeUID = database.storeImageInFirestore(outerUID, imageUID, ImageType.eventQRCodes, testImage, innerTestData);
+            Thread.sleep(5000);
 
             // Retrieve the image
             image = database.getImageFromFirestore(imageUID, ImageType.eventQRCodes).get();
@@ -341,6 +342,7 @@ public class FirebaseAccessUnitTest {
 
             // Store an image with no UID given
             storeUID = database.storeImageInFirestore(outerUID, null, ImageType.promoQRCodes, testImage);
+            Thread.sleep(5000);
 
             // Retrieve the image
             image = database.getImageFromFirestore(storeUID, ImageType.promoQRCodes).get();
