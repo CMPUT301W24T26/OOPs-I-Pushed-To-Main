@@ -75,8 +75,8 @@ public class QRCodeIntentTest {
     private User user;
 
     @Rule
-    public ActivityTestRule<EventListActivity> eventListActivityTestRule =
-            new ActivityTestRule<>(EventListActivity.class, true, true);
+    public ActivityTestRule<ProfileActivity> ProfileActivityTestRule =
+            new ActivityTestRule<>(ProfileActivity.class, true, true);
 
     @Before
     public void setUp() {
@@ -88,6 +88,7 @@ public class QRCodeIntentTest {
         Intents.release();
     }
 
+    @Rule
     public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
     @Rule
     public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_COARSE_LOCATION);
@@ -103,6 +104,9 @@ public class QRCodeIntentTest {
      */
     @Test
     public void testViewEventQRCodeAndShare() throws InterruptedException {
+
+        onView(withId(R.id.eventsButton)).perform(click());
+        Thread.sleep(500);
 
         // Click the first event. Replace with onData(...) if using a ListView or RecyclerViewActions for RecyclerView.
         onData(anything()).inAdapterView(withId(R.id.EventListView)).atPosition(0).perform(click());
