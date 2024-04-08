@@ -163,6 +163,9 @@ public class UserListActivity extends AppCompatActivity {
         public String getUID() {
             return uid;
         }
+
+        public byte[] getImageByteArray() {
+        }
     }
 
     /**
@@ -202,6 +205,28 @@ public class UserListActivity extends AppCompatActivity {
                 .show();
     }
 
+
+    /**
+     * Fetches profiles from the database and updates the UI accordingly.
+     */
+    private void fetchProfiles() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                profilesList.clear();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    Profile profile = document.toObject(Profile.class);
+                    profile.setUID(document.getId()); // Set the UID for the profile
+                    profilesList.add(profile);
+                }
+                userListAdapter.notifyDataSetChanged(); // Notify adapter of data change
+            } else {
+                Log.w("UserListActivity", "Error getting documents.", task.getException());
+                Toast.makeText(UserListActivity.this, "Error loading profiles.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     /**
      * Deletes a profile on the database
      * @param profile The profile to delete
@@ -227,25 +252,5 @@ public class UserListActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * Fetches profiles from the database and updates the UI accordingly.
-     */
-    private void fetchProfiles() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("users").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                profilesList.clear();
-                for (QueryDocumentSnapshot document : task.getResult()) {
-                    Profile profile = document.toObject(Profile.class);
-                    profile.setUID(document.getId()); // Set the UID for the profile
-                    profilesList.add(profile);
-                }
-                userListAdapter.notifyDataSetChanged(); // Notify adapter of data change
-            } else {
-                Log.w("UserListActivity", "Error getting documents.", task.getException());
-                Toast.makeText(UserListActivity.this, "Error loading profiles.", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
 
 }

@@ -1,20 +1,45 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/imageSelectionFragmentRoot"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="60dp">
+    android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/btnEventPictures"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/browse_images_activity_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="event_pictures"/>
+        android:layout_margin="30sp"
+        android:text="Browse Images"
+        android:textSize="50sp"
+        android:textStyle="bold"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="200dp"
+        android:paddingTop="70dp">
+    </TextView>
 
-    <Button
-        android:id="@+id/btnProfilePictures"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:id="@+id/imageSelectionFragmentRoot"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="profile_pictures"
-        android:layout_marginTop="16dp"/>
-</LinearLayout>
+        android:orientation="vertical"
+        android:padding="40dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true">
+
+        <Button
+            android:id="@+id/btnEventPictures"
+            android:layout_width="300dp"
+            android:layout_height="72dp"
+            android:textSize="30sp"
+            android:singleLine="true"
+            android:text="Event Posters"/>
+
+        <Button
+            android:id="@+id/btnProfilePictures"
+            android:layout_width="300dp"
+            android:layout_height="72dp"
+            android:layout_marginTop="32dp"
+            android:singleLine="true"
+            android:text="Profile Pictures"
+            android:textSize="30sp" />
+    </LinearLayout>
+
+</RelativeLayout>

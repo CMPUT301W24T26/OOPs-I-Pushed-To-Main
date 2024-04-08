@@ -1,33 +1,56 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
-    <Button
-        android:id="@+id/btnBrowseEvents"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/browse_images_activity_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="browse_events"
+        android:layout_margin="30sp"
+        android:text="Admin"
+        android:textSize="50sp"
+        android:textStyle="bold"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="200dp"
+        android:paddingTop="75dp">
+    </TextView>
 
-        android:layout_marginTop="16dp">
-
-    </Button>
-
-    <Button
-        android:id="@+id/btnBrowseProfiles"
+    <LinearLayout
+        android:id="@+id/imageSelectionFragmentRoot"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="browse_profiles"
-        android:layout_marginTop="16dp">
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/browse_images_activity_title"
+        android:layout_marginTop="55dp">
 
-    </Button>
+        <Button
+            android:id="@+id/btnBrowseEvents"
+            android:layout_width="300dp"
+            android:layout_height="72dp"
+            android:text="Browse Events"
+            android:textSize="30sp"
+            android:layout_marginTop="16dp">
+        </Button>
 
-    <Button
-        android:id="@+id/btnBrowseImages"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="browse_images"
-        android:layout_marginTop="16dp">
-    </Button>
+        <Button
+            android:id="@+id/btnBrowseProfiles"
+            android:layout_width="300dp"
+            android:layout_height="72dp"
+            android:text="Browse Profiles"
+            android:textSize="30sp"
+            android:layout_marginTop="16dp">
+        </Button>
 
-</LinearLayout>
+        <Button
+            android:id="@+id/btnBrowseImages"
+            android:layout_width="300dp"
+            android:layout_height="72dp"
+            android:text="Browse Images"
+            android:textSize="30sp"
+            android:layout_marginTop="16dp">
+        </Button>
+    </LinearLayout>
+
+</RelativeLayout>
