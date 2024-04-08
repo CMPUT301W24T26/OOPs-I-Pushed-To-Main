@@ -696,18 +696,15 @@ public class ProfileActivity extends AppCompatActivity {
      * Handles updating the profile picture when the profile image is clicked
      */
     public void handleProfileImageClick() {
-
         // Build a new alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(ProfileActivity.this);
         builder.setTitle("Update Profile Image");
-
-        // If the current image is the default image, don't show the delete option
+        // Show possible options for user image customization
         builder.setItems(new CharSequence[]{"Take Photo", "Choose from Gallery", "Delete Photo"},
                 // Set the listener for the selection on the dialog
                 (dialog, which) -> {
                     switch (which) {
-                        // Take a photo using the camera
-                        case 0: // Take Photo
+                        case 0: // Take a photo using the camera
                             // Check for camera permissions
                             if (ContextCompat.checkSelfPermission(ProfileActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                                 // Permission is not granted, request permissions
@@ -717,7 +714,7 @@ public class ProfileActivity extends AppCompatActivity {
                                 cameraEnabled = true;
                             }
 
-                            // Perform the proper action
+                            // Perform the camera operation
                             if (cameraEnabled) {
                                 // Open the camera
                                 Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
