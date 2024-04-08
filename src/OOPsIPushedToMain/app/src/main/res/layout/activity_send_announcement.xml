@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -9,12 +10,24 @@
 
     <TextView
         android:id="@+id/send_announcement"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/send_announcement"
         android:textSize="36sp"
+        android:textAlignment="center"
+        android:layout_margin="8sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:textStyle="bold" />
+
+    <View
+        android:id="@+id/spacer_bar"
+        android:layout_width="match_parent"
+        android:layout_marginTop="5sp"
+        android:layout_height="5sp"
+        android:background="?attr/colorAccent"
+        app:layout_constraintTop_toBottomOf="@id/send_announcement"/>
+
 
     <TextView
         android:id="@+id/event_title_header"
@@ -22,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:text="@string/event_title_header"
-        android:textSize="18sp"
+        android:textSize="25sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/send_announcement" />
 
@@ -30,8 +43,9 @@
         android:id="@+id/event_title_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="15sp"
+        android:textSize="20sp"
         android:padding="8sp"
+        android:text="Event Title"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/event_title_header" />
 
@@ -39,8 +53,9 @@
         android:id="@+id/announcement_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
         android:text="@string/announcement_title"
-        android:textSize="18sp"
+        android:textSize="25sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/event_title_title" />
 
@@ -49,7 +64,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:hint="@string/announcement_title"
-        android:textSize="15sp"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/announcement_title" />
 
@@ -59,17 +74,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="48dp"
         android:text="@string/announcement_body"
-        android:textSize="18sp"
+        android:textSize="25sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/announcement_title" />
+        app:layout_constraintTop_toBottomOf="@+id/announcement_title_e" />
 
     <EditText
         android:id="@+id/announcement_body_e"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:hint="@string/announcement_body"
-        android:textSize="15sp"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/announcement_body" />
 
@@ -77,25 +91,27 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/announcement_body_e"
+        app:layout_constraintVertical_bias="0.23">
 
         <Button
             android:id="@+id/btnSendNotification"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="@color/button_positive"
+            android:layout_marginEnd="16sp"
+            android:backgroundTint="?attr/colorAccent"
             android:text="@string/send"
             android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginEnd="16sp"/>
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnCancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="@color/button_negative"
+            android:backgroundTint="@color/red"
             android:text="@string/cancel"
             android:textSize="18sp"
             android:textStyle="bold" />

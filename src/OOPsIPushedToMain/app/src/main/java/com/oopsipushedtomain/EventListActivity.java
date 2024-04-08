@@ -210,10 +210,17 @@ public class EventListActivity extends AppCompatActivity {
 //                newEvent.setLocation(eventData.get("location").toString());
 
                 newEvent.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
-                newEvent.setCreatorId(eventData.get("creatorId").toString());
+                if (eventData.get("creatorId") != null){
+                    newEvent.setCreatorId(eventData.get("creatorId").toString());
 
-                // Add the event to the list
-                eventDataList.add(newEvent);
+                    // Add the event to the list
+                    eventDataList.add(newEvent);
+                } else {
+                    newEvent.setCreatorId(userId);
+                }
+
+
+
             }
 
             // Data is completely loaded, notify

@@ -40,7 +40,7 @@ public class FirebaseAccessUnitTest {
     /**
      * A toggle for performing the DeleteAll test
      */
-    boolean performDeleteAll = true;
+    boolean performDeleteAll = false;
 
     /**
      * The object being tested
