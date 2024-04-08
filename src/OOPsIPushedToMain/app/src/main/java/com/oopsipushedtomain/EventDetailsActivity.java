@@ -407,7 +407,7 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         });
 
-        // Event poster
+        // Custom event poster upload/deletion handling
         eventPosterEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -429,8 +429,8 @@ public class EventDetailsActivity extends AppCompatActivity {
                                 }
                             });
                 } else {
+                    // If the image isn't the default image, give option to delete
                     builder.setItems(new CharSequence[]{"Choose from Gallery", "Delete Poster"},
-                            // Set the listener for the selection on the dialog
                             (dialog, which) -> {
                                 switch (which) {
                                     case 0: // Choose from Gallery
