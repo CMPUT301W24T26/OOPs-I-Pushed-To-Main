@@ -25,7 +25,7 @@ import java.util.ArrayList;
  */
 public class AnnouncementListAdapter extends ArrayAdapter<Announcement> {
     /**
-     * Array list to store the announcement to dhow
+     * Array list to store the announcement to show
      */
     private final ArrayList<Announcement> announcements;
 

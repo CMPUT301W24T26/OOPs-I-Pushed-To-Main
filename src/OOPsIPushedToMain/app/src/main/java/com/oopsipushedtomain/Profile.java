@@ -4,6 +4,8 @@
  */
 package com.oopsipushedtomain;
 
+import android.graphics.Bitmap;
+
 /**
  * Represents an profile for the admin page
  */
@@ -36,6 +38,14 @@ public class Profile {
      * The phone number of the user
      */
     private String phone;
+    /**
+     * The UID of the user's profile picture
+     */
+    private String profileImageUID = null;
+    /**
+     * The user's profile picture
+     */
+    private Bitmap profileImage = null;
     /**
      * The email address of the user
      */

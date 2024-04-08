@@ -1,7 +1,5 @@
 package com.oopsipushedtomain;
 
-import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -9,7 +7,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,34 +15,25 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
+import com.oopsipushedtomain.CheckInList.CheckInListActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
-import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.CustomDateTimePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.Geolocation.MapActivity;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.sql.Time;
 import java.text.ParseException;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -194,8 +182,8 @@ public class EventDetailsActivity extends AppCompatActivity {
         viewEventQRCodeButton = findViewById(R.id.btnViewEventQRCode);
         viewEventPromoQRCodeButton = findViewById(R.id.btnViewPromoQRCode);
         viewMapButton = findViewById(R.id.btnViewMap);
-        viewSignedUpButton = findViewById(R.id.btnViewCheckedIn);
-        viewCheckedInButton = findViewById(R.id.btnViewSignedUp);
+        viewSignedUpButton = findViewById(R.id.btnViewSignedUp);
+        viewCheckedInButton = findViewById(R.id.btnViewCheckedIn);
 
 
         // Edit event buttons
@@ -407,6 +395,14 @@ public class EventDetailsActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // List of attendees who have checked in
+        viewCheckedInButton.setOnClickListener(v -> {
+            user.checkIn(eventID, EventDetailsActivity.this);
+            Intent intent = new Intent(EventDetailsActivity.this, CheckInListActivity.class);
+            intent.putExtra("eventId", event.getEventId());
+            startActivity(intent);
+        });
+
         // View and limit attendees button
         viewSignedUpButton.setOnClickListener(v -> {
             Intent intent = new Intent(EventDetailsActivity.this, ViewLimitAttendeesActivity.class);
@@ -491,6 +487,8 @@ public class EventDetailsActivity extends AppCompatActivity {
             // Call deleteEvent with the eventId
             if (eventId != null) {
                 deleteEvent(eventId);
+                Toast.makeText(this, "Event successfully deleted.", Toast.LENGTH_SHORT).show();
+                finish();
             } else {
                 Toast.makeText(this, "Event ID is not available.", Toast.LENGTH_SHORT).show();
             }
