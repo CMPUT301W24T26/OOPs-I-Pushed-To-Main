@@ -151,6 +151,9 @@ public class EventDetailsActivity extends AppCompatActivity {
         userId = intent2.getStringExtra("userId");
         eventID = intent2.getStringExtra("selectedEventId");
 
+        // Get Admin Intent
+        boolean isAdmin = getIntent().getBooleanExtra("isAdmin", false);
+
         // Create a new empty event
         event = new Event();
 
@@ -267,6 +270,10 @@ public class EventDetailsActivity extends AppCompatActivity {
                         viewEventQRCodeButton.setVisibility(View.VISIBLE);
                         viewMapButton.setVisibility(View.VISIBLE);
                     });
+                }
+                if (isAdmin) {
+                    // Show delete button
+                    deleteButton.setVisibility(View.VISIBLE);
                 }
             });
         });
