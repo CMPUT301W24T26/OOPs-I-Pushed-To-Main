@@ -165,6 +165,9 @@ public class EventDetailsActivity extends AppCompatActivity {
         userId = intent2.getStringExtra("userId");
         eventID = intent2.getStringExtra("selectedEventId");
 
+        // Get Admin Intent
+        boolean isAdmin = getIntent().getBooleanExtra("isAdmin", false);
+
         // Create a new empty event
         event = new Event();
 
@@ -278,6 +281,11 @@ public class EventDetailsActivity extends AppCompatActivity {
         eventEndTimeButton = findViewById(R.id.edit_event_end_button);
         eventDescriptionButton = findViewById(R.id.edit_event_description_button);
 
+        // Admin Check
+        if (isAdmin) {
+            deleteButton.setVisibility(View.VISIBLE);
+        }
+
         // If we have both the event and the user, check to see if the user is the organizer of this event
         userFuture.thenAccept(userVal -> {
             eventFuture.thenAccept(eventVal -> {
@@ -304,7 +312,6 @@ public class EventDetailsActivity extends AppCompatActivity {
                         viewMapButton.setVisibility(View.VISIBLE);
                     });
                 }
-
 
             });
         });
