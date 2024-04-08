@@ -90,6 +90,7 @@ public class AnnouncementsIntentTest {
     }
 
     /**
+     * US 02.06.01 - No login requirement for app access
      * US 01.03.01 - Send notifications to attendees
      * US 02.03.01 - Receive push notifications from event organizers
      * US 02.04.01 - View events details and announcements
