@@ -24,27 +24,11 @@ import com.google.android.gms.location.LocationServices;
 import android.Manifest;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import android.util.Log;
-import android.widget.Toast;
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
-import com.google.android.gms.tasks.CancellationTokenSource;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -53,18 +37,12 @@ import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
-import org.checkerframework.checker.units.qual.C;
-
-import java.io.Serializable;
-import java.sql.Time;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class defines and represents a user
@@ -847,60 +825,103 @@ public class User {
      *
      * @param eventID The UID of the event.
      */
-    public void signUp(String eventID) {
-        FirebaseAccess eventAccess = new FirebaseAccess(FirestoreAccessType.EVENTS);
+    public CompletableFuture<Boolean> signUp(String eventID) {
+        // Create the future to complete
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
 
-        // Fetch the event details to check the attendee limit and current signed-up attendees
-        eventAccess.getDataFromFirestore(eventID).thenAccept(eventData -> {
-            if (eventData != null) {
-                int attendeeLimit = eventData.containsKey("attendeeLimit") ? ((Number) eventData.get("attendeeLimit")).intValue() : Integer.MAX_VALUE;
-                List<String> signedUpAttendees = eventData.containsKey("signedUpAttendees") ? (List<String>) eventData.get("signedUpAttendees") : new ArrayList<>();
+        // Check to see if the user has signed in in already
+        database.getDataFromFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID).thenAccept(data -> {
+            // If there is no data create a new one
+            if (data == null) {
+                // Create a map for the new event data
+                HashMap<String, Object> eventInfo = new HashMap<>();
 
-                // Check if the user is already signed up for the event
-                database.getDataFromFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID).thenAccept(data -> {
-                    // If the user is not already signed up and the attendee limit has not been reached
-                    if (data == null && signedUpAttendees.size() < attendeeLimit && !signedUpAttendees.contains(uid)) {
-                        // Proceed to sign up the user
+                // Add the data to the internal map
+                int count = 1;
+                eventInfo.put("count", count);
+                eventInfo.put("date-time", new Date());
 
-                        // Create a map for the new event data
-                        HashMap<String, Object> eventInfo = new HashMap<>();
-                        eventInfo.put("count", 1); // Initial count
-                        eventInfo.put("date-time", new Date());
+                // Store the data into Firestore
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, eventInfo);
 
-                        // Store the data into Firestore
-                        database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, eventInfo);
+                // It is a new sign up
+                future.complete(true);
 
-                        // Sign the user up for notifications for the event
-                        FirebaseMessaging.getInstance().subscribeToTopic(eventID);
-
-                        Log.d("User", "User signed up successfully for event: " + eventID);
-                    } else {
-                        // The attendee limit has been reached or user is already signed up
-                        if (data != null) {
-                            // Just update the count
-                            long count = (long) data.get("count");
-                            data.put("count", count + 1);
-
-                            // Remove the UID
-                            data.remove("UID");
-
-                            // Store the data into Firestore
-                            database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, data);
-                        }
-                        Log.d("User", "Cannot sign up for event: " + eventID + ". Attendee limit reached or already signed up.");
-                    }
-                }).exceptionally(e -> {
-                    Log.e("User", "Error checking user sign up status for event: " + eventID, e);
-                    return null;
-                });
             } else {
-                Log.e("User", "Event not found: " + eventID);
+                // Just update the count
+                long count = (long) data.get("count");
+                data.put("count", count + 1);
+
+                // Remove the UID
+                data.remove("UID");
+
+                // Store the data into Firestore
+                database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, data);
+
+                // Is not new
+                future.complete(false);
             }
-        }).exceptionally(e -> {
-            Log.e("User", "Error signing up for event: " + eventID, e);
-            return null;
+
+            // Sign the user up for notifications for the event
+            FirebaseMessaging.getInstance().subscribeToTopic(eventID);
         });
+
+        // Return whether this is a new sign up
+        return future;
+
     }
+
+//        // Fetch the event details to check the attendee limit and current signed-up attendees
+//        eventAccess.getDataFromFirestore(eventID).thenAccept(eventData -> {
+//            if (eventData != null) {
+//                int attendeeLimit = eventData.containsKey("attendeeLimit") ? ((Number) eventData.get("attendeeLimit")).intValue() : Integer.MAX_VALUE;
+//                List<String> signedUpAttendees = eventData.containsKey("signedUpAttendees") ? (List<String>) eventData.get("signedUpAttendees") : new ArrayList<>();
+//
+//                // Check if the user is already signed up for the event
+//                database.getDataFromFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID).thenAccept(data -> {
+//                    // If the user is not already signed up and the attendee limit has not been reached
+//                    if (data == null && signedUpAttendees.size() < attendeeLimit && !signedUpAttendees.contains(uid)) {
+//                        // Proceed to sign up the user
+//
+//                        // Create a map for the new event data
+//                        HashMap<String, Object> eventInfo = new HashMap<>();
+//                        eventInfo.put("count", 1); // Initial count
+//                        eventInfo.put("date-time", new Date());
+//
+//                        // Store the data into Firestore
+//                        database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, eventInfo);
+//
+//                        // Sign the user up for notifications for the event
+//                        FirebaseMessaging.getInstance().subscribeToTopic(eventID);
+//
+//                        Log.d("User", "User signed up successfully for event: " + eventID);
+//                    } else {
+//                        // The attendee limit has been reached or user is already signed up
+//                        if (data != null) {
+//                            // Just update the count
+//                            long count = (long) data.get("count");
+//                            data.put("count", count + 1);
+//
+//                            // Remove the UID
+//                            data.remove("UID");
+//
+//                            // Store the data into Firestore
+//                            database.storeDataInFirestore(this.uid, FirebaseInnerCollection.signedUpEvents, eventID, data);
+//                        }
+//                        Log.d("User", "Cannot sign up for event: " + eventID + ". Attendee limit reached or already signed up.");
+//                    }
+//                }).exceptionally(e -> {
+//                    Log.e("User", "Error checking user sign up status for event: " + eventID, e);
+//                    return null;
+//                });
+//            } else {
+//                Log.e("User", "Event not found: " + eventID);
+//            }
+//        }).exceptionally(e -> {
+//            Log.e("User", "Error signing up for event: " + eventID, e);
+//            return null;
+//        });
+//    }
 
 
 

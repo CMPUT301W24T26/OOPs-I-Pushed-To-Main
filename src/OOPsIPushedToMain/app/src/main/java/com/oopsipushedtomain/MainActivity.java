@@ -1,18 +1,21 @@
 package com.oopsipushedtomain;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -71,6 +74,17 @@ public class MainActivity extends AppCompatActivity {
                 findUser(fid);
             }
         });
+
+        // Add the admin qr code
+        Bitmap adminImage = QRCode.generateAdminQRCode();
+
+        // Store the image into the qr code database
+        Blob imageBlob = FirebaseAccess.bitmapToBlob(adminImage);
+        Map<String, Object> imageData = new HashMap<>();
+        imageData.put("image", imageBlob);
+        imageData.put("origin", null);
+        imageData.put("type", "adminQRCode");
+        FirebaseFirestore.getInstance().collection("qrcodes").document("ADMIN-CODE").set(imageData);
 
 
 
