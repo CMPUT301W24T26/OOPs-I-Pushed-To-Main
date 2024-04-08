@@ -397,7 +397,7 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         // List of attendees who have checked in
         viewCheckedInButton.setOnClickListener(v -> {
-            user.checkIn(eventID, EventDetailsActivity.this);
+//            user.checkIn(eventID, EventDetailsActivity.this);
             Intent intent = new Intent(EventDetailsActivity.this, CheckInListActivity.class);
             intent.putExtra("eventId", event.getEventId());
             startActivity(intent);

@@ -24,6 +24,7 @@ import com.oopsipushedtomain.R;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class CheckInListActivity extends AppCompatActivity {
 
@@ -60,7 +61,7 @@ public class CheckInListActivity extends AppCompatActivity {
             public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
                 View view = convertView;
                 if (view == null) {
-                    view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.item_profile, parent, false);
+                    view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.item_checked_in_attendee, parent, false);
                 }
 
                 Map<String, Object> attendee = getItem(position);
@@ -68,10 +69,11 @@ public class CheckInListActivity extends AppCompatActivity {
                     ImageView attendeeImageView = view.findViewById(R.id.userImageView);
                     TextView attendeeNameView = view.findViewById(R.id.nameTextView);
                     TextView checkInCountView = view.findViewById(R.id.checkInCount);
-
-                    attendeeNameView.setText((String) attendee.get("name"));
-                    attendeeImageView.setImageBitmap((Bitmap) attendee.get("image"));
-                    checkInCountView.setText((String) attendee.get("count"));
+                    runOnUiThread(() -> {
+                        attendeeNameView.setText((String) attendee.get("name"));
+                        attendeeImageView.setImageBitmap((Bitmap) attendee.get("image"));
+                        checkInCountView.setText((String) attendee.get("count"));
+                    });
                 }
 
                 return view;
@@ -100,21 +102,39 @@ public class CheckInListActivity extends AppCompatActivity {
      */
     public void getCheckedInAttendees() {
         attendeeDataList.clear();
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
         db.getAllDocuments().thenAccept(users -> {
+            if (users == null) {
+                future.complete(null);
+                return;
+            }
+
             for (Map<String, Object> user : users) {
-                db.getDataFromFirestore((String) user.get("userId"), FirebaseInnerCollection.checkedInEvents, eventId).thenAccept(event -> {
-                    if (event != null) {
+//                user.forEach((key, value) -> System.out.println(key + " asdfhjkl:!!! " + value));
+                Log.d(TAG, "asdfhjkl " + (String) user.get("UID"));
+                Log.d(TAG, "asdfhjkl " + eventId);
+                db.getDataFromFirestore((String) user.get("UID"), FirebaseInnerCollection.checkedInEvents, eventId).thenAccept(checkIn -> {
+//                    checkIn.forEach((key, value) -> System.out.println(key + " asdfhjkl:??? " + value));
+                    if (checkIn != null) {
+                        Log.d(TAG, "asdfhjkl");
                         // Create a new attendee from the user's information
                         Map<String, Object> newAttendee = new HashMap<>();
                         newAttendee.put("name", user.get("name"));
                         newAttendee.put("image", user.get("profileImage"));
-//                        newAttendee.put("count", user.get("profileImage"));
+                        newAttendee.put("count", checkIn.get("count"));
 
                         attendeeDataList.add(newAttendee);
                     }
+
+                    if (user.equals(users.get(users.size() - 1))) {
+                        future.complete(null);
+                    }
                 });
             }
-            attendeeAdapter.notifyDataSetChanged();
+
+            future.thenAccept(value -> runOnUiThread(() -> attendeeAdapter.notifyDataSetChanged()));
         });
     }
 }
