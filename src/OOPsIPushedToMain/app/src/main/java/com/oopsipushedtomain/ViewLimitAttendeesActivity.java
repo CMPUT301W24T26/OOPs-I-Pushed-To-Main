@@ -6,10 +6,12 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
+import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 
 import java.util.ArrayList;
@@ -71,6 +73,8 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
     }
 
 
+
+
     public static void setFirebaseAccessInstanceForTesting(FirebaseAccess firebaseAccess) {
         firebaseAccessInstanceForTesting = firebaseAccess;
     }
@@ -80,47 +84,52 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
     }
     /**
      * Fetches the list of signed-up attendees for the event from Firestore and updates the ListView.
-     * This method uses the {@link FirebaseAccess} class to asynchronously fetch event data based on the eventId.
+     * This method now iterates through all users and checks if the event ID is present in their signedUpEvents inner collection.
      */
     public void fetchSignedUpAttendees() {
-        firebaseAccess.getDataFromFirestore(eventId).thenAccept(eventData -> {
-            if (eventData != null && eventData.containsKey("signedUpAttendees")) {
-                List<String> userIds = (List<String>) eventData.get("signedUpAttendees");
-                signedUpAttendees.clear();
+        FirebaseAccess userAccess = new FirebaseAccess(FirestoreAccessType.USERS);
 
+        // Clear the current list of signed-up attendees
+        signedUpAttendees.clear();
+
+        // Fetch all users
+        userAccess.getAllDocuments().thenAccept(usersData -> {
+            if (usersData != null) {
                 // Counter to keep track of completed async tasks
-                AtomicInteger counter = new AtomicInteger(userIds.size());
+                AtomicInteger counter = new AtomicInteger(usersData.size());
 
-                for (String userId : userIds) {
-                    // Fetch each user's name using their userId
-                    FirebaseAccess userAccess = new FirebaseAccess(FirestoreAccessType.USERS);
-                    userAccess.getDataFromFirestore(userId).thenAccept(userData -> {
-                        if (userData != null && userData.containsKey("name")) {
+                for (Map<String, Object> userData : usersData) {
+                    String userId = (String) userData.get("UID");
+
+                    // For each user, check if they have signed up for the current event
+                    userAccess.getDataFromFirestore(userId, FirebaseInnerCollection.signedUpEvents, eventId).thenAccept(eventData -> {
+                        if (eventData != null) {
+                            // This user has signed up for the event, add their name to the list
                             String userName = (String) userData.get("name");
                             signedUpAttendees.add(userName);
-                        } else {
-                            signedUpAttendees.add("Unknown User"); // in case user data is missing
                         }
 
                         // Check if all async tasks are completed
                         if (counter.decrementAndGet() == 0) {
                             runOnUiThread(() -> signedUpAttendeesAdapter.notifyDataSetChanged());
+
                         }
                     }).exceptionally(e -> {
                         Log.e("ViewLimitAttendeesActivity", "Error fetching user details", e);
                         if (counter.decrementAndGet() == 0) {
                             runOnUiThread(() -> signedUpAttendeesAdapter.notifyDataSetChanged());
+
                         }
+
                         return null;
                     });
                 }
             }
         }).exceptionally(e -> {
-            Log.e("ViewLimitAttendeesActivity", "Error fetching signed up attendees", e);
+            Log.e("ViewLimitAttendeesActivity", "Error fetching users", e);
             return null;
         });
     }
-
 
     /**
      * Sets the attendee limit for the event in Firestore.
@@ -133,7 +142,9 @@ public class ViewLimitAttendeesActivity extends AppCompatActivity {
             Map<String, Object> update = new HashMap<>();
             update.put("attendeeLimit", limit);
             firebaseAccess.storeDataInFirestore(eventId, update);
-            finish();
+            Toast.makeText(ViewLimitAttendeesActivity.this, "Attendee limit set successfully", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(ViewLimitAttendeesActivity.this, "Please enter a valid limit", Toast.LENGTH_SHORT).show();
         }
     }
 }
