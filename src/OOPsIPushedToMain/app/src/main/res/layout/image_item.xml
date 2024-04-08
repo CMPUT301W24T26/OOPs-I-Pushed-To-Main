@@ -1,18 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:padding="8dp">
 
-    <com.google.android.material.imageview.ShapeableImageView
+    <ImageView
         android:id="@+id/imageView"
-        android:layout_width="165dp"
-        android:layout_height="165dp"
-        android:padding="3sp"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
         android:scaleType="centerCrop"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:shapeAppearanceOverlay="@style/CircularShape" />
+        android:adjustViewBounds="true"
+        android:background="@drawable/rounded_corners_background"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"/>
 
 </LinearLayout>
