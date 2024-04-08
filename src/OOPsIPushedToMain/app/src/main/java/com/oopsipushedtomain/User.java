@@ -791,9 +791,15 @@ public class User {
             // Sign the user up for notifications for the event
             FirebaseMessaging.getInstance().subscribeToTopic(eventID);
 
+            // Increment event check-in count
+            FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
+            eventDB.getDataFromFirestore(eventID).thenAccept(event -> {
+                event.put("checkIns", (long) event.get("checkIns") + 1);
+                eventDB.storeDataInFirestore(eventID, null, null, event);
+            });
+
             // Save the check-in location IF the user has enabled geolocation tracking
             if (this.geolocation) {
-                FirebaseAccess eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
                 FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
                 if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     Log.e("UserCheckIn", "User has location app permissions disabled");

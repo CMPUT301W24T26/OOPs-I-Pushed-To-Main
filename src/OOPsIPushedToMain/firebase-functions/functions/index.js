@@ -15,3 +15,22 @@ exports.androidPushNotification = functions.firestore.document("events/{eventId}
         );
     }
 );
+
+exports.tenMultCheckInNotification = functions.firestore.document("events/{eventId}")
+    .onUpdate((change, context) => {
+        const after = change.after.data();
+        if (after && after.checkIns && after.checkIns > 0 && after.checkIns % 10 == 0) {
+            const eventId = context.params.eventId; // Retrieving eventId from context
+            const organizerTopic = `${eventId}-ORGANIZER`;
+            admin.messaging().sendToTopic(
+                organizerTopic,  // Topic to send to (eventId concatenated with "-ORGANIZER" suffix)
+                {
+                    notification: {
+                        title: "Milestone reached!",
+                        body: `Congratulations, your event ${after.title} has reached ${after.checkIns} check-ins!`
+                    }
+                }
+            );
+        }
+    }
+);

@@ -88,5 +88,5 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.intents)
 
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
-    androidTestImplementation("androidx.test.espresso:espresso-contrib:3.4.0")
+//    androidTestImplementation("androidx.test.espresso:espresso-contrib:3.4.0")
 }

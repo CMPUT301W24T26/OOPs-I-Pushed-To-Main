@@ -83,6 +83,8 @@
             android:exported="false" />
         <activity android:name=".ShowImageActivity"
             android:exported="false" />
+        <activity android:name=".CheckInList.CheckInListActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
