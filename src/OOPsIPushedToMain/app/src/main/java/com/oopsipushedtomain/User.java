@@ -225,6 +225,7 @@ public class User {
 
     }
 
+
     /**
      * Stores the received Firestore data in the class
      *
