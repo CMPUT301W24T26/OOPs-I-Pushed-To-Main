@@ -1,4 +1,4 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.User;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;

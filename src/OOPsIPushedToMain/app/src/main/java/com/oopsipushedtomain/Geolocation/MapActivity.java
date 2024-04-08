@@ -12,6 +12,7 @@ import androidx.preference.PreferenceManager;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Events.EventDetailsActivity;
 import com.oopsipushedtomain.R;
 
 import org.osmdroid.api.IMapController;
@@ -34,7 +35,7 @@ import java.util.Objects;
  * which is then used to query the checkInCoords inner collection to get the markers.
  *
  * @author Aidan Gironella
- * @see com.oopsipushedtomain.EventDetailsActivity
+ * @see EventDetailsActivity
  */
 public class MapActivity extends AppCompatActivity {
     /**

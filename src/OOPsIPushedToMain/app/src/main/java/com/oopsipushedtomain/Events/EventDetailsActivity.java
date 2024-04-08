@@ -1,7 +1,5 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Events;
 
-import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -31,22 +29,19 @@ import com.oopsipushedtomain.Database.ImageType;
 import com.oopsipushedtomain.DialogInputListeners.CustomDateTimePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.Geolocation.MapActivity;
+import com.oopsipushedtomain.QRCode.QRCode;
+import com.oopsipushedtomain.R;
+import com.oopsipushedtomain.QRCode.ShowImageActivity;
+import com.oopsipushedtomain.User.User;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;

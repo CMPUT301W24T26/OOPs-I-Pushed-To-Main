@@ -1,7 +1,6 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Events;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -13,13 +12,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Activity for viewing and limiting the number of attendees for an event.

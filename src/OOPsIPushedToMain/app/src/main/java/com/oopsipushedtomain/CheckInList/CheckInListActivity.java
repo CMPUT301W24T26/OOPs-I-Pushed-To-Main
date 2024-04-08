@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Events.EventDetailsActivity;
 import com.oopsipushedtomain.R;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ import java.util.concurrent.Callable;
  * the checked-in events of every user in the database.
  *
  * @author Aidan Gironella
- * @see com.oopsipushedtomain.EventDetailsActivity
+ * @see EventDetailsActivity
  */
 public class CheckInListActivity extends AppCompatActivity {
 

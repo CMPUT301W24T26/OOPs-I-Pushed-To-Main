@@ -26,28 +26,28 @@
         android:theme="@style/Theme.OOPsIPushedToMain"
         tools:targetApi="31">
         <activity
-            android:name=".ImageListActivity"
+            android:name=".Admin.ImageListActivity"
             android:exported="false" />
         <activity
-            android:name=".UserListActivity"
+            android:name=".Admin.UserListActivity"
             android:exported="false" />
         <activity
-            android:name=".ProfileActivity"
+            android:name=".User.ProfileActivity"
             android:exported="false" />
         <activity
-            android:name=".EventListActivity"
+            android:name=".Events.EventListActivity"
             android:exported="false" />
         <activity
-            android:name=".EventDetailsActivity"
+            android:name=".Events.EventDetailsActivity"
             android:exported="false" />
         <activity
-            android:name=".NewEventActivity"
+            android:name=".Events.NewEventActivity"
             android:exported="false"/>
         <activity
-            android:name=".AdminActivity"
+            android:name=".Admin.AdminActivity"
             android:exported="false" />
         <activity
-            android:name=".QRScanner"
+            android:name=".QRCode.QRScanner"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
@@ -79,9 +79,9 @@
         <activity android:name=".Geolocation.MapActivity"
             android:exported="false"
             android:hardwareAccelerated="false"/>
-        <activity android:name=".ViewLimitAttendeesActivity"
+        <activity android:name=".Events.ViewLimitAttendeesActivity"
             android:exported="false" />
-        <activity android:name=".ShowImageActivity"
+        <activity android:name=".QRCode.ShowImageActivity"
             android:exported="false" />
         <activity android:name=".CheckInList.CheckInListActivity"
             android:exported="false" />

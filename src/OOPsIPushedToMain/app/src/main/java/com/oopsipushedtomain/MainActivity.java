@@ -10,10 +10,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.Database.GetFIDUtil;
+import com.oopsipushedtomain.QRCode.QRCode;
+import com.oopsipushedtomain.User.ProfileActivity;
+import com.oopsipushedtomain.User.User;
 
 import java.util.HashMap;
 import java.util.Map;

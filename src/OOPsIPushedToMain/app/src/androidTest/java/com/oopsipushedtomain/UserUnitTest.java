@@ -15,6 +15,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.User.User;
 
 import org.junit.After;
 import org.junit.Before;

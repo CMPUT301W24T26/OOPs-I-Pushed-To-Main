@@ -1,4 +1,4 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.User;
 
 import android.Manifest;
 import android.app.Activity;
@@ -25,12 +25,17 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.oopsipushedtomain.Admin.AdminActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.DialogInputListeners.PhonePickerDialog;
+import com.oopsipushedtomain.Events.EventDetailsActivity;
+import com.oopsipushedtomain.Events.EventListActivity;
+import com.oopsipushedtomain.QRCode.QRScanner;
+import com.oopsipushedtomain.R;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;

@@ -1,4 +1,6 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Admin;
+
+import com.oopsipushedtomain.User.User;
 
 /**
  * An interface for setting an on item click listener for the profile

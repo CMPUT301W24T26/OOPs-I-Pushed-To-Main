@@ -1,4 +1,4 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.QRCode;
 
 import android.app.Activity;
 import android.content.Intent;

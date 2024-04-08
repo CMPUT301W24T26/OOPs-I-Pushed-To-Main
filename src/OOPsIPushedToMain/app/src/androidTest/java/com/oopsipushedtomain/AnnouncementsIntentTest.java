@@ -28,6 +28,8 @@ import androidx.test.uiautomator.Until;
 
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.User.ProfileActivity;
+import com.oopsipushedtomain.User.User;
 
 import org.junit.After;
 import org.junit.Before;

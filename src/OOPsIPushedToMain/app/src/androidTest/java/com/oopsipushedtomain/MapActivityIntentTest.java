@@ -24,6 +24,8 @@ import androidx.test.rule.GrantPermissionRule;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Geolocation.MapActivity;
+import com.oopsipushedtomain.User.ProfileActivity;
+import com.oopsipushedtomain.User.User;
 
 import org.junit.After;
 import org.junit.Before;

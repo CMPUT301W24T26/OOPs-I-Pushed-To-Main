@@ -1,7 +1,6 @@
 package com.oopsipushedtomain;
 
 import androidx.fragment.app.testing.FragmentScenario;
-import androidx.test.espresso.Espresso;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
@@ -13,8 +12,7 @@ import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
-import com.oopsipushedtomain.AdminDashboardFragment;
-import com.oopsipushedtomain.R;
+import com.oopsipushedtomain.Admin.AdminDashboardFragment;
 
 /**
  * Test admin dashboard

@@ -1,4 +1,4 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Events;
 
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -12,6 +12,7 @@ import com.google.firebase.storage.StorageReference;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
+import com.oopsipushedtomain.QRCode.QRCode;
 
 import java.io.Serializable;
 import java.util.Date;

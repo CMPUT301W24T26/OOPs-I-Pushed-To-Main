@@ -1,6 +1,5 @@
 package com.oopsipushedtomain.Database;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -12,16 +11,12 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
-import com.oopsipushedtomain.Event;
-import com.oopsipushedtomain.ProfileActivity;
-import com.oopsipushedtomain.QRCode;
+import com.oopsipushedtomain.QRCode.QRCode;
 
 import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

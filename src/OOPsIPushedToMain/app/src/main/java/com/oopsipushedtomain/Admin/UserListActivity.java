@@ -1,4 +1,4 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Admin;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -14,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
+import com.oopsipushedtomain.R;
 
 import java.util.ArrayList;
 import java.util.Date;

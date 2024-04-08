@@ -33,6 +33,9 @@ import androidx.test.uiautomator.UiObjectNotFoundException;
 import androidx.test.uiautomator.UiSelector;
 import androidx.test.uiautomator.Until;
 
+import com.oopsipushedtomain.User.ProfileActivity;
+import com.oopsipushedtomain.User.User;
+
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;

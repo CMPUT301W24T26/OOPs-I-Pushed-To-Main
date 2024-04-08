@@ -1,4 +1,4 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Admin;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,6 +9,8 @@ import android.widget.Button;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import com.oopsipushedtomain.R;
 
 /**
  * A Fragment for selecting images from different categories such as event pictures and profile pictures.

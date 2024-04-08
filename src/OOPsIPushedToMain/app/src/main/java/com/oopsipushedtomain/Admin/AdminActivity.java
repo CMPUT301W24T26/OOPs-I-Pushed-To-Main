@@ -3,12 +3,13 @@
  * It is the main activity for admin tasks
  */
 
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Admin;
 
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.FragmentTransaction;
+
+import com.oopsipushedtomain.R;
 
 /**
  * AdminActivity is the entry point for administrators.

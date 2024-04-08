@@ -8,9 +8,7 @@
     });
  */
 
-package com.oopsipushedtomain;
-
-import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+package com.oopsipushedtomain.User;
 
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -36,14 +34,13 @@ import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
+import com.oopsipushedtomain.Events.Event;
 
-import java.sql.Time;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class defines and represents a user

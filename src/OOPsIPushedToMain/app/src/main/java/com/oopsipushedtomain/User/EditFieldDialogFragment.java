@@ -2,7 +2,7 @@
  * This file contains the edit dialog fragment.
  * It is created when a user clicks on a field on the profile page
  */
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.User;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -15,6 +15,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+
+import com.oopsipushedtomain.R;
 
 /**
  * The edit dialog fragment for editing the user's profile

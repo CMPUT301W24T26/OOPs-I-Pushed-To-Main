@@ -1,17 +1,15 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.QRCode;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
-import android.view.View;
+
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
-import java.io.File;
-import java.io.FileOutputStream;
+
+import com.oopsipushedtomain.R;
 
 public class ShowImageActivity extends AppCompatActivity {
 

@@ -1,19 +1,16 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Events;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.PopupMenu;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.OnNewIntentProvider;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -23,15 +20,13 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirebaseInnerCollection;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
-
-import org.checkerframework.checker.units.qual.C;
+import com.oopsipushedtomain.R;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**

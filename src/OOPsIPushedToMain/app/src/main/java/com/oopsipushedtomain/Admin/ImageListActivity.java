@@ -1,4 +1,4 @@
-package com.oopsipushedtomain;
+package com.oopsipushedtomain.Admin;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
+import com.oopsipushedtomain.R;
 
 import java.util.ArrayList;
 import java.util.List;

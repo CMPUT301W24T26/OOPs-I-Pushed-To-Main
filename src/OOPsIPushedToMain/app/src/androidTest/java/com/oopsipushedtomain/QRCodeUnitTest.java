@@ -1,7 +1,7 @@
 package com.oopsipushedtomain;
 
-import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.ImageType;
+import com.oopsipushedtomain.QRCode.QRCode;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -10,11 +10,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import android.graphics.Bitmap;
-
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class QRCodeUnitTest {
