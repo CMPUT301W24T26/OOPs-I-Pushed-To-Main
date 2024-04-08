@@ -6,8 +6,6 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -15,13 +13,13 @@ import android.Manifest;
 import android.content.Intent;
 import android.util.Log;
 
-import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.action.ViewActions;
+import androidx.test.espresso.intent.Intents;
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.rule.ActivityTestRule;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.UiDevice;
@@ -37,6 +35,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
+/**
+ * Intent test for Announcements. Covers the following user stories:
+ * US 01.03.01 - Send notifications to attendees.
+ * US 02.03.01 - Receive push notifications from event organizers.
+ * US 02.04.01 - View events details and announcements.
+ *
+ * @author Aidan Gironella
+ * @see com.oopsipushedtomain.Announcements
+ */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class AnnouncementsIntentTest {
@@ -45,34 +54,23 @@ public class AnnouncementsIntentTest {
     private FirebaseAccess eventDB;
 
     /**
-     * Manually request fine location permissions so that the dialog doesn't pop up
+     * Manually request all permissions so that the dialogs don't appear
      */
     @Rule
-    public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(Manifest.permission.ACCESS_FINE_LOCATION);
-
-    /**
-     * Manually request coarse location permissions so that the dialog doesn't pop up
-     */
+    public GrantPermissionRule permissionFineLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
     @Rule
-    public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(Manifest.permission.ACCESS_COARSE_LOCATION);
-
-    /**
-     * Manually request post notifications permissions in order to test them
-     */
+    public GrantPermissionRule permissionCoarseLoc = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_COARSE_LOCATION);
     @Rule
     public GrantPermissionRule permissionNotifications = GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS);
-
-    /**
-     * Used to access the currently running EventDetailsActivity
-     */
     @Rule
-    public ActivityTestRule<EventDetailsActivity> eventDetailsActivityRule = new ActivityTestRule<>(EventDetailsActivity.class);
+    public GrantPermissionRule permissionCamera = GrantPermissionRule.grant(Manifest.permission.CAMERA);
 
     /**
      * Used to access the currently running ProfileActivity
      */
     @Rule
-    public ActivityTestRule<ProfileActivity> profileActivityRule = new ActivityTestRule<>(ProfileActivity.class);
+    public ActivityScenarioRule<ProfileActivity> activityRule =
+            new ActivityScenarioRule<>(ProfileActivity.class);
 
     /**
      * Initialize the databases.
@@ -81,6 +79,7 @@ public class AnnouncementsIntentTest {
     public void setup() {
         // Initialize the database
         try {
+            Intents.init();
             eventDB = new FirebaseAccess(FirestoreAccessType.EVENTS);
         } catch (Exception e) {
             // There was an error, the test failed
@@ -90,44 +89,57 @@ public class AnnouncementsIntentTest {
     }
 
     /**
-     * US 02.06.01 - No login requirement for app access
-     * US 01.03.01 - Send notifications to attendees
-     * US 02.03.01 - Receive push notifications from event organizers
-     * US 02.04.01 - View events details and announcements
-     * Sends an announcement, checks that it appears in the AnnouncementListActivity, and checks
-     * that the push notification was probably sent and received.
-     * @throws InterruptedException For Thread.sleep()
+     * US 01.03.01 - Send notifications to attendees.
+     * US 02.03.01 - Receive push notifications from event organizers.
+     * US 02.04.01 - View events details and announcements.
+     * Creates a test event, signs up for the event, sends an announcement, checks that it appears
+     * in the AnnouncementListActivity, and checks that the push notification was probably sent and
+     * received.
+     *
+     * @throws InterruptedException For Thread.sleep() and typeTextInDialog()
      */
     @Test
     public void testAnnouncements() throws InterruptedException {
-        // Launch MainActivity
-        Intent i = new Intent(getInstrumentation().getTargetContext(), MainActivity.class);
-        ActivityScenario.launch(i);
-
-        // Open Events list and create a test event
-        Thread.sleep(2000);  // Wait for automatic profile generation to finish
-        ProfileActivity profileActivity = profileActivityRule.getActivity();
-        user = profileActivity.getUser();
-        user.setName("Announcements tester");
+        int startupDelay = 1000;
+        Thread.sleep(startupDelay); // Wait for automatic profile generation to complete
+        activityRule.getScenario().onActivity(activity -> user = activity.getUser());
         onView(withId(R.id.eventsButton)).perform(click());
+
+        // Create new test event
+        // Set title
         String titleToType = "Announcements test event " + (Math.random() * 10 + 1);
-        String startDateToType = "2024-01-01";
-        String endDateToType = "2024-01-02";
-        String descriptionToType = "Event to test announcements";
         onView(withId(R.id.create_event_button)).perform(click());
         onView(withId(R.id.new_event_title_e)).perform(ViewActions.typeText(titleToType));
-        onView(withId(R.id.new_event_start_time_e)).perform(ViewActions.typeText(startDateToType));
-        onView(withId(R.id.new_event_end_time_e)).perform(ViewActions.typeText(endDateToType));
-        onView(withId(R.id.new_event_description_e)).perform(ViewActions.typeText(descriptionToType));
+        Espresso.closeSoftKeyboard();
+        // Set start date and time
+        onView(withId(R.id.edit_event_start_button)).perform(click());
+        onView(withText("OK")).perform(click());
+        onView(withText("OK")).perform(click());
+        // Set end date and time
+        onView(withId(R.id.edit_event_end_button)).perform(click());
+        onView(withText("OK")).perform(click());
+        onView(withText("OK")).perform(click());
+        // Set description
+        String descToType = "Announcements intent test event";
+        onView(withId(R.id.new_event_description_e)).perform(ViewActions.typeText(descToType));
+        Espresso.closeSoftKeyboard();
+        // Limit attendees to 10
+        onView(withId(R.id.new_event_attendee_limit_e)).perform(ViewActions.typeText("5"));
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.btnCreateNewEvent)).perform(click());
 
-        // Open an event and sign up for it, thus signing up to receive push notifications
-        Thread.sleep(3000);  // Wait for EventList to populate
-        onView(withText(containsString(titleToType))).perform(click());
-        EventDetailsActivity eventDetailsActivity = eventDetailsActivityRule.getActivity();
-        eventId = eventDetailsActivity.getEventID();
+        // Sign up for event
         onView(withId(R.id.btnSignUpEvent)).perform(click());
+
+        // Intercept the event ID intent extra so that we can delete the event in cleanUp()
+        Thread.sleep(2000);
+        List<Intent> intents = Intents.getIntents();
+        for (Intent intent : intents)
+            // Get the extra data from the intent
+            eventId = intent.getStringExtra("selectedEventId");
+
+        // Release Intents
+        Intents.release();
 
         // Send an announcement
         titleToType = "UI Test Notification " + (Math.random() * 10 + 1);
@@ -159,13 +171,13 @@ public class AnnouncementsIntentTest {
      */
     @After
     public void cleanUp() {
-        // Delete the user and event
+        // Delete the user
         try {
             user.deleteUser().get();
             eventDB.deleteDataFromFirestore(eventId).get();
         } catch (Exception e) {
             // There was an error, the test failed
-            Log.e("AnmtsIntentTestCleanUp", "Error: " + e.getMessage());
+            Log.e("ProfileActivityIntentTest", "Clean-up error: " + e.getMessage());
             fail();
         }
     }

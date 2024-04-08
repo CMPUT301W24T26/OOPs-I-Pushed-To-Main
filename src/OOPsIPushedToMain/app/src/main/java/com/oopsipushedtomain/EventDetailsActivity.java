@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,17 +21,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.oopsipushedtomain.Announcements.AnnouncementListActivity;
 import com.oopsipushedtomain.Announcements.SendAnnouncementActivity;
+import com.oopsipushedtomain.CheckInList.CheckInListActivity;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
-import com.oopsipushedtomain.DialogInputListeners.CustomDatePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.CustomDateTimePickerDialog;
 import com.oopsipushedtomain.DialogInputListeners.InputTextDialog;
 import com.oopsipushedtomain.Geolocation.MapActivity;
@@ -43,8 +38,9 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.sql.Time;
 import java.text.ParseException;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -53,7 +49,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -173,6 +168,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         // Create a new empty event
         event = new Event();
 
+
         // Using the event ID, get the data from Firestore
         database.getDataFromFirestore(eventID).thenAccept(eventData -> {
             // If the event does not exists, throw an error
@@ -197,7 +193,29 @@ public class EventDetailsActivity extends AppCompatActivity {
                 if (eventData.get("endTime") != null) {
                     eventEndTime.setText(formatter.format(((Timestamp) eventData.get("endTime")).toDate()));
                 }
-                eventDescription.setText(eventData.get("description").toString());
+                // Assign all the parameters to the event
+                event.setEventId(eventData.get("UID").toString());
+                event.setTitle(eventData.get("title").toString());
+                event.setStartTime(((Timestamp) eventData.get("startTime")).toDate());
+                event.setEndTime(((Timestamp) eventData.get("endTime")).toDate());
+                event.setDescription(eventData.get("description").toString());
+                event.setAttendeeLimit(Integer.parseInt(eventData.get("attendeeLimit").toString()));
+                event.setCreatorId(eventData.get("creatorId").toString());
+
+                // Set the details on the screen
+                runOnUiThread(() -> {
+                    eventTitle.setText(eventData.get("title").toString());
+                    if (eventData.get("startTime") != null) {
+                        eventStartTime.setText(formatter.format(((Timestamp) eventData.get("startTime")).toDate()));
+                    }
+                    if (eventData.get("endTime") != null) {
+                        eventEndTime.setText(formatter.format(((Timestamp) eventData.get("endTime")).toDate()));
+                    }
+                    eventDescription.setText(eventData.get("description").toString());
+                });
+
+                // Finished getting the event details
+                eventFuture.complete(null);
             });
 
             database.getAllRelatedImagesFromFirestore(event.getEventId(), ImageType.eventPosters).thenAccept(dataList -> {
@@ -227,10 +245,9 @@ public class EventDetailsActivity extends AppCompatActivity {
         // Create a new user from the UserID
         User.createNewObject(userId).thenAccept(newUser -> {
             user = newUser;
-
             // Finished getting the user
             userFuture.complete(null);
-        });
+            });
 
 
         // Find the texts for the event details
@@ -586,6 +603,13 @@ public class EventDetailsActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // List of attendees who have checked in
+        viewCheckedInButton.setOnClickListener(v -> {
+            Intent intent = new Intent(EventDetailsActivity.this, CheckInListActivity.class);
+            intent.putExtra("eventId", event.getEventId());
+            startActivity(intent);
+        });
+
         // View and limit attendees button
         viewSignedUpButton.setOnClickListener(v -> {
             Intent intent = new Intent(EventDetailsActivity.this, ViewLimitAttendeesActivity.class);
@@ -670,6 +694,8 @@ public class EventDetailsActivity extends AppCompatActivity {
             // Call deleteEvent with the eventId
             if (eventId != null) {
                 deleteEvent(eventId);
+                Toast.makeText(this, "Event successfully deleted.", Toast.LENGTH_SHORT).show();
+                finish();
             } else {
                 Toast.makeText(this, "Event ID is not available.", Toast.LENGTH_SHORT).show();
             }
@@ -705,13 +731,23 @@ public class EventDetailsActivity extends AppCompatActivity {
     }
 
     /**
+<<<<<<< HEAD
+     * Returns the current event ID. Used for Intent testing (Announcements, MapActivity)
+=======
      * Returns the current event ID. Used for Intent testing (MapActivity)
      *
+>>>>>>> 65194be54505083c6410aed20fc0f4109b5f1de6
      * @return The event ID
      */
     public String getEventID() {
         return eventID;
     }
+
+    /**
+     * Returns the current User object. Used for intent testing (Announcements)
+     * @return User object for the currently active user
+     */
+    public User getUser() { return user; }
 
 
 }

@@ -1,26 +1,21 @@
 package com.oopsipushedtomain;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 import com.oopsipushedtomain.Database.FirebaseAccess;
 import com.oopsipushedtomain.Database.FirestoreAccessType;
 import com.oopsipushedtomain.Database.ImageType;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -104,6 +99,11 @@ public class Event implements Serializable {
 
     private int signedUpUsers = 0;
 
+    /**
+     * Count that keeps track of how many unique check-ins there have been
+     */
+    private int checkIns = 0;
+
 
     /**
      * Constructs a new Event instance.
@@ -179,6 +179,7 @@ public class Event implements Serializable {
         if (properties.get("signedUp") != null) {
             this.signedUpUsers = properties.get("signedUp") instanceof Number ? ((Number) properties.get("attendeeLimit")).intValue() : 0;
         }
+        this.checkIns = properties.get("checkIns") instanceof Number ? ((Number) properties.get("checkIns")).intValue() : 0;
     }
 
 
@@ -221,6 +222,9 @@ public class Event implements Serializable {
             QRCode.createNewQRCodeObject(eventId, ImageType.promoQRCodes);
             QRCode.createNewQRCodeObject(eventId, ImageType.eventQRCodes);
 
+            // Sign organizer up for milestone notifications
+            FirebaseMessaging.getInstance().subscribeToTopic(eventId + "-ORGANIZER");
+
         } catch (Exception e) {
             Log.e("Event", "Error adding/updating event", e);
         }
@@ -237,6 +241,7 @@ public class Event implements Serializable {
         event.put("attendeeLimit", attendeeLimit);
         event.put("creatorId", creatorId);
         event.put("signedUp", signedUpUsers);
+        event.put("checkIns", checkIns);
         return event;
     }
 
@@ -407,5 +412,13 @@ public class Event implements Serializable {
 
     public void setSignedUpUsers(int signedUpUsers) {
         this.signedUpUsers = signedUpUsers;
+    }
+
+    public int getCheckIns() {
+        return checkIns;
+    }
+
+    public void setCheckIns(int checkIns) {
+        this.checkIns = checkIns;
     }
 }
