@@ -1,37 +1,78 @@
 package com.oopsipushedtomain;
 
-import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.Espresso;
-import androidx.test.espresso.matcher.ViewMatchers;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.LargeTest;
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
+import android.view.View;
+
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.test.espresso.NoMatchingViewException;
+import androidx.test.espresso.ViewAssertion;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.rule.ActivityTestRule;
+
+import org.hamcrest.Matchers;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-
-import com.oopsipushedtomain.AdminActivity;
-
 @RunWith(AndroidJUnit4.class)
-@LargeTest
 public class AdminActivityTest {
 
+    @Rule
+    public ActivityTestRule<AdminActivity> activityRule =
+            new ActivityTestRule<>(AdminActivity.class, true, true);
+
+    // Test for browsing events
     @Test
-    public void ensureAdminDashboardFragmentIsDisplayed() {
-        // Launch the AdminActivity
-        ActivityScenario.launch(AdminActivity.class);
+    public void testNavigateToBrowseEvents() {
+        onView(withId(R.id.btnBrowseEvents)).perform(click());
+        onView(withId(R.id.EventListView)).check(matches(isDisplayed()));
+                //.check(new RecyclerViewNotEmptyAssertion());
+    }
 
-        // Check if the "Browse Events" button is displayed
-        Espresso.onView(ViewMatchers.withId(R.id.btnBrowseEvents))
-                .check(matches(isDisplayed()));
+    // Test for browsing profiles
+    @Test
+    public void testNavigateToBrowseProfiles() {
+        onView(withId(R.id.btnBrowseProfiles)).perform(click());
+        // Introduce a delay to wait for data to load
+        try {
+            Thread.sleep(2000); // wait for 2 seconds
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        onView(withId(R.id.profilesRecyclerView)).check(matches(isDisplayed()))
+                .check(new RecyclerViewNotEmptyAssertion());
+    }
 
-        Espresso.onView(ViewMatchers.withId(R.id.btnBrowseProfiles))
-                .check(matches(isDisplayed()));
+    // Test for browsing images and making a choice in ImageSelectionFragment
+    @Test
+    public void testNavigateToBrowseImagesAndChoose() {
+        onView(withId(R.id.btnBrowseImages)).perform(click());
+        onView(withId(R.id.imageSelectionFragmentRoot)).check(matches(isDisplayed()));
 
-        Espresso.onView(ViewMatchers.withId(R.id.btnBrowseImages))
-                .check(matches(isDisplayed()));
+        // Simulate choosing to browse event pictures
+        onView(withId(R.id.btnProfilePictures)).perform(click());
+        onView(withId(R.id.imagesRecyclerView)).check(matches(isDisplayed()))
+                .check(new RecyclerViewNotEmptyAssertion());
+    }
 
+    public class RecyclerViewNotEmptyAssertion implements ViewAssertion {
+        @Override
+        public void check(View view, NoMatchingViewException noViewException) {
+            if (noViewException != null) {
+                throw noViewException;
+            }
+
+            RecyclerView recyclerView = (RecyclerView) view;
+            RecyclerView.Adapter adapter = recyclerView.getAdapter();
+
+            assertThat(adapter.getItemCount(), Matchers.greaterThan(0));
+        }
     }
 }

@@ -56,7 +56,9 @@ public class UserListActivity extends AppCompatActivity {
         public Profile() {
         }
 
-        // Getters and Setters
+        /**
+         * Getters and Setters
+         */
 
         public void setUID(String uid) {
             this.uid = uid;
@@ -204,7 +206,7 @@ public class UserListActivity extends AppCompatActivity {
      * Deletes a profile on the database
      * @param profile The profile to delete
      */
-    private void deleteProfile(Profile profile) {
+    public void deleteProfile(Profile profile) {
         // Assuming FirebaseAccess class is equipped to handle deletion and user.getUid() is accessible directly
         FirebaseAccess firebaseAccess = new FirebaseAccess(FirestoreAccessType.USERS);
         String userId = profile.getUID(); // Ensure getUid() method exists and retrieves the user's ID
@@ -225,6 +227,9 @@ public class UserListActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Fetches profiles from the database and updates the UI accordingly.
+     */
     private void fetchProfiles() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").get().addOnCompleteListener(task -> {
